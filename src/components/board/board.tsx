@@ -2,6 +2,9 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useMemo, useRef } from "react";
+import { ExternalDropZone } from "@/components/capture/external-drop-zone";
+import { PasteListener } from "@/components/capture/paste-listener";
+import { QuickAdd } from "@/components/capture/quick-add";
 import { Button } from "@/components/ui/button";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { useRetryEnrich } from "@/lib/items/mutations";
@@ -159,6 +162,9 @@ export function Board({ view, sort }: BoardProps) {
         <Toolbar view={view} sort={sort} />
       </Suspense>
       {content}
+      <PasteListener view={view} />
+      <ExternalDropZone view={view} />
+      <QuickAdd view={view} />
     </div>
   );
 }

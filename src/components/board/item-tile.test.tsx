@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUploadStore } from "@/stores/upload-store";
 import { makeItem } from "@/test/fixtures";
-import { ItemTile, itemDisplayTitle } from "./item-tile";
+import { ItemTile, isStalePending, itemDisplayTitle } from "./item-tile";
 
 describe("itemDisplayTitle", () => {
   it("falls back from title to url to file name to Untitled", () => {
@@ -82,6 +82,7 @@ describe("ItemTile capture status", () => {
         url: "https://a.example",
         title: null,
         enrich_status: "pending",
+        updated_at: new Date().toISOString(),
       }),
     });
     expect(container.querySelector('[data-slot="item-tile"]')).toHaveAttribute("aria-busy", "true");
@@ -161,5 +162,87 @@ describe("ItemTile capture status", () => {
       </ul>,
     );
     expect(container.querySelector("img")).not.toBeInTheDocument();
+  });
+});
+
+describe("isStalePending", () => {
+  const NOW = Date.parse("2026-01-01T00:10:00Z");
+  const link = (overrides: Partial<Parameters<typeof makeItem>[0]>) =>
+    makeItem({ kind: "link", url: "https://a.example", enrich_status: "pending", ...overrides });
+
+  it("is true for a pending link last updated more than 2 minutes ago", () => {
+    expect(isStalePending(link({ updated_at: "2026-01-01T00:07:59Z" }), NOW)).toBe(true);
+  });
+
+  it("is false up to and including 2 minutes", () => {
+    expect(isStalePending(link({ updated_at: "2026-01-01T00:08:00Z" }), NOW)).toBe(false);
+    expect(isStalePending(link({ updated_at: "2026-01-01T00:09:59Z" }), NOW)).toBe(false);
+  });
+
+  it("is false without a url, when not pending, or with an unreadable date", () => {
+    const old = "2026-01-01T00:00:00Z";
+    expect(isStalePending(link({ updated_at: old, url: null }), NOW)).toBe(false);
+    expect(isStalePending(link({ updated_at: old, enrich_status: "failed" }), NOW)).toBe(false);
+    expect(isStalePending(link({ updated_at: old, enrich_status: "done" }), NOW)).toBe(false);
+    expect(isStalePending(link({ updated_at: "not a date" }), NOW)).toBe(false);
+  });
+});
+
+describe("ItemTile stale pending link", () => {
+  const stale = makeItem({
+    kind: "link",
+    url: "https://a.example",
+    enrich_status: "pending",
+    updated_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+  });
+
+  it("shows the failed state with Retry instead of a skeleton", () => {
+    const { container } = render(
+      <ul>
+        <ItemTile variant="grid" item={stale} onRetry={vi.fn()} />
+      </ul>,
+    );
+    expect(screen.getByText("Couldn't fetch details")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="skeleton"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-slot="item-tile"]')).not.toHaveAttribute("aria-busy");
+  });
+
+  it("does the same in the list variant", () => {
+    render(
+      <ul>
+        <ItemTile variant="list" item={stale} onRetry={vi.fn()} />
+      </ul>,
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("goes back to the skeleton while the retry runs", async () => {
+    let finish: () => void = () => {};
+    const onRetry = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
+    const { container } = render(
+      <ul>
+        <ItemTile variant="grid" item={stale} onRetry={onRetry} />
+      </ul>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    finish();
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("leaves a fresh pending link as a skeleton", () => {
+    const { container } = render(
+      <ul>
+        <ItemTile
+          variant="grid"
+          item={{ ...stale, updated_at: new Date().toISOString() }}
+          onRetry={vi.fn()}
+        />
+      </ul>,
+    );
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 });

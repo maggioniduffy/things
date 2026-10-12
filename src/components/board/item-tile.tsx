@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { KindIcon } from "@/components/kind-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,26 @@ export function itemDisplayTitle(item: BoardItem): string {
   return item.title || item.url || item.file_name || noteTitle || "Untitled";
 }
 
+/** A link still "pending" this long after its last update lost its enrichment (e.g. a reload). */
+export const STALE_PENDING_MS = 2 * 60 * 1000;
+
+/**
+ * True for a link whose enrichment can no longer be running: pending, has a URL and was last
+ * updated more than two minutes ago. Captures made in this tab are always younger than that.
+ */
+export function isStalePending(item: BoardItem, now: number): boolean {
+  if (item.enrich_status !== "pending" || !item.url) return false;
+  const updatedAt = Date.parse(item.updated_at);
+  return Number.isFinite(updatedAt) && now - updatedAt > STALE_PENDING_MS;
+}
+
 type ItemTileProps = {
   item: BoardItem;
   variant: ItemTileVariant;
   /** Signed storage URL of the item's thumbnail; falls back to the unfurled `image_url`. */
   thumbnailUrl?: string | null;
   /** Called by the Retry button of a link whose details could not be fetched. */
-  onRetry?: (item: BoardItem) => void;
+  onRetry?: (item: BoardItem) => void | Promise<void>;
 };
 
 /** Thin bar for a file upload: determinate when progress is known, otherwise a static partial fill. */
@@ -52,10 +66,10 @@ function UploadBar({ itemId }: { itemId: string }) {
   );
 }
 
-function RetryButton({ item, onRetry }: { item: BoardItem; onRetry?: (item: BoardItem) => void }) {
+function RetryButton({ item, onRetry }: { item: BoardItem; onRetry?: ItemTileProps["onRetry"] }) {
   if (!onRetry || !item.url) return null;
   return (
-    <Button variant="ghost" size="sm" onClick={() => onRetry(item)}>
+    <Button variant="ghost" size="sm" onClick={() => void onRetry(item)}>
       Retry
     </Button>
   );
@@ -67,8 +81,23 @@ function RetryButton({ item, onRetry }: { item: BoardItem; onRetry?: (item: Boar
  */
 export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps) {
   const title = itemDisplayTitle(item);
-  const pending = item.enrich_status === "pending";
-  const failed = item.enrich_status === "failed";
+  // Read once per mount: a tile that is shown pending stays that way until its data changes.
+  const [mountedAt] = useState(() => Date.now());
+  // Retrying makes the item fresh again, but its cached `updated_at` is still old.
+  const [retrying, setRetrying] = useState(false);
+  const stale = !retrying && isStalePending(item, mountedAt);
+  const pending = item.enrich_status === "pending" && !stale;
+  const failed = item.enrich_status === "failed" || stale;
+  const retry = onRetry
+    ? async (target: BoardItem) => {
+        setRetrying(true);
+        try {
+          await onRetry(target);
+        } finally {
+          setRetrying(false);
+        }
+      }
+    : undefined;
   const imageUrl = thumbnailUrl ?? item.image_url;
 
   if (variant === "list") {
@@ -88,7 +117,7 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
             <span className="text-meta text-ink-subtle hidden sm:inline">
               Couldn&apos;t fetch details
             </span>
-            <RetryButton item={item} onRetry={onRetry} />
+            <RetryButton item={item} onRetry={retry} />
           </>
         ) : item.domain ? (
           <span className="text-meta text-ink-subtle hidden max-w-48 truncate sm:inline">
@@ -115,6 +144,7 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
           src={imageUrl}
           alt=""
           loading="lazy"
+          draggable={false}
           className="bg-line rounded-control aspect-video w-full object-cover"
         />
       ) : null}
@@ -134,7 +164,7 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
       ) : failed ? (
         <div className="mt-auto flex items-center justify-between gap-2">
           <p className="text-meta text-ink-subtle">Couldn&apos;t fetch details</p>
-          <RetryButton item={item} onRetry={onRetry} />
+          <RetryButton item={item} onRetry={retry} />
         </div>
       ) : item.domain ? (
         <p className="text-meta text-ink-subtle mt-auto truncate">{item.domain}</p>
