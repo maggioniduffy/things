@@ -23,4 +23,16 @@ describe("Logo", () => {
     render(<Logo size={40} showWordmark={false} />);
     expect(screen.getByRole("img", { name: "Things" })).toHaveAttribute("width", "40");
   });
+
+  it("uses currentColor and no gradients in the mono variant", () => {
+    const { container } = render(<Logo variant="mono" showWordmark={false} />);
+    expect(container.querySelector("linearGradient")).toBeNull();
+    expect(container.querySelector("path")).toHaveAttribute("fill", "currentColor");
+  });
+
+  it("paints the color variant with gradients", () => {
+    const { container } = render(<Logo showWordmark={false} />);
+    expect(container.querySelectorAll("linearGradient")).toHaveLength(3);
+    expect(container.querySelector("path")?.getAttribute("fill")).toMatch(/^url\(#/);
+  });
 });

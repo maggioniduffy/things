@@ -14,6 +14,7 @@ const interTight = Inter_Tight({
 export const metadata: Metadata = {
   title: "Things",
   description: "Save anything for later.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

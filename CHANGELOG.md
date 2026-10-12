@@ -1,5 +1,13 @@
 ## Unreleased
 
+### Brand assets
+
+#### Added
+
+- New mark (two sheared cards) in `Logo`, with `color` (default), `duo` and `mono` variants.
+- App icons, favicon and Open Graph images from the Claude Design brand sheet: `src/app/icon.png`, `apple-icon.png`, `favicon.ico`, `opengraph-image.png`, `twitter-image.png`, plus `public/brand/*` (PWA icons, ink and aurora icons, `og-brand.png`) and a static web app manifest (`public/manifest.webmanifest`; it needs literal colors, which the no-raw-hex guard keeps out of `src`).
+- `scripts/render-brand-assets.mjs` regenerates all PNGs from the design (Playwright Chromium).
+
 ### Phase 1 — Supabase, auth and guests
 
 #### Added
