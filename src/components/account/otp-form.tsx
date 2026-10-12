@@ -4,8 +4,9 @@ import { LoaderCircleIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AUTH_MESSAGES, EMAIL_OTP_TYPE, isValidOtp, mapAuthError, sanitizeOtp } from "@/lib/auth";
+import { AUTH_MESSAGES, EMAIL_OTP_TYPE, isValidOtp, mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
+import { OtpCodeInput } from "./otp-code-input";
 import { TurnstileField, useTurnstile } from "./turnstile-field";
 
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -127,11 +128,9 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
     }
   }
 
-  function onCodeChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const next = sanitizeOtp(event.target.value);
+  function onCodeChange(next: string) {
     setCode(next);
     if (error) setError(null);
-    if (isValidOtp(next)) void verify(next);
   }
 
   function onVerifySubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -212,22 +211,15 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
               Enter the 6-digit code we sent to{" "}
               <span className="text-ink font-medium break-all">{email}</span>
             </label>
-            <Input
+            <OtpCodeInput
               ref={codeInput}
               id={codeId}
-              name="code"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]*"
-              maxLength={12}
-              placeholder="000000"
               value={code}
-              onChange={onCodeChange}
+              onValueChange={onCodeChange}
+              onComplete={(complete) => void verify(complete)}
               readOnly={pending === "verify"}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={errorId}
-              className="h-11 text-center font-mono text-[length:var(--text-section)] tracking-[0.4em]"
+              invalid={Boolean(error)}
+              describedBy={errorId}
             />
             <FieldError id={errorId} message={error} />
           </div>

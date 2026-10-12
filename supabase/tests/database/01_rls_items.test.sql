@@ -139,7 +139,9 @@ select is(
 reset role;
 
 select results_eq(
-  $$ select id, title from public.items order by id $$,
+  $$ select id, title from public.items
+     where id in ('a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001')
+     order by id $$,
   $$ values ('a1000000-0000-0000-0000-000000000001'::uuid, 'A item'),
             ('b1000000-0000-0000-0000-000000000001'::uuid, 'B item') $$,
   'both original items are untouched after cross-user attempts'

@@ -1,0 +1,133 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { expect, type BrowserContext, type Page } from "@playwright/test";
+
+/** Playwright does not load .env.local the way Next does, so read the generated file directly. */
+function readEnvLocal(): Record<string, string> {
+  try {
+    const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
+    const entries = text
+      .split("\n")
+      .map((line) => line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/))
+      .filter((match): match is RegExpMatchArray => match !== null)
+      .map((match) => [match[1] ?? "", (match[2] ?? "").replace(/^["']|["']$/g, "")] as const);
+    return Object.fromEntries(entries);
+  } catch {
+    return {};
+  }
+}
+
+const envLocal = readEnvLocal();
+
+function requireEnv(name: string): string {
+  const value = process.env[name] || envLocal[name];
+  if (!value) throw new Error(`${name} is not set. Run \`pnpm db:env\` first.`);
+  return value;
+}
+
+const SUPABASE_URL = () => requireEnv("NEXT_PUBLIC_SUPABASE_URL");
+const PUBLISHABLE_KEY = () => requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+
+export type AppSession = {
+  accessToken: string;
+  user: { id: string; email?: string; is_anonymous?: boolean };
+};
+
+type StoredSession = {
+  access_token?: string;
+  user?: { id: string; email?: string; is_anonymous?: boolean };
+};
+
+/**
+ * Decodes the Supabase auth cookie (`sb-<ref>-auth-token`), which `@supabase/ssr` may split into
+ * `.0`, `.1`, ... chunks and may prefix with `base64-` (base64url JSON).
+ */
+export function decodeAuthCookie(cookies: { name: string; value: string }[]): AppSession | null {
+  const matching = cookies.filter((cookie) => /^sb-.+-auth-token(\.\d+)?$/.test(cookie.name));
+  if (matching.length === 0) return null;
+
+  const whole = matching.find((cookie) => !/\.\d+$/.test(cookie.name));
+  const raw = whole
+    ? whole.value
+    : matching
+        .filter((cookie) => /\.\d+$/.test(cookie.name))
+        .sort((a, b) => Number(a.name.split(".").pop()) - Number(b.name.split(".").pop()))
+        .map((cookie) => cookie.value)
+        .join("");
+
+  let text = raw;
+  try {
+    text = decodeURIComponent(raw);
+  } catch {
+    // Not URI-encoded; use as is.
+  }
+  const json = text.startsWith("base64-")
+    ? Buffer.from(text.slice("base64-".length), "base64url").toString("utf8")
+    : text;
+
+  const parsed = JSON.parse(json) as StoredSession;
+  if (!parsed.access_token || !parsed.user) return null;
+  return { accessToken: parsed.access_token, user: parsed.user };
+}
+
+/** The session the app itself holds in the browser, read from its auth cookie. */
+export async function readSession(context: BrowserContext): Promise<AppSession> {
+  const session = decodeAuthCookie(await context.cookies());
+  if (!session) throw new Error("No Supabase session cookie in this browser context.");
+  return session;
+}
+
+function restHeaders(session: AppSession) {
+  return {
+    apikey: PUBLISHABLE_KEY(),
+    Authorization: `Bearer ${session.accessToken}`,
+    "Content-Type": "application/json",
+  };
+}
+
+/** Inserts `count` notes as the signed-in user through PostgREST, with RLS applying as in the app. */
+export async function createNotes(session: AppSession, count: number, prefix = "Note") {
+  const rows = Array.from({ length: count }, (_, index) => ({
+    kind: "note",
+    title: `${prefix} ${index + 1}`,
+    note: `Saved by e2e (${prefix} ${index + 1})`,
+    position: `a${String(index).padStart(3, "0")}`,
+  }));
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/items`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=minimal" },
+    body: JSON.stringify(rows),
+  });
+  expect(response.status, await response.clone().text()).toBe(201);
+}
+
+/** Titles of the signed-in user's items, oldest first. */
+export async function listItemTitles(session: AppSession): Promise<string[]> {
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/items?select=title&order=position`, {
+    headers: restHeaders(session),
+  });
+  expect(response.status).toBe(200);
+  const rows = (await response.json()) as { title: string }[];
+  return rows.map((row) => row.title);
+}
+
+/** `GET /auth/v1/user` with the session's access token: what the server believes about the user. */
+export async function fetchAuthUser(session: AppSession) {
+  const response = await fetch(`${SUPABASE_URL()}/auth/v1/user`, {
+    headers: { apikey: PUBLISHABLE_KEY(), Authorization: `Bearer ${session.accessToken}` },
+  });
+  expect(response.status).toBe(200);
+  return (await response.json()) as { id: string; email?: string; is_anonymous?: boolean };
+}
+
+/** Landing page -> "Try without an account" -> /app, with the guest banner showing. */
+export async function startGuest(page: Page) {
+  await page.goto("/");
+  await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(guestBanner(page)).toBeVisible();
+}
+
+export function guestBanner(page: Page) {
+  return page.getByRole("region", { name: "Guest account" });
+}
