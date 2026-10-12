@@ -1,10 +1,8 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { Logo } from "./logo";
 
 describe("Logo", () => {
-  afterEach(cleanup); // vitest globals are off, so RTL does not auto-clean
-
   it("is named 'Things' with the wordmark", () => {
     const { container } = render(
       <h1>
