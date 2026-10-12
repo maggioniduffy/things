@@ -17,7 +17,14 @@ pnpm supabase gen types typescript --local > src/types/database.types.ts
 
 Also available: `pnpm build`, `pnpm start`, `pnpm format`, `pnpm format:check`, `pnpm test:watch`.
 
-Copy `.env.example` to `.env.local` and fill in the values before running against Supabase.
+## Local setup
+
+1. Start Docker (in a cloud container: `dockerd &`).
+2. Start the local Supabase stack: `pnpm db:start`.
+3. Write `.env.local` from `pnpm supabase status -o env`: copy `API_URL` to `NEXT_PUBLIC_SUPABASE_URL`, `PUBLISHABLE_KEY` to `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SECRET_KEY` to `SUPABASE_SECRET_KEY` (see `.env.example`).
+4. Run the app: `pnpm dev`, then open http://localhost:3000.
+
+`.env.local` is gitignored. The app needs it to build and start, so `pnpm e2e` (which runs `pnpm build && pnpm start`) needs it too.
 
 ## Docs
 

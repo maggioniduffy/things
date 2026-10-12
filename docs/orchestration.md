@@ -64,7 +64,7 @@ These need your accounts or secrets. Each is listed with the first WP it blocks;
 | # | Action | Needed by | Notes |
 | --- | --- | --- | --- |
 | O1 | Create the GitHub `main` branch protection / accept PR flow | Phase 0 PR | One PR per phase |
-| O2 | Create a Supabase cloud project (free) and provide `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` as env/secrets | Phase 1 deploy check (local dev uses `supabase start`) | Secret key only for `/api/cron/*` |
+| O2 | Create a Supabase cloud project (free) and provide `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` as env/secrets | Phase 1 deploy check (local dev uses `supabase start`) | Secret key only for `/api/cron/*`. In Auth settings keep **Confirm email ON** (otherwise a guest's `updateUser({ email })` is auto-confirmed and a guest could claim any address unverified — found in WP 1.6), enable anonymous sign-ins and manual identity linking, and paste the three email templates from `supabase/templates/`. Also set **Site URL** to the production origin and the **redirect allow-list** to `https://<prod>/auth/callback` (plus preview URLs), and review email OTP frequency and the auth rate limits (local dev uses relaxed values). Don't copy local-only settings: `skip_nonce_check` (Google) stays off in production; `double_confirm_changes = false` is deliberate (guests have no old address) |
 | O3 | Google Cloud OAuth client (web), redirect `https://<project>.supabase.co/auth/v1/callback`; enable Google + **manual identity linking** + **anonymous sign-ins** in Supabase Auth | WP 1.6 (Google), WP 1.7 (linking) | Local dev can skip Google: OTP + guest cover the gate |
 | O4 | Cloudflare Turnstile site (site key + secret) and enable CAPTCHA in Supabase Auth | Production only | Local/e2e uses Cloudflare's always-pass test keys |
 | O5 | Brevo account → SMTP credentials into Supabase Auth custom SMTP; OTP template using `{{ .Token }}` | Production only | Local uses the CLI's built-in mail catcher |
@@ -204,8 +204,8 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | --- | --- | --- |
 | Plan + orchestration | done | maggioniduffy/things#1 |
 | 0 Scaffold & design system | done (gate passed: Lighthouse 96/100, e2e 13/13) | WP 0.1 in #1; WP 0.2–0.4 next PR |
-| 1 Supabase, auth, guests | next | |
-| 2 Shell & data layer | | |
+| 1 Supabase, auth, guests | done (gate passed after open-redirect fix) | Phase 1 PR |
+| 2 Shell & data layer | next | |
 | 3 Capture | | |
 | 4 Browse | | |
 | 5 Organize & DnD | | |
@@ -225,3 +225,7 @@ From the Phase 0 gate review (non-blocking). Each lands in the WP named.
 | Styleguide lacks derived `rounded-sm…xl`, `CommandDialog`, bottom drawer, sub-menus, radio items | WP 7.2 / 8.3 |
 | Motion JS animations need `MotionConfig reducedMotion="user"` (CSS rule doesn't cover them) | WP 8.1 (already planned) |
 | Playwright `reuseExistingServer` can pick up a stale server without `STYLEGUIDE=1`; stop stray servers before e2e | Process note |
+| Google `linkIdentity` conflict (`identity_already_exists`) surfaces at `/auth/callback` as the generic callback error, not the "already has an account" copy; pass the provider error code through to `/login` | When O3 (Google) is done |
+| "Sign in instead" from the upgrade conflict leaves the guest's rows orphaned until the 30-day cleanup | WP 8.4 (cleanup cron) — acceptable for v1 |
+| Storage quota rejections come back as a generic HTTP 500 `DatabaseError` (message lacks `guest_quota_exceeded`); the upload client must map a 500 on a guest upload to the quota toast | WP 3.3 |
+| `05_functions` foreign-id case passes via the function's own `user_id` filter rather than RLS (RLS is covered in `01`) | No action |

@@ -1,5 +1,37 @@
 ## Unreleased
 
+### Phase 1 — Supabase, auth and guests
+
+#### Added
+
+- Local Supabase project in `supabase/`: config, five migrations (extensions and helpers, core tables, RLS, functions, storage), seed and email templates. Postgres 17.
+- Schema: `collections`, `items`, `tags`, `item_tags`, `smart_views` and `unfurl_log`, the `item_kind` enum, `updated_at` triggers, and indexes for the board, kinds, domains, trash purge and tag lookups. A generated `search` tsvector holds unaccented lexemes, plus a trigram index on `title`.
+- RLS on every table, granted to `authenticated` only. Guests are authenticated too, and nothing is granted to `anon`.
+- Cross-user foreign-key checks in `with check`: `items.collection_id` and both keys of `item_tags` must point at the caller's own rows. Foreign-key checks bypass RLS, so without these a user could link to someone else's rows.
+- `unfurl_log` is append-only and backs the 60-per-hour unfurl limit.
+- `save_canvas_layout(layout jsonb)` RPC: security invoker with a fixed `search_path`, and it touches only the caller's items.
+- `item_counts` view (security invoker) feeding the sidebar counts.
+- Private `things` storage bucket (50 MB per file) with policies that tie the first path segment to the caller's user id.
+- Guest quotas of 10 MB per file and 25 MB in total. An `items` trigger catches overruns early; the authoritative check is a `storage.objects` trigger (see Notes).
+- pgTAP suite: 132 assertions across 8 files covering RLS isolation, anon access, functions, storage policies, guest quotas and the search column.
+- Typed Supabase browser and server clients (`@supabase/ssr` `getAll`/`setAll`), a zod-validated public env, and generated database types.
+- `src/proxy.ts`: refreshes the session with `getClaims()`, sends signed-out users from `/app` to `/login?next=…`, and sends signed-in non-guests away from `/login`.
+- `/login`: email, then a 6-digit code (auto-submit, resend cooldown, inline errors). Also a Google button behind `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED`, and "Try without an account" (anonymous sign-in).
+- `/auth/callback`: OAuth code exchange that accepts only a same-origin `next`.
+- `GuestBanner` and `UpgradeDialog`: a guest adds an email (confirmed with an `email_change` code) or links Google and keeps the same user id and every item. A conflict message appears when the email already has an account.
+- E2E specs for the auth guard, OTP login, guest sessions and the guest upgrade; codes are read from the local Mailpit.
+- `db:*` scripts: `db:start`, `db:stop`, `db:reset`, `db:test`, `db:lint`, `db:types`, `db:env` (writes `.env.local` from the running stack without printing keys).
+- CI `db` job: schema lint, pgTAP and a check that the generated types match the schema. The `e2e` job now runs against a real Supabase stack.
+
+#### Notes
+
+- Email confirmation is required (`enable_confirmations = true`). Without it, a guest's email change is auto-confirmed, so a guest could claim any address without proving they own it. Production must keep "Confirm email" on (owner action O2).
+- Captcha is off locally and in CI. The Turnstile widget renders only when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set; production enables captcha in the Supabase dashboard (O4).
+- `db:start` pulls images from Docker Hub because the default registry is rate-limited from cloud containers. CI uses the default.
+- The storage quota is a trigger because the storage service inserts objects as `service_role`, so the uploader can't be identified from the JWT. The trigger reads `owner_id` and the server-measured size, and takes a per-user advisory lock so parallel uploads can't each pass the sum check.
+- Known gap: a Google identity conflict shows the generic callback error, not the "already has an account" message. It will be fixed when Google is enabled (O3).
+- Gate review fixes: `safeNextPath` now resolves `next` against a fixed origin and rejects control characters and backslashes (a tab in `next` was an open redirect after sign-in); re-uploading a file no longer counts it twice against the guest quota; `anon` can no longer execute `save_canvas_layout`. The guest 25 MB limit and parallel-upload safety are now tested through the real Storage API.
+
 ### Phase 0 — Scaffold and design system
 
 #### Added

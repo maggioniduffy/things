@@ -1,0 +1,1 @@
+-- Intentionally empty: no fake users or data. Tests create their own users.

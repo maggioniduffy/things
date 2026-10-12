@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ClipboardPasteIcon, FolderTreeIcon, SearchIcon } from "lucide-react";
+import { GuestStartButton } from "@/components/account/guest-start-button";
 import { Aurora, Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { focusRing } from "@/components/ui/focus-ring";
@@ -53,10 +54,7 @@ export function Hero() {
         Drop in links, files and notes. Things sorts them by format and keeps them easy to find.
       </p>
       <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <Button asChild size="lg">
-          {/* Phase 1: anonymous sign-in */}
-          <Link href="/login?guest=1">Try without an account</Link>
-        </Button>
+        <GuestStartButton size="lg" />
         <Button asChild size="lg" variant="secondary">
           <Link href="/login">Sign in</Link>
         </Button>

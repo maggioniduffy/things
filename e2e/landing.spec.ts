@@ -12,11 +12,10 @@ test.describe("landing page", () => {
     );
 
     const main = page.getByRole("main");
-    const guest = main.getByRole("link", { name: "Try without an account" });
+    const guest = main.getByRole("button", { name: "Try without an account" });
     const signIn = main.getByRole("link", { name: "Sign in" });
     await expect(guest).toBeVisible();
     await expect(signIn).toBeVisible();
-    await expect(guest).toHaveAttribute("href", /^\/login/);
     await expect(signIn).toHaveAttribute("href", /^\/login/);
 
     await expect(page.getByRole("contentinfo")).toBeVisible();
