@@ -47,3 +47,6 @@ next-env.d.ts
 /playwright-report
 /coverage
 supabase/.temp
+
+# Claude Code worktrees
+/.claude/worktrees/
