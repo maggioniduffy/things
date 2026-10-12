@@ -51,10 +51,11 @@ select throws_ok(
      values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'https://example.com') $$,
   '42501', null, 'anon cannot insert into unfurl_log');
 
--- save_canvas_layout runs as invoker with auth.uid() = null: it must touch nothing
-select lives_ok(
+-- save_canvas_layout is not executable by anon at all (and would touch nothing anyway)
+select throws_ok(
   $$ select public.save_canvas_layout('[{"id":"a1000000-0000-0000-0000-000000000001","x":99,"y":99,"w":1,"h":1,"z":1}]'::jsonb) $$,
-  'anon can call save_canvas_layout without error');
+  '42501', null,
+  'anon cannot execute save_canvas_layout');
 
 reset role;
 

@@ -131,3 +131,30 @@ export async function startGuest(page: Page) {
 export function guestBanner(page: Page) {
   return page.getByRole("region", { name: "Guest account" });
 }
+
+/**
+ * Uploads `bytes` random bytes to the `things` bucket at `<user id>/<name>` through the Storage API,
+ * as the signed-in user — the same path the app's upload pipeline will use. Returns the HTTP status.
+ */
+export async function uploadBytes(
+  session: AppSession,
+  name: string,
+  bytes: number,
+  { upsert = false }: { upsert?: boolean } = {},
+): Promise<number> {
+  const response = await fetch(
+    `${SUPABASE_URL()}/storage/v1/object/things/${session.user.id}/${name}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: PUBLISHABLE_KEY(),
+        Authorization: `Bearer ${session.accessToken}`,
+        "Content-Type": "application/octet-stream",
+        ...(upsert ? { "x-upsert": "true" } : {}),
+      },
+      body: new Uint8Array(bytes),
+    },
+  );
+  await response.arrayBuffer();
+  return response.status;
+}

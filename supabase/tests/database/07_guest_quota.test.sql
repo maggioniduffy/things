@@ -2,7 +2,7 @@
 -- and on storage.objects (authoritative check). Regular users are never limited.
 -- Sizes: 9 MB = 9437184, 10 MB = 10485760, 11 MB = 11534336, 25 MB = 26214400.
 begin;
-select plan(25);
+select plan(26);
 
 -- Fixtures (as postgres)
 insert into auth.users (id, email, is_anonymous, aud, role) values
@@ -115,6 +115,14 @@ select throws_ok(
      values ('things', '51515151-5151-5151-5151-515151515151/three', '51515151-5151-5151-5151-515151515151',
              jsonb_build_object('size', 9437184)) $$,
   'P0001', 'guest_quota_exceeded', 'storage: a third 9 MB object would pass 25 MB and is rejected');
+
+-- Re-uploading the same file (upsert: insert … on conflict) at 18 MB doesn't count the old copy twice
+select lives_ok(
+  $$ insert into storage.objects (bucket_id, name, owner_id, metadata)
+     values ('things', '51515151-5151-5151-5151-515151515151/two', '51515151-5151-5151-5151-515151515151',
+             jsonb_build_object('size', 9437184))
+     on conflict (bucket_id, name) where archived_at is null do update set metadata = excluded.metadata $$,
+  'storage: a guest can re-upload (upsert) an existing 9 MB object at 18 MB total');
 
 -- Non-guest owner is unaffected
 select lives_ok(

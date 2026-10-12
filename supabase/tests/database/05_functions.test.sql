@@ -118,12 +118,13 @@ select is(
   'https://b.example.com',
   'B''s log row is untouched');
 
--- anon: save_canvas_layout changes nothing (auth.uid() is null)
+-- anon: save_canvas_layout is not executable at all
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select lives_ok(
+select throws_ok(
   $$ select public.save_canvas_layout('[{"id":"b1000000-0000-0000-0000-000000000001","x":42,"y":42,"w":1,"h":1,"z":1}]'::jsonb) $$,
-  'anon can call save_canvas_layout');
+  '42501', null,
+  'anon cannot execute save_canvas_layout');
 reset role;
 select is(
   (select canvas_x from public.items where id = 'b1000000-0000-0000-0000-000000000001'),

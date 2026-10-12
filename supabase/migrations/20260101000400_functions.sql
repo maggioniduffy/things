@@ -60,3 +60,7 @@ $$;
 create trigger items_guest_quota
   before insert or update of file_size on public.items
   for each row execute function public.enforce_guest_item_quota();
+
+-- Signed-out callers have nothing to save; only authenticated users (guests included) may call it.
+revoke execute on function public.save_canvas_layout(jsonb) from public, anon;
+grant execute on function public.save_canvas_layout(jsonb) to authenticated;

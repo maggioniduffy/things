@@ -136,5 +136,16 @@ test.describe("guest and redirects", () => {
   test("ignores an unsafe next on the callback", async ({ page }) => {
     await page.goto("/auth/callback?code=bogus&next=%2F%2Fevil.example");
     await expect(page).toHaveURL(/\/login\?error=callback$/);
+    // A tab is stripped by URL parsers, so "/\t/evil" would become "//evil" (open redirect).
+    await page.goto("/auth/callback?code=bogus&next=%2F%09%2Fevil.example");
+    await expect(page).toHaveURL(/\/login\?error=callback$/);
+  });
+
+  test("never leaves the site after sign-in, even with a control character in next", async ({
+    page,
+  }) => {
+    await page.goto("/login?next=%2F%09%2Fevil.example%2Fphish");
+    await signInWithEmail(page, uniqueEmail());
+    await expect(page).toHaveURL(/^http:\/\/localhost:3000\/app$/);
   });
 });

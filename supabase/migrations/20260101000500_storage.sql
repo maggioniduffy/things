@@ -51,7 +51,8 @@ begin
   from storage.objects o
   where o.bucket_id = 'things'
     and o.owner_id = new.owner_id
-    and o.id <> new.id;
+    and o.id <> new.id
+    and o.name <> new.name; -- an upsert replaces the object with the same name: don't count it twice
 
   if used + new_size > 26214400 then
     raise exception 'guest_quota_exceeded' using errcode = 'P0001';

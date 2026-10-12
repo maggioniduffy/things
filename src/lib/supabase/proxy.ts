@@ -10,11 +10,25 @@ function isAppPath(pathname: string) {
   return pathname === "/app" || pathname.startsWith("/app/");
 }
 
-/** Keeps only same-origin relative paths; anything else becomes null. */
+const NEXT_BASE = "http://things.invalid";
+
+/**
+ * Keeps only same-origin relative paths; anything else becomes null.
+ * Browsers strip tabs/newlines and treat `\` as `/` while parsing URLs, so `/\t/evil.com` would
+ * become `//evil.com`: reject control characters and backslashes outright, then resolve against a
+ * fixed origin and require it to stay there. Returns the normalised path + search + hash.
+ */
 export function safeNextPath(value: string | null | undefined): string | null {
-  if (!value || !value.startsWith("/")) return null;
-  if (value.startsWith("//") || value.startsWith("/\\")) return null;
-  return value;
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+  if (/[\u0000-\u001F\u007F\\]/.test(value)) return null;
+  let url: URL;
+  try {
+    url = new URL(value, NEXT_BASE);
+  } catch {
+    return null;
+  }
+  if (url.origin !== NEXT_BASE) return null;
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 /**
