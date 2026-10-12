@@ -6,7 +6,7 @@ Verified facts that **override `docs/plan.md` and model memory** where they diff
 
 | Package | Version | Note |
 | --- | --- | --- |
-| next / eslint-config-next | 16.4.x | Node ≥ 20.9 (container has 22.22) |
+| next / eslint-config-next | 16.4.x | Node ≥ 20.9 for Next itself; the repo needs ≥ 22.19 since Phase 3 (undici 8). Container has 22.22 |
 | react / react-dom | 19.x | |
 | tailwindcss / @tailwindcss/turbopack | 4.3.x | `@theme` in `globals.css`; the Next 16.4 scaffold wires Tailwind via a `turbopack.rules` loader in `next.config.ts`, not PostCSS |
 | shadcn (CLI) | 4.21.x | see Phase 0 notes |

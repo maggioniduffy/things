@@ -1,5 +1,55 @@
 ## Unreleased
 
+### Phase 3 — Capture
+
+#### Added
+
+- Paste anywhere on the board: a pasted URL saves as a link, pasted text as a note and a pasted image as an image item. Pastes into a field or an open dialog are left alone.
+- Drag files, links or text in from outside the page. An aurora "Drop to save" overlay shows while the drag is over the window, and dropping saves what it holds. Drags that start on the page are never captured, and drops while a dialog is open are ignored.
+- A gesture saves at most 20 things. A list of up to 20 URL lines saves as one link each, other text saves as one note, and anything past the cap is skipped with a "Saved the first 20 items." toast.
+- The toolbar's Add button opens quick add: one field for a link or a note, Enter to save, Shift + Enter for a new line, a Choose files button, and files pasted into the field are saved.
+- Captures appear on the board at once and enrich in place. A capture made in a collection view goes into that collection; in any other view it goes to the Inbox, and a toast says where it went, with an Open action. The guest banner's reminder count updates right after a save.
+- Links unfurl into cards with title, description, image, favicon and site name. Pages marked as articles (`og:type` article or `article:published_time`) get the article kind. YouTube and Vimeo links use oEmbed first, then the page.
+- A link whose details can't be fetched shows "Couldn't fetch details" with a Retry button. A link still pending two minutes after its last update, for example after a reload, shows the same state; a file upload interrupted the same way says "Upload didn't finish".
+- Files up to 6 MB upload in one request with an indeterminate progress bar; larger files upload resumably with real progress. A failed upload removes its card and shows a toast, with Retry for network and unknown errors.
+- Images, PDFs and videos get a WebP thumbnail at most 480 px wide: an image is scaled down, a PDF uses its first page, and a video uses a frame at 1 s (the middle of clips under 2 s). Other kinds keep their icon.
+- Kinds come from the file's MIME type, falling back to the extension when the type is empty or generic. For URLs, video hosts and code hosts win, then media and PDF extensions; any other URL, including a `.docx` URL, is a link. Text that is a URL saves as a link; other text saves as a note.
+- Guest accounts can upload files up to 10 MB each and 25 MB in total; everyone is limited to 50 MB per file. Going over a limit shows a toast with the reason.
+- `POST /api/unfurl` requires a session, guests included, and allows 60 requests per user per hour; after that it returns 429 with `Retry-After`. Every request counts, including blocked and failed ones.
+- The unfurl fetch connects only to public unicast addresses and pins the address it checked to the connection. It re-checks each redirect (three at most), allows only ports 80 and 443 and URLs without credentials, caps the response at 1 MB, reads HTML only up to `</head>`, and gives up after 5 seconds.
+- Data layer: `lib/items/detect-kind.ts`, `lib/unfurl/` (fetch-safe, parse, providers), `lib/items/upload.ts`, `thumbnails.ts`, `mutations.ts` (optimistic inserts, enrichment, retry and rollback) and `cache.ts`. New items get fractional-index positions reserved in order, so quick captures keep their order. Thumbnails are signed in one batch per page, and upload progress lives in a Zustand store.
+- Tests: unfurl unit tests cover the SSRF cases (loopback, metadata, `[::1]`, `[::ffff:127.0.0.1]`, `2130706433`, port 22, DNS rebinding, a redirect to a private host, a fourth redirect), the oEmbed fallback and the shared deadline. `e2e/unfurl.spec.ts` checks 401, 400, 422 and 429 against the real route.
+- Tests: upload and thumbnail unit tests cover size limits, safe object names, error mapping (a guest 500 is the quota toast), the 6 MB split, abort and thumbnail sizing. `e2e/upload.spec.ts` runs the pipeline on the local stack: a 1 MB standard upload, a 7 MB resumable upload with progress, guest quota rejections at 11 MB and past 25 MB, a 60 MB file rejected as too large, and an aborted upload that leaves no object behind. Unit tests for kind detection, mutations, clipboard handling, paste, drop, quick add and signed URLs cover the optimistic card before the network answers, rollback, the 20-item cap and the drag and paste guards. `e2e/capture.spec.ts` checks paste, drop and quick add across a reload, paste into a field, and Retry on a failed link.
+
+#### Changed
+
+- Node 22.19 or later is required (`package.json` engines), because undici 8 and pdfjs-dist need it.
+- Dependencies added: undici, ipaddr.js, linkedom, tus-js-client, pdfjs-dist and fractional-indexing; `@vitest/coverage-v8` reports coverage for `src/lib`.
+- ESLint ignores agent worktrees under `.claude/worktrees/`.
+
+#### Fixed (review)
+
+- The unfurl guard blocks IPv4-compatible IPv6 (`::/96`, such as `[::127.0.0.1]`), which ipaddr.js reports as unicast, and checks IP literals with `net.isIP` so they are never resolved.
+- An unfurl has one 5-second deadline: oEmbed gets 2 seconds of it, and the page fallback shares the rest.
+- Request bodies over 4 KB are rejected before they are parsed.
+- Thumbnails are stored as `.thumb.webp` beside the item's file, not `thumb.webp`, so a user's own file can never collide with its thumbnail.
+- Signed URLs refresh every 50 minutes, even in a tab that stays focused, so thumbnails don't stop loading after an hour.
+- A broken PDF's pdf.js task is destroyed, and rendering times out after 10 seconds.
+- Audio-only video files get no thumbnail instead of a blank one, and videos preload with `preload="auto"` so Safari produces a frame.
+- The tus client no longer stores resume fingerprints in localStorage.
+- Several captures at once (a 20-file drop) no longer lose their cards: the list refetches only after the last capture in the tab finishes, instead of after the first.
+- A failed upload waits for its row to be deleted before the list refetches, so the card can't come back stuck as pending; if the delete fails too, the row is marked failed.
+- Remote preview images load with `referrerPolicy="no-referrer"`.
+
+#### Notes
+
+- Cloud containers have no outbound DNS, so real-site unfurls are mocked in e2e with `page.route`; the real route is hit only for auth, SSRF and rate-limit cases. Real YouTube and blog checks are left to the deployed app (Phase 8).
+- pdf.js uses the legacy build. The modern build calls `Map.prototype.getOrInsertComputed`, which Chromium 141 lacks, so rendering threw. The legacy build also covers Safari before 17.4.
+- Standard uploads (up to 6 MB) can't be cancelled, because storage-js has no abort; the request finishes in the background. Resumable uploads can be aborted, and the partial object is removed.
+- Unfurl has no server cache in v1, because it is a POST; the 60 per hour limit bounds the cost.
+- Any HTTP 500 on a guest upload reads as "Guest storage is full", because storage gives no separate code for quota rejections.
+- Unfurl decodes every page as UTF-8, so non-UTF-8 titles can come out garbled, and `unfurl_log` keeps full URLs until the daily purge lands in WP 4.4.
+
 ### Phase 2 — App shell and data layer
 
 #### Added
