@@ -1,5 +1,30 @@
 ## Unreleased
 
+### Phase 2 — App shell and data layer
+
+#### Added
+
+- `/app/[[...view]]`: one board page for every view — Inbox, All, Unread, Favorites, Archive, Trash, formats (`/app/f/<kind>`), collections (`/app/c/<id>`), tags (`/app/t/<id>`) and smart views (`/app/v/<id>`). Unknown routes render the 404 page.
+- The first page of items is fetched on the server and hydrated into TanStack Query; later pages load with keyset pagination (50 per page) as you scroll, with a "Load more" fallback.
+- Sort modes (manual, newest, oldest, title) live in the URL (`?sort=`), so the server prefetch and the client agree.
+- Sidebar: system views, formats that have items (with counts), collections, tags, smart views, Archive and Trash, plus the signed-in account and sign out. On phones it opens as a drawer from the toolbar.
+- Toolbar: view title, sort menu, grid/list toggle (remembered per browser) and a canvas toggle that stays disabled until Phase 6. The search field is a placeholder until Phase 7.
+- Aurora empty states with copy for every view, a "not found" state for unknown collections, tags and smart views, and a loading skeleton for navigations.
+- Data layer: `lib/views.ts` (route ↔ `ViewSpec`, sort parsing), `lib/items/queries.ts` (view filters, keyset cursors, quoted PostgREST values), `lib/sidebar/` (counts summarized from `item_counts`, collections, tags, smart views), a per-request server `QueryClient` and a Zustand UI store.
+- Tests: unit tests for routing, query building, counts, sidebar, toolbar, empty states and board states; `e2e/board.spec.ts` checks sidebar counts against seeded data, client-side navigation without a reload, sorting, 404s, pagination, view toggle and the phone drawer.
+
+#### Changed
+
+- Tooltips share one app-level `TooltipProvider`, so skip-delay grouping works.
+- Buttons, icon buttons and inputs transition only background, border and text color, so the focus ring no longer animates in.
+
+#### Notes
+
+- Tag routes use the tag id, not its name, so renaming a tag never breaks a link.
+- Smart views show an empty state until the smart-view builder lands (WP 5.4).
+- Invalid `/app` routes show the 404 page with HTTP status 200, because the loading skeleton starts streaming before the route is validated. `/app` is private and not indexed.
+- Keyset pagination was verified against local Postgres 17 with duplicate positions and timestamps, null titles and titles containing PostgREST syntax characters.
+
 ### Phase 1 — Supabase, auth and guests
 
 #### Added

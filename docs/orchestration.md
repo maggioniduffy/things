@@ -206,8 +206,8 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | Plan + orchestration | done | maggioniduffy/things#1 |
 | 0 Scaffold & design system | done (gate passed: Lighthouse 96/100, e2e 13/13) | WP 0.1 in #1; WP 0.2–0.4 next PR |
 | 1 Supabase, auth, guests | done (gate passed after open-redirect fix) | Phase 1 PR |
-| 2 Shell & data layer | next | |
-| 3 Capture | | |
+| 2 Shell & data layer | built; gate in review | maggioniduffy/things#4 |
+| 3 Capture | next | |
 | 4 Browse | | |
 | 5 Organize & DnD | | |
 | 6 Canvas | | |
