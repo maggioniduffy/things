@@ -22,7 +22,8 @@
     "db:reset": "pnpm supabase db reset",
     "db:test": "pnpm supabase test db",
     "db:lint": "pnpm supabase db lint --level warning",
-    "db:types": "pnpm supabase gen types typescript --local > src/types/database.types.ts && prettier --write src/types/database.types.ts"
+    "db:types": "pnpm supabase gen types typescript --local > src/types/database.types.ts && prettier --write src/types/database.types.ts",
+    "db:env": "node scripts/write-env-local.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
