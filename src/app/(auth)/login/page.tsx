@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Logo } from "@/components/brand";
-import { Button } from "@/components/ui/button";
+import { safeNextPath } from "@/lib/supabase/proxy";
+import { LoginPanel } from "./login-panel";
 
 export const metadata: Metadata = {
   title: "Sign in — Things",
   robots: { index: false },
 };
 
-// Placeholder until Phase 1 (email OTP, Google, guest sign-in).
-export default function LoginPage() {
-  return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
-      <Logo />
-      <h1 className="font-heading text-page tracking-heading">Sign-in is coming soon</h1>
-      <p className="text-body text-ink-muted">Accounts and guest mode arrive in the next update.</p>
-      <Button asChild variant="secondary">
-        <Link href="/">Back to home</Link>
-      </Button>
-    </main>
-  );
+type LoginPageProps = {
+  searchParams: Promise<{ next?: string | string[]; error?: string | string[] }>;
+};
+
+function first(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const next = safeNextPath(first(params.next));
+  const callbackFailed = first(params.error) === "callback";
+
+  return <LoginPanel next={next} callbackFailed={callbackFailed} />;
 }

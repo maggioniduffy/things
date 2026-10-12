@@ -26,6 +26,7 @@
     "db:env": "node scripts/write-env-local.mjs"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "1.6.2",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.3",
     "class-variance-authority": "^0.7.1",
