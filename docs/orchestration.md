@@ -230,3 +230,8 @@ From the Phase 0 gate review (non-blocking). Each lands in the WP named.
 | "Sign in instead" from the upgrade conflict leaves the guest's rows orphaned until the 30-day cleanup | WP 8.4 (cleanup cron) — acceptable for v1 |
 | Storage quota rejections come back as a generic HTTP 500 `DatabaseError` (message lacks `guest_quota_exceeded`); the upload client must map a 500 on a guest upload to the quota toast | WP 3.3 |
 | `05_functions` foreign-id case passes via the function's own `user_id` filter rather than RLS (RLS is covered in `01`) | No action |
+| Unfurl decodes every page as UTF-8; pages in windows-1252 or Shift_JIS get garbled titles (charset from `Content-Type`/`<meta charset>` is ignored) | v2 (or WP 8.x if seen in practice) |
+| `unfurl_log` keeps full URLs forever; purge rows older than a day in `/api/cron/daily` | WP 4.4 |
+| `createImageBitmap` decodes images at full size before the 480 px thumbnail; a 20k px image risks memory pressure — pass `resizeWidth` when the file is large | WP 8.5 |
+| Any HTTP 500 on a guest upload maps to the quota toast (storage gives no distinguishable code); a real server error reads as "storage is full" | Accepted for v1 |
+| Upgrade dialog lives inside `GuestBanner`, so the guest-quota toast can't offer "Add email" | WP 7.2 (palette/actions) |
