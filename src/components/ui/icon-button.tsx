@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 const iconButtonVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center rounded-control text-ink",
-    "transition-colors duration-(--duration-fast) ease-out-soft",
+    "transition-[color,background-color,border-color] duration-(--duration-fast) ease-out-soft",
     "disabled:pointer-events-none disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-[18px]",
     focusRing,

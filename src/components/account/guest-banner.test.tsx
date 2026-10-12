@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GUEST_BANNER_DISMISSED_KEY, resetGuestBannerDismissedForTests } from "@/lib/auth/guest";
+import { render } from "@/test/render";
 import { GuestBanner } from "./guest-banner";
 
 const itemsQuery = vi.hoisted(() => ({ result: { count: 0 as number | null, error: null } }));

@@ -1,29 +1,53 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { GuestBanner } from "@/components/account/guest-banner";
-import { Logo } from "@/components/brand";
+import { AppShell } from "@/components/app-shell/app-shell";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { makeQueryClient } from "@/lib/query-client";
+import {
+  collectionsQueryOptions,
+  countsQueryOptions,
+  smartViewsQueryOptions,
+  tagsQueryOptions,
+} from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "./sign-out-button";
 
 export const metadata: Metadata = {
   title: "Things",
   robots: { index: false },
 };
 
-// Placeholder shell; the real sidebar and board arrive in Phase 2.
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Re-evaluated on router.refresh(), so the banner leaves as soon as a guest upgrades.
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
-  const isGuest = data?.claims?.is_anonymous === true;
+  const claims = data?.claims;
+
+  // The proxy keeps signed-out users out of /app; this is a defensive fallback.
+  if (!claims) redirect("/login");
+
+  const isGuest = claims.is_anonymous === true;
+  const email = !isGuest && typeof claims.email === "string" ? claims.email : null;
+
+  // Sidebar data is prefetched on the server and hydrated, so the sidebar renders complete.
+  // A failed prefetch is fine: the client query simply fetches on mount.
+  const queryClient = makeQueryClient();
+  await Promise.all([
+    queryClient.query(countsQueryOptions(supabase)).catch(() => {}),
+    queryClient.query(collectionsQueryOptions(supabase)).catch(() => {}),
+    queryClient.query(tagsQueryOptions(supabase)).catch(() => {}),
+    queryClient.query(smartViewsQueryOptions(supabase)).catch(() => {}),
+  ]);
 
   return (
-    <div className="bg-paper flex min-h-dvh flex-col">
-      <header className="border-line relative z-10 flex h-14 items-center justify-between border-b px-4 sm:px-6">
-        <Logo />
-        <SignOutButton />
-      </header>
-      {isGuest ? <GuestBanner /> : null}
-      {children}
-    </div>
+    <QueryProvider userId={claims.sub}>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <div className="bg-paper flex h-dvh flex-col">
+          {isGuest ? <GuestBanner /> : null}
+          <AppShell email={email}>{children}</AppShell>
+        </div>
+      </HydrationBoundary>
+    </QueryProvider>
   );
 }

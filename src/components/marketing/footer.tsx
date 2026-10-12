@@ -27,7 +27,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 ];
 
 const linkClass = cn(
-  "link-underline text-body text-ink-muted hover:text-ink rounded-sm transition-colors duration-(--duration-fast)",
+  "link-underline text-body text-ink-muted hover:text-ink rounded-sm transition-[color,background-color,border-color] duration-(--duration-fast)",
   focusRing,
 );
 
