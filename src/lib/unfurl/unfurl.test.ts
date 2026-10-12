@@ -129,6 +129,19 @@ describe("unfurl: providers", () => {
     expect(result.provider).toBe("youtube");
   });
 
+  it("shares one deadline between oEmbed and the page, with a shorter oEmbed budget", async () => {
+    respond({
+      [oembedUrl]: new UnreachableError(),
+      [videoUrl]: page({ finalUrl: videoUrl, body: "<head><title>Page</title></head>" }),
+    });
+    await unfurl(videoUrl);
+    const [oembedCall, pageCall] = fetchMock.mock.calls;
+    expect(oembedCall?.[1]).toMatchObject({ timeoutMs: 2000 });
+    expect(oembedCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(pageCall?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(pageCall?.[1]?.timeoutMs).toBeUndefined();
+  });
+
   it("falls back to the page when oEmbed is not JSON or has no title", async () => {
     respond({
       [oembedUrl]: page({ finalUrl: oembedUrl, contentType: "application/json", body: "<html>" }),

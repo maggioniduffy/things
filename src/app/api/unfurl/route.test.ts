@@ -120,6 +120,13 @@ describe("POST /api/unfurl", () => {
     expect((await post("{nope", true)).status).toBe(400);
   });
 
+  it("400 for an oversized body, without parsing or fetching", async () => {
+    const response = await post({ url: "https://example.com/", pad: "x".repeat(10_000) });
+    expect(response.status).toBe(400);
+    expect(state.current.inserted).toEqual([]);
+    expect(unfurlMock).not.toHaveBeenCalled();
+  });
+
   it("429 with Retry-After at 60 requests in the last hour, without logging or fetching", async () => {
     state.current.count = 60;
     state.current.oldest = new Date(Date.now() - 50 * 60 * 1000).toISOString();

@@ -1,7 +1,7 @@
 // Server-only: SSRF-guarded HTTP fetch for /api/unfurl. (No `import "server-only"`: it throws
 // under vitest, and this module is only imported by the route handler and its tests.)
 import dns from "node:dns";
-import type { LookupFunction } from "node:net";
+import net, { type LookupFunction } from "node:net";
 import ipaddr from "ipaddr.js";
 import { Agent, fetch as undiciFetch } from "undici";
 
@@ -21,6 +21,10 @@ export class UnreachableError extends Error {
   }
 }
 
+// Deprecated IPv4-compatible IPv6 (`::a.b.c.d`). ipaddr.js calls these "unicast", but they embed
+// an IPv4 address (`[::127.0.0.1]`), so they are never allowed.
+const IPV4_COMPATIBLE = ipaddr.parseCIDR("::/96");
+
 /**
  * True only for globally routable unicast addresses. An allowlist: private, loopback, link-local,
  * CGNAT, unique-local, multicast, reserved, documentation ranges, `::` and `0.0.0.0` all fail.
@@ -30,6 +34,9 @@ export function isPublicAddress(ip: string): boolean {
   const bare = ip.trim().replace(/^\[|\]$/g, "");
   if (!ipaddr.isValid(bare)) return false;
   try {
+    // Check the raw form: `process` turns the dotted spelling (`::8.8.8.8`) into plain IPv4.
+    const raw = ipaddr.parse(bare);
+    if (raw.kind() === "ipv6" && raw.match(IPV4_COMPATIBLE)) return false;
     return ipaddr.process(bare).range() === "unicast";
   } catch {
     return false;
@@ -41,6 +48,8 @@ export type SafeFetchOptions = {
   maxBytes?: number;
   /** One overall deadline for connect, headers and body (default 5000). */
   timeoutMs?: number;
+  /** Aborts the request early, e.g. a deadline shared by several fetches. */
+  signal?: AbortSignal;
   /** Redirects followed before giving up (default 3). */
   maxRedirects?: number;
   accept?: string;
@@ -111,7 +120,8 @@ function assertAllowedTarget(
   // decimal/hex forms like 2130706433 and 0x7f.1 to dotted quads; IPv6 keeps its brackets).
   const host = url.hostname.replace(/^\[|\]$/g, "");
   if (!host) throw new BlockedUrlError("URL has no host");
-  if (ipaddr.isValid(host) && !options.isAllowed(host)) {
+  // Use Node's own test for "is a literal" (it decides whether lookup runs) and fail closed.
+  if (net.isIP(host) !== 0 && !options.isAllowed(host)) {
     throw new BlockedUrlError("Address is not allowed");
   }
 }
@@ -186,6 +196,7 @@ export async function fetchSafe(
     lookup = dns.lookup,
     isAllowed = isPublicAddress,
     allowedPorts = [80, 443],
+    signal: outerSignal,
   } = options;
 
   let current: URL;
@@ -199,7 +210,8 @@ export async function fetchSafe(
   const agent = new Agent({
     connect: { lookup: guardedLookup(lookup as unknown as RealLookup, isAllowed) },
   });
-  const signal = AbortSignal.timeout(timeoutMs);
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = outerSignal ? AbortSignal.any([timeout, outerSignal]) : timeout;
 
   try {
     for (let redirects = 0; ; redirects++) {

@@ -8,6 +8,8 @@ import { unfurl } from "@/lib/unfurl/unfurl";
 // Unfurls per user per rolling hour (counted from `unfurl_log` under RLS).
 const HOURLY_LIMIT = 60;
 const HOUR_MS = 60 * 60 * 1000;
+// `{ "url": <2048 chars> }` fits easily; anything bigger is not a valid request.
+const MAX_BODY_CHARS = 4096;
 
 const bodySchema = z.object({
   url: z
@@ -23,6 +25,14 @@ const STATUS: Record<UnfurlErrorCode, number> = {
   blocked: 422,
   unreachable: 502,
 };
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
 
 function fail(code: UnfurlErrorCode, headers?: Record<string, string>) {
   return NextResponse.json<UnfurlErrorBody>(
@@ -41,7 +51,11 @@ export async function POST(request: Request) {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) return fail("unauthorized");
 
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  const declaredLength = Number(request.headers.get("content-length") ?? 0);
+  if (declaredLength > MAX_BODY_CHARS) return fail("invalid_url");
+  const text = await request.text().catch(() => "");
+  if (text.length > MAX_BODY_CHARS) return fail("invalid_url");
+  const parsed = bodySchema.safeParse(parseJson(text));
   if (!parsed.success) return fail("invalid_url");
   const { url } = parsed.data;
 

@@ -4,6 +4,9 @@ import { matchProvider, parseOEmbed, type ProviderMatch } from "./providers";
 import type { UnfurlResult } from "./types";
 
 const HTML_TYPE = /html|xhtml/i;
+/** Whole unfurl budget (oEmbed + page fallback share it), and the oEmbed share of it. */
+const UNFURL_BUDGET_MS = 5000;
+const OEMBED_BUDGET_MS = 2000;
 
 function faviconFor(pageUrl: string): string | null {
   try {
@@ -33,12 +36,24 @@ async function fetchOEmbed(
  * YouTube and Vimeo use oEmbed first and fall back to parsing the page.
  * Throws BlockedUrlError or UnreachableError (from `fetchSafe`).
  */
-export async function unfurl(url: string, options: SafeFetchOptions = {}): Promise<UnfurlResult> {
+export async function unfurl(
+  url: string,
+  fetchOptions: SafeFetchOptions = {},
+): Promise<UnfurlResult> {
+  // One deadline for everything below, so an oEmbed timeout can't double the wait.
+  const deadline = AbortSignal.timeout(fetchOptions.timeoutMs ?? UNFURL_BUDGET_MS);
+  const options: SafeFetchOptions = {
+    ...fetchOptions,
+    signal: fetchOptions.signal ? AbortSignal.any([fetchOptions.signal, deadline]) : deadline,
+  };
   const match = matchProvider(url);
   const provider = match?.provider ?? null;
 
   if (match) {
-    const oembed = await fetchOEmbed(match, options);
+    const oembed = await fetchOEmbed(match, {
+      ...options,
+      timeoutMs: Math.min(options.timeoutMs ?? OEMBED_BUDGET_MS, OEMBED_BUDGET_MS),
+    });
     if (oembed) {
       return {
         url,

@@ -54,6 +54,9 @@ describe("isPublicAddress", () => {
     ["[::1]", false],
     ["::ffff:127.0.0.1", false],
     ["::ffff:8.8.8.8", true],
+    ["::7f00:1", false],
+    ["::a9fe:a9fe", false],
+    ["::808:808", false],
     ["fc00::1", false],
     ["fd12:3456::1", false],
     ["fe80::1", false],
@@ -122,6 +125,8 @@ describe("fetchSafe blocks unsafe targets", () => {
     "http://[fe80::1]/",
     "http://100.64.0.1/",
     "https://192.168.0.1/",
+    "http://[::127.0.0.1]/",
+    "http://[::a9fe:a9fe]/",
   ];
 
   it.each(blockedLiterals)("%s is rejected before any lookup or socket", async (url) => {
