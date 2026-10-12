@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KindIcon } from "@/components/kind-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,19 @@ export function itemDisplayTitle(item: BoardItem): string {
   return item.title || item.url || item.file_name || noteTitle || "Untitled";
 }
 
-/** A link still "pending" this long after its last update lost its enrichment (e.g. a reload). */
+/** An item still "pending" this long after its last update lost its enrichment (e.g. a reload). */
 export const STALE_PENDING_MS = 2 * 60 * 1000;
+/** How often a pending tile re-checks whether it went stale. */
+const STALE_CHECK_MS = 30 * 1000;
 
 /**
- * True for a link whose enrichment can no longer be running: pending, has a URL and was last
- * updated more than two minutes ago. Captures made in this tab are always younger than that.
+ * True for a link or file whose enrichment can no longer be running: pending, last updated more
+ * than two minutes ago, and (for files) not uploading in this tab. Link captures made in this tab
+ * are always younger than that; a long upload is covered by `uploading`.
  */
-export function isStalePending(item: BoardItem, now: number): boolean {
-  if (item.enrich_status !== "pending" || !item.url) return false;
+export function isStalePending(item: BoardItem, now: number, uploading = false): boolean {
+  if (item.enrich_status !== "pending" || uploading) return false;
+  if (!item.url && !item.file_path) return false;
   const updatedAt = Date.parse(item.updated_at);
   return Number.isFinite(updatedAt) && now - updatedAt > STALE_PENDING_MS;
 }
@@ -81,11 +85,19 @@ function RetryButton({ item, onRetry }: { item: BoardItem; onRetry?: ItemTilePro
  */
 export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps) {
   const title = itemDisplayTitle(item);
-  // Read once per mount: a tile that is shown pending stays that way until its data changes.
-  const [mountedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const isPendingRow = item.enrich_status === "pending";
+  // A pending tile re-checks now and then, so a capture interrupted by a reload turns into Retry.
+  useEffect(() => {
+    if (!isPendingRow) return;
+    const timer = setInterval(() => setNow(Date.now()), STALE_CHECK_MS);
+    return () => clearInterval(timer);
+  }, [isPendingRow]);
+  const uploading = useUploadStore((state) => state.progress[item.id] !== undefined);
   // Retrying makes the item fresh again, but its cached `updated_at` is still old.
   const [retrying, setRetrying] = useState(false);
-  const stale = !retrying && isStalePending(item, mountedAt);
+  const stale = !retrying && isStalePending(item, now, uploading);
+  const failedCopy = item.file_path ? "Upload didn't finish" : "Couldn't fetch details";
   const pending = item.enrich_status === "pending" && !stale;
   const failed = item.enrich_status === "failed" || stale;
   const retry = onRetry
@@ -114,9 +126,7 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
         {pending ? <Skeleton className="hidden h-3 w-24 sm:block" /> : null}
         {failed ? (
           <>
-            <span className="text-meta text-ink-subtle hidden sm:inline">
-              Couldn&apos;t fetch details
-            </span>
+            <span className="text-meta text-ink-subtle hidden sm:inline">{failedCopy}</span>
             <RetryButton item={item} onRetry={retry} />
           </>
         ) : item.domain ? (
@@ -144,6 +154,8 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
           src={imageUrl}
           alt=""
           loading="lazy"
+          // Remote preview images: don't tell third-party hosts which page they were shown on.
+          referrerPolicy="no-referrer"
           draggable={false}
           className="bg-line rounded-control aspect-video w-full object-cover"
         />
@@ -163,7 +175,7 @@ export function ItemTile({ item, variant, thumbnailUrl, onRetry }: ItemTileProps
         </>
       ) : failed ? (
         <div className="mt-auto flex items-center justify-between gap-2">
-          <p className="text-meta text-ink-subtle">Couldn&apos;t fetch details</p>
+          <p className="text-meta text-ink-subtle">{failedCopy}</p>
           <RetryButton item={item} onRetry={retry} />
         </div>
       ) : item.domain ? (

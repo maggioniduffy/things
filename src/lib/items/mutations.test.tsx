@@ -73,6 +73,7 @@ function makeFakeClient(initialRows: BoardItem[]) {
     deletes: [] as string[],
     insertResult: (): Promise<Result> | Result => ({ error: null }),
     updateResult: (): Promise<Result> | Result => ({ error: null }),
+    deleteResult: (): Promise<Result> | Result => ({ error: null }),
   };
 
   function from(table: string) {
@@ -137,10 +138,13 @@ function makeFakeClient(initialRows: BoardItem[]) {
           }
           return result;
         }
-        case "delete":
+        case "delete": {
           state.deletes.push(query.id);
-          state.serverRows = state.serverRows.filter((row) => row.id !== query.id);
-          return { error: null };
+          const result = await state.deleteResult();
+          if (!result.error)
+            state.serverRows = state.serverRows.filter((row) => row.id !== query.id);
+          return result;
+        }
         case "select": {
           if (query.columns === "position") {
             const first = state.serverRows.map((row) => row.position).sort()[0];
@@ -538,6 +542,28 @@ describe("capturing a link", () => {
     expect(queryClient.isFetching()).toBe(0);
   });
 
+  it("does not refetch while another capture is still running, so its card stays", async () => {
+    const { capture, queryClient, ids } = setup();
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    const unfurl = deferred<Response>();
+    fetchMock.mockReturnValue(unfurl.promise);
+
+    let linkDone!: Promise<void>;
+    await act(async () => {
+      linkDone = capture.current.captureLink(URL_A);
+      await capture.current.captureNote("quick note");
+    });
+    // The note finished first, but the link is still unfurling: no refetch yet.
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(ids(itemsQueryKey(INBOX, "manual"))).toHaveLength(3);
+
+    await act(async () => {
+      unfurl.resolve(jsonResponse(RESULT));
+      await linkDone;
+    });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["items"] });
+  });
+
   it("keeps quick successive captures in order with unique, decreasing positions", async () => {
     const { fake, capture } = setup();
     fetchMock.mockResolvedValue(jsonResponse(RESULT));
@@ -725,6 +751,17 @@ describe("capturing a file", () => {
       expect(call[1]?.action?.label).toBe(hasRetry ? "Retry" : undefined);
     },
   );
+
+  it("marks the row failed when the rollback delete fails too", async () => {
+    const { fake, capture } = setup();
+    mocks.uploadFile.mockRejectedValue(new UploadError("network"));
+    fake.state.deleteResult = () => ({ error: { message: "offline" } });
+    await act(() => capture.current.captureFile(file("a.pdf", "application/pdf", 1000)));
+
+    const id = fake.state.inserts[0]?.id as string;
+    expect(fake.state.deletes).toEqual([id]);
+    expect(fake.state.updates).toContainEqual({ id, patch: { enrich_status: "failed" } });
+  });
 
   it("runs the capture again from the Retry action", async () => {
     const { fake, capture } = setup();

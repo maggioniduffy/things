@@ -229,6 +229,7 @@ export function resetCaptureStateForTests(): void {
   lastKey = null;
   positionQueue = Promise.resolve();
   enriching.clear();
+  inFlight = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -292,7 +293,12 @@ async function patchItem(
   if (error) throw error;
 }
 
+// Captures and retries still running in this tab. Their cards may exist only in the cache (row
+// not inserted yet), so a refetch would wipe them: only the last one to finish refreshes.
+let inFlight = 0;
+
 async function refreshLists(queryClient: QueryClient): Promise<void> {
+  if (inFlight > 0) return;
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["items"] }),
     queryClient.invalidateQueries({ queryKey: ["counts"] }),
@@ -390,14 +396,29 @@ async function enrichFile(
         onProgress: (value) => useUploadStore.getState().set(row.id, value),
       });
     } catch (error) {
-      // The file never landed: take the card back out, in the cache and in the database.
+      // The file never landed: take the card back out, in the cache and in the database. Wait for
+      // the delete, or the refresh after this capture could bring the row back as "pending".
       const { code } = toUploadError(error, { isGuest });
       removeFromCaches(queryClient, row);
-      void client
+      const { error: deleteError } = await client
         .from("items")
         .delete()
         .eq("id", row.id)
-        .then(() => undefined);
+        .then(
+          (result) => result,
+          (failure: unknown) => ({ error: failure }),
+        );
+      // Still in the database (e.g. offline): mark it failed so the card says so after a refetch.
+      if (deleteError) {
+        await client
+          .from("items")
+          .update({ enrich_status: "failed" })
+          .eq("id", row.id)
+          .then(
+            () => undefined,
+            () => undefined,
+          );
+      }
       const message = uploadErrorMessage(code, file.name);
       if (code === "network" || code === "unknown" || code === "aborted") {
         toast.error(message, { action: { label: "Retry", onClick: retry } });
@@ -500,6 +521,7 @@ async function retryLink({ client, queryClient }: EnrichDeps, item: BoardItem): 
   const deps = { client, queryClient };
   if (!item.url || enriching.has(item.id)) return;
   enriching.add(item.id);
+  inFlight += 1;
   try {
     try {
       await patchItem(deps, item.id, { enrich_status: "pending" });
@@ -509,6 +531,7 @@ async function retryLink({ client, queryClient }: EnrichDeps, item: BoardItem): 
     await enrichLink(deps, { id: item.id, url: item.url, kind: item.kind });
   } finally {
     enriching.delete(item.id);
+    inFlight -= 1;
   }
   await refreshLists(queryClient);
 }
@@ -567,27 +590,33 @@ export function useCapture(view: ViewSpec): {
       const position = reservePosition(deps.client);
       position.catch(() => undefined);
 
-      let saved = false;
+      inFlight += 1;
       try {
-        await insert({ row, position });
-        saved = true;
-      } catch {
-        // onError already removed the card and showed the toast.
-      }
+        let saved = false;
+        try {
+          await insert({ row, position });
+          saved = true;
+        } catch {
+          // onError already removed the card and showed the toast.
+        }
 
-      if (saved) {
-        announceDestination(deps, row);
-        if (enrich) {
-          enriching.add(row.id);
-          try {
-            await enrich();
-          } catch {
-            // Enrichment reports its own failures; a capture never rejects.
-          } finally {
-            enriching.delete(row.id);
+        if (saved) {
+          announceDestination(deps, row);
+          if (enrich) {
+            enriching.add(row.id);
+            try {
+              await enrich();
+            } catch {
+              // Enrichment reports its own failures; a capture never rejects.
+            } finally {
+              enriching.delete(row.id);
+            }
           }
         }
+      } finally {
+        inFlight -= 1;
       }
+      // Only the last capture to finish refetches (see `inFlight`).
       await refreshLists(queryClient);
     }
 

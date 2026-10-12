@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUploadStore } from "@/stores/upload-store";
@@ -186,6 +186,13 @@ describe("isStalePending", () => {
     expect(isStalePending(link({ updated_at: old, enrich_status: "done" }), NOW)).toBe(false);
     expect(isStalePending(link({ updated_at: "not a date" }), NOW)).toBe(false);
   });
+
+  it("covers a pending file whose upload is not running in this tab", () => {
+    const old = "2026-01-01T00:00:00Z";
+    const pendingFile = link({ updated_at: old, url: null, file_path: "u/i/a.pdf" });
+    expect(isStalePending(pendingFile, NOW)).toBe(true);
+    expect(isStalePending(pendingFile, NOW, true)).toBe(false);
+  });
 });
 
 describe("ItemTile stale pending link", () => {
@@ -230,6 +237,57 @@ describe("ItemTile stale pending link", () => {
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
     finish();
     expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  it("turns a pending link into Retry once it goes stale while shown", () => {
+    vi.useFakeTimers();
+    try {
+      const almostStale = {
+        ...stale,
+        updated_at: new Date(Date.now() - 2 * 60 * 1000 + 10_000).toISOString(),
+      };
+      render(
+        <ul>
+          <ItemTile variant="grid" item={almostStale} onRetry={vi.fn()} />
+        </ul>,
+      );
+      expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+      });
+      expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("says an interrupted file upload didn't finish, without a link Retry", () => {
+    render(
+      <ul>
+        <ItemTile
+          variant="grid"
+          item={{ ...stale, url: null, file_path: "u/i/a.pdf" }}
+          onRetry={vi.fn()}
+        />
+      </ul>,
+    );
+    expect(screen.getByText("Upload didn't finish")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+  });
+
+  it("keeps a pending file that is uploading in this tab as a skeleton", () => {
+    const uploadingFile = { ...stale, url: null, file_path: "u/i/a.pdf" };
+    useUploadStore.getState().set(uploadingFile.id, null);
+    try {
+      const { container } = render(
+        <ul>
+          <ItemTile variant="grid" item={uploadingFile} />
+        </ul>,
+      );
+      expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
+    } finally {
+      useUploadStore.getState().clear(uploadingFile.id);
+    }
   });
 
   it("leaves a fresh pending link as a skeleton", () => {
