@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { GuestBanner } from "@/components/account/guest-banner";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ViewerProvider } from "@/components/providers/viewer-provider";
 import { makeQueryClient } from "@/lib/query-client";
 import {
   collectionsQueryOptions,
@@ -42,12 +43,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <QueryProvider userId={claims.sub}>
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <div className="bg-paper flex h-dvh flex-col">
-          {isGuest ? <GuestBanner /> : null}
-          <AppShell email={email}>{children}</AppShell>
-        </div>
-      </HydrationBoundary>
+      <ViewerProvider userId={claims.sub} isGuest={isGuest}>
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <div className="bg-paper flex h-dvh flex-col">
+            {isGuest ? <GuestBanner /> : null}
+            <AppShell email={email}>{children}</AppShell>
+          </div>
+        </HydrationBoundary>
+      </ViewerProvider>
     </QueryProvider>
   );
 }
