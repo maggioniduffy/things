@@ -64,7 +64,7 @@ These need your accounts or secrets. Each is listed with the first WP it blocks;
 | # | Action | Needed by | Notes |
 | --- | --- | --- | --- |
 | O1 | Create the GitHub `main` branch protection / accept PR flow | Phase 0 PR | One PR per phase |
-| O2 | Create a Supabase cloud project (free) and give the URL + publishable key + secret key as env/secrets | Phase 1 deploy check (local dev uses `supabase start`) | Secret key only for `/api/cron/*` |
+| O2 | Create a Supabase cloud project (free) and provide `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` as env/secrets | Phase 1 deploy check (local dev uses `supabase start`) | Secret key only for `/api/cron/*` |
 | O3 | Google Cloud OAuth client (web), redirect `https://<project>.supabase.co/auth/v1/callback`; enable Google + **manual identity linking** + **anonymous sign-ins** in Supabase Auth | WP 1.6 (Google), WP 1.7 (linking) | Local dev can skip Google: OTP + guest cover the gate |
 | O4 | Cloudflare Turnstile site (site key + secret) and enable CAPTCHA in Supabase Auth | Production only | Local/e2e uses Cloudflare's always-pass test keys |
 | O5 | Brevo account → SMTP credentials into Supabase Auth custom SMTP; OTP template using `{{ .Token }}` | Production only | Local uses the CLI's built-in mail catcher |
@@ -77,7 +77,7 @@ Found while analysing `docs/plan.md`. These are binding for the builders; they a
 **Security / data integrity**
 1. **Cross-user foreign keys.** RLS `with check (user_id = auth.uid())` does not stop a user from pointing `items.collection_id`, `item_tags.item_id` or `item_tags.tag_id` at *someone else's* row (FK checks bypass RLS). Fix: policies' `with check` also require `exists (select 1 from collections c where c.id = collection_id)` (that subquery is itself RLS-filtered), same for `item_tags` → `items` and `tags`. Tested in WP 1.3.
 2. **Guest quota trusts the client.** The trigger sums `items.file_size`, which the browser writes. Fix: enforce on the real object — a storage insert policy for anonymous users that checks the per-file size from the upload, plus the `items` trigger as the friendly first line; set the bucket `file_size_limit` to 50 MB for everyone. Exact mechanism verified by a scout in Phase 1 (storage.objects metadata timing) before WP 1.2 is briefed.
-3. **SSRF via DNS rebinding.** "Resolve, check, then fetch" re-resolves at connect time. Fix: pin the checked IP — do the check inside the HTTP client's `lookup` hook (undici `Agent({ connect: { lookup } })`) so the address that is connected to is the one that was checked; redirects handled manually (`redirect: 'manual'`, max 3). Also reject IPv4-mapped IPv6, `0.0.0.0/8`, `100.64/10`, and non-80/443 ports. Use `ipaddr.js` for range checks.
+3. **SSRF via DNS rebinding.** "Resolve, check, then fetch" re-resolves at connect time. Fix: pin the checked IP — do the check inside the HTTP client's `lookup` hook (undici `Agent({ connect: { lookup } })`) so the address that is connected to is the one that was checked; redirects handled manually (`redirect: 'manual'`, max 3). Allowlist instead of blocklist: after `ipaddr.process()` (unwraps IPv4-mapped IPv6) accept only `range() === 'unicast'`; also reject non-80/443 ports. See research-notes.
 4. **Unfurl cache vs custom fetch.** Next's fetch cache doesn't apply to an undici-agent fetch. Cache parsed results instead (`unfurl_cache(url_hash, payload, fetched_at)` table read under RLS-free security-definer function, or simply per-user in TanStack Query + 24 h `Cache-Control` on the response). Decision: response cache header + skip the server cache in v1 — simplest, and the 60/h rate limit bounds abuse.
 5. **`search_path` in SQL functions.** `f_unaccent`, `search_items`, `save_canvas_layout` and triggers get `set search_path = ''` and fully qualified names (`extensions.similarity`, `public.items`) — Supabase's linter flags mutable search paths and the `%` operator lives in `extensions`.
 6. **`updated_at`** needs a `before update` trigger (`moddatetime` or a small plpgsql function); the spec only sets it in the canvas RPC.
@@ -102,7 +102,7 @@ Legend: **S** = scout (Haiku) · **B** = builder (Sonnet) · **R** = reviewer (O
 ### Phase 0 — Scaffold and design system
 | WP | Who | Task | Key acceptance |
 | --- | --- | --- | --- |
-| 0.0 | S | Confirm create-next-app / shadcn / Tailwind v4 / ESLint flat config facts (done → research-notes) | Notes cited |
+| 0.0 | S | Confirm create-next-app / shadcn / Tailwind v4 / ESLint flat config facts — **done**, see research-notes (scaffold into a subdir: create-next-app refuses non-empty dirs) | Notes cited |
 | 0.1 | B | Scaffold: Next 16, pnpm, TS strict, Tailwind v4, ESLint + Prettier, Vitest + Testing Library, Playwright; scripts `dev/typecheck/lint/test/e2e`; `.github/workflows/ci.yml`; `.env.example`; `CHANGELOG.md` | `pnpm typecheck && pnpm lint && pnpm test && pnpm build` green; CI green |
 | 0.2 | B | Tokens in `globals.css` `@theme`; fonts via `next/font` (Inter + Inter Tight); `<Grain />`, `<Aurora />`, `<Logo />` in `components/brand` | No raw hex outside `globals.css` (scout grep); reduced-motion stops drift |
 | 0.3 | B ∥ | shadcn init; restyle Button (primary/secondary/ghost), IconButton, Input, SearchField, Dialog, Drawer (vaul), DropdownMenu, ContextMenu, Tooltip, Kbd, Badge, Toast (sonner), Command (cmdk), Skeleton | Each renders with tokens; keyboard focus visible |
@@ -112,7 +112,7 @@ Legend: **S** = scout (Haiku) · **B** = builder (Sonnet) · **R** = reviewer (O
 ### Phase 1 — Supabase, schema, auth, guests
 | WP | Who | Task | Key acceptance |
 | --- | --- | --- | --- |
-| 1.0 | S + O | Verify auth/storage APIs (done → research-notes); confirm local stack starts in this container (§5.13); storage metadata timing for quota (§5.2) | Decision recorded |
+| 1.0 | S + O | Verify auth/storage APIs (**done**, research-notes); confirm local stack starts in this container (§5.13); storage metadata timing for quota (§5.2) | Decision recorded |
 | 1.1 | B | `supabase init`; migrations: extensions, `f_unaccent`, enum, 5 tables + `unfurl_log`, indexes, `updated_at` trigger, RLS with cross-ownership checks (§5.1), `item_counts` view (security invoker), `save_canvas_layout`, `search_items` stub, all with fixed `search_path` (§5.5); `seed.sql` | `supabase db reset` clean; `supabase db lint` no errors |
 | 1.2 | B | Storage bucket `things` (private, 50 MB limit) + policies; guest quota (10 MB/file, 25 MB total) per §5.2 | SQL tests below |
 | 1.3 | B | pgTAP tests: user A can't select/update/delete B's rows or link to B's collection/tag/item; can't upload to B's path; guest blocked past 25 MB and 10 MB/file | `supabase test db` green |
