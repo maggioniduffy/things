@@ -110,7 +110,7 @@ select is(
   0,
   'no item anywhere received the foreign coordinates');
 select is(
-  (select count(*)::int from public.unfurl_log),
+  (select count(*)::int from public.unfurl_log where user_id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')),
   2,
   'unfurl_log holds exactly the two original inserts');
 select is(

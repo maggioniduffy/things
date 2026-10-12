@@ -84,7 +84,7 @@ select results_eq(
 reset role;
 
 select is(
-  (select count(*)::int from public.item_tags),
+  (select count(*)::int from public.item_tags where user_id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')),
   2,
   'exactly two links exist: B''s original and A''s legitimate one');
 

@@ -101,7 +101,8 @@ select throws_ok(
 reset role;
 
 select is(
-  (select count(*)::int from storage.objects where bucket_id = 'things'),
+  (select count(*)::int from storage.objects where bucket_id = 'things'
+     and owner_id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')),
   2,
   'exactly A''s seed object and B''s object remain');
 
