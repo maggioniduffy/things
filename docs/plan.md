@@ -106,6 +106,9 @@ Every collection and the Inbox has its own infinite canvas built with React Flow
 - Moving to another collection from the canvas: context menu or `M`. Dropping a node on a sidebar collection (detected on drag stop with `elementFromPoint`) is a stretch goal.
 - Grid manual order and canvas positions are independent; switching views never moves items.
 - Minimap toggle; `onlyRenderVisibleElements` above \~300 nodes.
+- Copy and paste cards: ⌘C copies the selected cards, ⌘V pastes copies at the cursor (viewport center if the cursor is off the canvas), keeping their relative layout; ⌘D duplicates in place, offset by 16px. Also in the node and pane context menus (Copy, Duplicate, Paste). Pasting works across canvases (copy in the Inbox, paste into a collection). A paste is one batch insert with an Undo toast, and the copies become the new selection.
+  - The copy goes to an in-app clipboard (item ids + offsets, Zustand) and, as plain text, to the system clipboard (URLs for links, text for notes, one per line), so it also pastes into other apps. On ⌘V the canvas checks whether the system clipboard still holds that exact text: if yes it duplicates the items, otherwise it falls back to the normal paste (URL → link, text → note, image → image item).
+  - Copies keep title, note, metadata and tags, get fresh ids, `position` and canvas coordinates, and start unread and not favorited. File items copy their Storage object (`storage.copy()` to the new item's path), so the copy counts toward the guest quota and deleting one never breaks the other.
 
 | Key | Canvas action |
 | --- | --- |
@@ -115,6 +118,8 @@ Every collection and the Inbox has its own infinite canvas built with React Flow
 | Shift + 0 | Zoom to 100% |
 | N | New note at viewport center |
 | \] / \[ | Bring forward / send backward |
+| ⌘C / ⌘V | Copy selected cards / paste copies at the cursor |
+| ⌘D | Duplicate selected cards |
 
 **Item states:** unread → read (on open), favorite toggle, archive, soft delete to Trash (30-day purge), every destructive action with an Undo toast.
 
@@ -499,8 +504,8 @@ Nine phases, all part of the MVP, each one Claude Code session (or one PR) with 
    - **Done when:** reorder persists after reload with a single-row update; dropping 5 selected cards on a collection moves all 5 with one optimistic update; keyboard DnD works.
 7. **Phase 6 — Canvas**
    - React Flow view for Inbox and each collection; `ItemNode` reusing card components; pan, zoom, marquee, multi-drag, resize, z-order, snap, minimap.
-   - Drops and pastes at position, double-click to add a note, auto-place for unplaced items, `save_canvas_layout` RPC with debounce, viewport persistence, canvas shortcuts.
-   - **Done when:** positions, sizes and viewport persist after reload and on another device; a file dropped at a point appears there; 300 cards pan and zoom at 60 fps; moving cards on the canvas never changes grid order.
+   - Drops and pastes at position, double-click to add a note, copy/paste and duplicate cards, auto-place for unplaced items, `save_canvas_layout` RPC with debounce, viewport persistence, canvas shortcuts.
+   - **Done when:** positions, sizes and viewport persist after reload and on another device; a file dropped at a point appears there; copied cards paste at the cursor with their layout, including into another collection; 300 cards pan and zoom at 60 fps; moving cards on the canvas never changes grid order.
 8. **Phase 7 — Search and command palette**
    - `search_items` RPC, debounced search field, filter chips, ⌘K palette (search results + actions + navigation), all shortcuts.
    - **Done when:** searching "cancion" finds "Canción"; a one-character typo still matches titles; every shortcut in both tables works.
