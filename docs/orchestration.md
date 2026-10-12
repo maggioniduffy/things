@@ -202,9 +202,9 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 
 | Phase | Status | PR |
 | --- | --- | --- |
-| Plan + orchestration | done | — |
-| 0 Scaffold & design system | next | |
-| 1 Supabase, auth, guests | | |
+| Plan + orchestration | done | maggioniduffy/things#1 |
+| 0 Scaffold & design system | done (gate passed: Lighthouse 96/100, e2e 13/13) | WP 0.1 in #1; WP 0.2–0.4 next PR |
+| 1 Supabase, auth, guests | next | |
 | 2 Shell & data layer | | |
 | 3 Capture | | |
 | 4 Browse | | |
@@ -212,3 +212,16 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 6 Canvas | | |
 | 7 Search & palette | | |
 | 8 Polish & release | | |
+
+## 9. Carried-over findings
+
+From the Phase 0 gate review (non-blocking). Each lands in the WP named.
+
+| Finding | Fix in |
+| --- | --- |
+| `Tooltip` creates its own Provider per instance, which breaks Radix skip-delay grouping; move to one app-level `TooltipProvider` | WP 2.3 (shell/toolbar) |
+| `transition-colors` animates `outline-color`, so the focus ring flashes for 150 ms on focus; transition only bg/border/text | WP 2.3 |
+| Menu/command highlighted row is 1.13:1 against the menu surface; strengthen the highlight | WP 7.2 (palette) |
+| Styleguide lacks derived `rounded-sm…xl`, `CommandDialog`, bottom drawer, sub-menus, radio items | WP 7.2 / 8.3 |
+| Motion JS animations need `MotionConfig reducedMotion="user"` (CSS rule doesn't cover them) | WP 8.1 (already planned) |
+| Playwright `reuseExistingServer` can pick up a stale server without `STYLEGUIDE=1`; stop stray servers before e2e | Process note |

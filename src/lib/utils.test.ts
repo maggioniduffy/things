@@ -15,3 +15,21 @@ describe("cn", () => {
     expect(cn("text-sm text-red-500", "text-blue-500")).toBe("text-sm text-blue-500");
   });
 });
+
+describe("cn with token utilities", () => {
+  it("keeps a token font size next to a token color", () => {
+    expect(cn("text-body", "text-ink")).toBe("text-body text-ink");
+    expect(cn("text-body", "text-meta")).toBe("text-meta");
+  });
+
+  it("lets a token radius override another", () => {
+    expect(cn("rounded-control", "rounded-card")).toBe("rounded-card");
+  });
+});
+
+describe("cn token groups", () => {
+  it("treats shadow-card as a shadow size, not a shadow color", () => {
+    expect(cn("shadow-card", "shadow-ink/10")).toBe("shadow-card shadow-ink/10");
+    expect(cn("shadow-card", "shadow-none")).toBe("shadow-none");
+  });
+});

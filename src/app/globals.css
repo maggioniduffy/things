@@ -1,1 +1,230 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Design tokens: the single source for every color, radius, font, type size, shadow and motion value.
+ * Components use the generated utilities (bg-paper, text-ink-muted, rounded-card, ...) and never raw values.
+ * `static` emits every variable even when no utility references it, so var(--color-aurora-*) works anywhere.
+ */
+@theme static {
+  /* Surfaces and ink */
+  --color-paper: #f3f4f6;
+  --color-surface: rgb(255 255 255 / 0.65);
+  --color-ink: #0f0f12;
+  --color-ink-muted: #4a4a52;
+  --color-ink-subtle: #6b6b74; /* darkened from the plan's #8B8B94 (3.1:1) to meet AA 4.5:1 on paper */
+  --color-line: rgb(15 15 18 / 0.12);
+
+  /* Aurora stops */
+  --color-aurora-pink: #ee5bc4;
+  --color-aurora-violet: #8e6cf0;
+  --color-aurora-blue: #4f63de;
+  --color-aurora-red: #ef4a30;
+  --color-aurora-coral: #f6a79c;
+  --color-aurora-olive: #a9a55c;
+
+  /* Focus ring, based on aurora-violet */
+  --color-focus: var(--color-aurora-violet); /* solid: 3.4:1 on paper (WCAG 1.4.11 needs 3:1) */
+
+  /* Radii */
+  --radius-control: 8px;
+  --radius-card: 14px;
+
+  /* Type scale */
+  --text-meta: 13px;
+  --text-meta--line-height: 18px;
+  --text-body: 15px;
+  --text-body--line-height: 22px;
+  --text-card: 17px;
+  --text-card--line-height: 24px;
+  --text-section: 20px;
+  --text-section--line-height: 28px;
+  --text-page: 28px;
+  --text-page--line-height: 36px;
+  --tracking-heading: -0.02em;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgb(15 15 18 / 0.04), 0 4px 16px rgb(15 15 18 / 0.05);
+  --shadow-card-hover: 0 2px 4px rgb(15 15 18 / 0.05), 0 12px 32px rgb(15 15 18 / 0.09);
+
+  /* Motion (use as duration-(--duration-base) / ease-out-soft) */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 300ms;
+
+  /* Aurora drift: transform-only, slow, different per blob */
+  --animate-aurora-a: aurora-drift-a 26s ease-in-out infinite alternate;
+  --animate-aurora-b: aurora-drift-b 32s ease-in-out infinite alternate;
+  --animate-aurora-c: aurora-drift-c 38s ease-in-out infinite alternate;
+  --animate-aurora-d: aurora-drift-d 22s ease-in-out infinite alternate;
+  --animate-aurora-e: aurora-drift-e 30s ease-in-out infinite alternate;
+
+  @keyframes aurora-drift-a {
+    from {
+      transform: translate3d(-4%, 3%, 0) scale(1);
+    }
+    to {
+      transform: translate3d(6%, -4%, 0) scale(1.08);
+    }
+  }
+  @keyframes aurora-drift-b {
+    from {
+      transform: translate3d(5%, 2%, 0) scale(1.06);
+    }
+    to {
+      transform: translate3d(-5%, -3%, 0) scale(0.96);
+    }
+  }
+  @keyframes aurora-drift-c {
+    from {
+      transform: translate3d(-6%, -2%, 0) scale(0.98);
+    }
+    to {
+      transform: translate3d(4%, 4%, 0) scale(1.06);
+    }
+  }
+  @keyframes aurora-drift-d {
+    from {
+      transform: translate3d(-8%, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(8%, 2%, 0) scale(1.05);
+    }
+  }
+  @keyframes aurora-drift-e {
+    from {
+      transform: translate3d(10%, 0, 0);
+    }
+    to {
+      transform: translate3d(-10%, -6%, 0);
+    }
+  }
+}
+
+/* Fonts come from next/font CSS variables set on <html>, so they must resolve at the element: `inline`. */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-inter-tight), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* shadcn semantic variables, mapped onto our tokens. Light only in v1 (no .dark block). */
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-ink);
+  --primary-foreground: white;
+  --secondary: var(--color-surface);
+  --secondary-foreground: var(--color-ink);
+  --muted: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  --muted-foreground: var(--color-ink-muted);
+  --accent: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  --accent-foreground: var(--color-ink);
+  --destructive: var(--color-aurora-red);
+  --border: var(--color-line);
+  --input: var(--color-line);
+  --ring: var(--color-focus);
+  --radius: var(--radius-control);
+
+  /* Shared SVG assets, defined once so Grain and Aurora cannot drift apart. */
+  --grain-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --aurora-horizon-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 600' preserveAspectRatio='none'><defs><filter id='b' x='-5%' y='-20%' width='110%' height='140%'><feGaussianBlur stdDeviation='9'/></filter></defs><path filter='url(%23b)' d='M-80 150 C 120 60 300 40 500 120 S 860 240 1040 110 S 1300 20 1520 120 L1520 700 L-80 700 Z'/></svg>");
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  html {
+    background: var(--color-paper);
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: var(--tracking-heading);
+  }
+}
+
+/* Footer-style text link: 1px underline, 3px offset. */
+@utility link-underline {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Soft wavy horizon for <Aurora />: wave keeps its wavelength on narrow screens (mask crops instead of squashing). */
+@utility aurora-horizon {
+  -webkit-mask-image: var(--aurora-horizon-mask);
+  mask-image: var(--aurora-horizon-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center top;
+  mask-position: center top;
+  -webkit-mask-size: max(100%, 1100px) 100%;
+  mask-size: max(100%, 1100px) 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-aurora-blob] {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

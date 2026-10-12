@@ -89,3 +89,7 @@ Verified facts that **override `docs/plan.md` and model memory** where they diff
 - **pdfjs-dist 6:** set `GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString()` in a client-only module, and load it lazily.
 - **ipaddr.js:** `ipaddr.process(ip)` unwraps IPv4-mapped IPv6. Allow only `range() === 'unicast'` and reject everything else (private, loopback, linkLocal, carrierGradeNat, uniqueLocal, 6to4, teredo, reserved, and so on). This allowlist is simpler and safer than a blocklist.
 - **zod 4:** `z.uuid()`, `z.url()` and `z.email()` are top-level. Update the plan's `Rules` schema to use `z.array(z.uuid())`.
+
+## Design token adjustments (Phase 0 gate)
+
+- `--color-ink-subtle` is `#6B6B74`, not the plan's `#8B8B94`. The plan's value is only 3.1:1 on paper, which fails WCAG AA for 13px meta text; `#6B6B74` gives 4.8:1 on paper and 5.3:1 on white.
