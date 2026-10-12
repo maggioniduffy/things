@@ -149,14 +149,13 @@ test.describe("guest banner and upgrade", () => {
     await page.getByRole("button", { name: "Dismiss for now" }).click();
     await expect(guestBanner(page)).toHaveCount(0);
 
-    // Reload in the same tab: still hidden. Wait for the banner's own count query so the
-    // check cannot pass before the page has hydrated.
-    const counted = page.waitForResponse(
-      (response) =>
-        response.url().includes("/rest/v1/items") && response.request().method() === "HEAD",
-    );
+    // Reload in the same tab: still hidden. Open and close quick add first, which only works once
+    // the page has hydrated, so the check cannot pass on the server-rendered (hidden) banner.
     await page.reload();
-    await counted;
+    await page.getByRole("button", { name: "Add" }).click();
+    await expect(page.getByRole("dialog", { name: "Add" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Add" })).toHaveCount(0);
     await expect(accountGroup(page)).toContainText("Guest");
     await expect(guestBanner(page)).toHaveCount(0);
 

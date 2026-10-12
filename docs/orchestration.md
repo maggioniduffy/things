@@ -207,8 +207,8 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 0 Scaffold & design system | done (gate passed: Lighthouse 96/100, e2e 13/13) | WP 0.1 in #1; WP 0.2–0.4 next PR |
 | 1 Supabase, auth, guests | done (gate passed after open-redirect fix) | Phase 1 PR |
 | 2 Shell & data layer | done (gate passed after cache-isolation fix) | maggioniduffy/things#5 |
-| 3 Capture | next | |
-| 4 Browse | | |
+| 3 Capture | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
+| 4 Browse | next | |
 | 5 Organize & DnD | | |
 | 6 Canvas | | |
 | 7 Search & palette | | |
@@ -230,3 +230,13 @@ From the Phase 0 gate review (non-blocking). Each lands in the WP named.
 | "Sign in instead" from the upgrade conflict leaves the guest's rows orphaned until the 30-day cleanup | WP 8.4 (cleanup cron) — acceptable for v1 |
 | Storage quota rejections come back as a generic HTTP 500 `DatabaseError` (message lacks `guest_quota_exceeded`); the upload client must map a 500 on a guest upload to the quota toast | WP 3.3 |
 | `05_functions` foreign-id case passes via the function's own `user_id` filter rather than RLS (RLS is covered in `01`) | No action |
+| Unfurl decodes every page as UTF-8; pages in windows-1252 or Shift_JIS get garbled titles (charset from `Content-Type`/`<meta charset>` is ignored) | v2 (or WP 8.x if seen in practice) |
+| `unfurl_log` keeps full URLs forever; purge rows older than a day in `/api/cron/daily` | WP 4.4 |
+| `createImageBitmap` decodes images at full size before the 480 px thumbnail; a 20k px image risks memory pressure — pass `resizeWidth` when the file is large | WP 8.5 |
+| Any HTTP 500 on a guest upload maps to the quota toast (storage gives no distinguishable code); a real server error reads as "storage is full" | Accepted for v1 |
+| Upgrade dialog lives inside `GuestBanner`, so the guest-quota toast can't offer "Add email" | WP 7.2 (palette/actions) |
+| Orphaned storage objects: an upload that lands but whose response is lost, or a thumbnail uploaded before a failed final patch, stays in Storage (and counts toward the guest quota) with no row; sweep `{user}/{item}/` folders without an `items` row in `/api/cron/daily` | WP 4.4 |
+| Pending file rows left by a closed tab show "Upload didn't finish" but can't be removed yet | WP 4.3 (trash/delete) |
+| "Dropping on a sidebar collection files it there directly" (plan, Capture §2) is not built; external drops always go to the current view's target | WP 5.3 (sidebar drop targets) |
+| Drop overlay only fades in; the spec's "drifts up from the bottom edge" is missing | WP 8.1 (motion pass) |
+| The gate's "≤ 3 s" is asserted in e2e only for links (unfurl mocked); image/PDF cases use longer timeouts on the local stack | Re-check on the deployed app, WP 8.G |

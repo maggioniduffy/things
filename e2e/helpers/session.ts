@@ -28,6 +28,11 @@ function requireEnv(name: string): string {
 const SUPABASE_URL = () => requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 const PUBLISHABLE_KEY = () => requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
+/** The local stack's public URL and publishable key, for specs that build their own client. */
+export function supabasePublicEnv() {
+  return { url: SUPABASE_URL(), publishableKey: PUBLISHABLE_KEY() };
+}
+
 export type AppSession = {
   accessToken: string;
   user: { id: string; email?: string; is_anonymous?: boolean };

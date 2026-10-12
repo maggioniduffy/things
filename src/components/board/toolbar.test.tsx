@@ -45,7 +45,12 @@ describe("Toolbar", () => {
     nav.push.mockClear();
     nav.pathname = "/app/f/pdf";
     nav.search = "";
-    useUiStore.setState({ viewMode: "grid", sidebarCollapsed: false, mobileSidebarOpen: false });
+    useUiStore.setState({
+      viewMode: "grid",
+      sidebarCollapsed: false,
+      mobileSidebarOpen: false,
+      quickAddOpen: false,
+    });
   });
 
   describe("title", () => {
@@ -150,6 +155,15 @@ describe("Toolbar", () => {
     renderToolbar({ type: "inbox" });
     expect(screen.getByRole("searchbox", { name: "Search" })).toBeDisabled();
     expect(screen.getByPlaceholderText("Search")).toBeInTheDocument();
+  });
+
+  it("has a primary Add button that opens quick add", async () => {
+    renderToolbar({ type: "inbox" });
+    const add = screen.getByRole("button", { name: "Add" });
+    expect(add).toHaveAttribute("data-variant", "primary");
+    expect(add).toHaveTextContent("Add");
+    await userEvent.click(add);
+    expect(useUiStore.getState().quickAddOpen).toBe(true);
   });
 
   it("toggles the sidebar from its buttons", async () => {

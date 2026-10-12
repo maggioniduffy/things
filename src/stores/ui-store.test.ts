@@ -58,6 +58,16 @@ describe("layout flags", () => {
   });
 });
 
+describe("quick add", () => {
+  it("opens and closes", () => {
+    expect(useUiStore.getState().quickAddOpen).toBe(false);
+    useUiStore.getState().setQuickAddOpen(true);
+    expect(useUiStore.getState().quickAddOpen).toBe(true);
+    useUiStore.getState().setQuickAddOpen(false);
+    expect(useUiStore.getState().quickAddOpen).toBe(false);
+  });
+});
+
 describe("persistence", () => {
   it("defaults to grid and does not read storage until rehydrated", () => {
     localStorage.setItem(UI_STORE_KEY, JSON.stringify({ state: { viewMode: "list" }, version: 0 }));
@@ -70,6 +80,7 @@ describe("persistence", () => {
     s.select("a");
     s.toggleSidebar();
     s.setPaletteOpen(true);
+    s.setQuickAddOpen(true);
     const stored = JSON.parse(localStorage.getItem(UI_STORE_KEY) ?? "null");
     expect(stored.state).toEqual({ viewMode: "list" });
   });

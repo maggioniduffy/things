@@ -32,6 +32,17 @@ const supabase = vi.hoisted(() => {
   return { state, client: { from: () => chain } };
 });
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => supabase.client }));
+// The capture components need a signed-in viewer; they have their own tests.
+vi.mock("@/lib/items/mutations", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/items/mutations")>()),
+  useCapture: () => ({
+    captureLink: vi.fn(),
+    captureNote: vi.fn(),
+    captureFile: vi.fn(),
+    captureText: vi.fn(),
+    retryEnrich: vi.fn(),
+  }),
+}));
 
 const INBOX: ViewSpec = { type: "inbox" };
 

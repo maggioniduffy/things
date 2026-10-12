@@ -1,7 +1,8 @@
 "use client";
 
 import { XIcon } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import {
@@ -10,6 +11,7 @@ import {
   guestBannerVariant,
   subscribeGuestBannerDismissed,
 } from "@/lib/auth";
+import { countsQueryOptions } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
 import { UpgradeDialog } from "./upgrade-dialog";
 
@@ -19,25 +21,15 @@ function reminderCopy(count: number) {
   return `You've saved ${count} things as a guest. Add an email so you don't lose them.`;
 }
 
-/** Counts the guest's saved items. Returns null when the query fails; the banner then keeps its default copy. */
-async function fetchItemCount(): Promise<number | null> {
-  try {
-    const { count, error } = await createClient()
-      .from("items")
-      .select("id", { count: "exact", head: true })
-      .is("deleted_at", null);
-    return error ? null : count;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Slim, persistent offer to keep a guest's things. Mount it only for anonymous sessions
  * (the /app layout checks). Dismissing hides it for this tab session only.
  */
 export function GuestBanner() {
-  const [count, setCount] = useState<number | null>(null);
+  // Everything not trashed. Shares the sidebar's counts query, so a capture (which bumps the
+  // counts optimistically) moves the reminder right away; null until known or if the query fails.
+  const counts = useQuery(countsQueryOptions(createClient()));
+  const count = counts.data ? counts.data.all + counts.data.archive : null;
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Server snapshot is "dismissed" so nothing flashes before the tab's stored choice is known.
@@ -46,22 +38,6 @@ export function GuestBanner() {
     getGuestBannerDismissed,
     () => true,
   );
-
-  // Refetch on mount and whenever the window regains focus; there is no realtime in v1.
-  useEffect(() => {
-    let active = true;
-    const refresh = () => {
-      void fetchItemCount().then((next) => {
-        if (active) setCount(next);
-      });
-    };
-    refresh();
-    window.addEventListener("focus", refresh);
-    return () => {
-      active = false;
-      window.removeEventListener("focus", refresh);
-    };
-  }, []);
 
   const variant = guestBannerVariant(count, dismissed);
   if (variant === "hidden") return null;

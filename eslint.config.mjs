@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "src/types/database.types.ts",
+    // Agent worktrees (each is a full checkout with its own build output).
+    ".claude/worktrees/**",
   ]),
   // Must stay last: turns off rules that conflict with Prettier.
   prettier,

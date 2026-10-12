@@ -8,6 +8,7 @@ import {
   ListIcon,
   MenuIcon,
   PanelLeftIcon,
+  PlusIcon,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const setMobileSidebarOpen = useUiStore((state) => state.setMobileSidebarOpen);
+  const setQuickAddOpen = useUiStore((state) => state.setQuickAddOpen);
 
   function changeSort(next: string) {
     if (!isSortMode(next)) return;
@@ -225,6 +227,11 @@ export function Toolbar({ view, sort }: ToolbarProps) {
           <TooltipContent>Canvas is coming soon</TooltipContent>
         </Tooltip>
       </div>
+
+      <Button size="sm" aria-label="Add" onClick={() => setQuickAddOpen(true)}>
+        <PlusIcon />
+        <span className="hidden sm:inline">Add</span>
+      </Button>
     </div>
   );
 }

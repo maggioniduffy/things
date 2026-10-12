@@ -21,6 +21,10 @@ type UiState = {
 
   paletteOpen: boolean;
   setPaletteOpen: (open: boolean) => void;
+
+  /** The "Add" dialog; the toolbar button and the Phase 7 palette open it. */
+  quickAddOpen: boolean;
+  setQuickAddOpen: (open: boolean) => void;
 };
 
 export const UI_STORE_KEY = "things-ui";
@@ -82,6 +86,9 @@ export const useUiStore = create<UiState>()(
 
       paletteOpen: false,
       setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+
+      quickAddOpen: false,
+      setQuickAddOpen: (quickAddOpen) => set({ quickAddOpen }),
     }),
     {
       name: UI_STORE_KEY,
