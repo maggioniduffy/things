@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Unsafe URLs</title>
+    <meta property="og:image" content="javascript:alert(1)" />
+    <meta name="twitter:image" content="https://img.example.com/ok.png" />
+    <link rel="canonical" href="data:text/html,hi" />
+    <link rel="icon" href="javascript:alert(2)" />
+    <link rel="icon" href="data:image/png;base64,AAAA" />
+    <link rel="icon" href="icons/small.png" />
+  </head>
+  <body></body>
+</html>
