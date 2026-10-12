@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { clearMail } from "./helpers/mail";
 import {
+  accountGroup,
   createNotes,
   fetchAuthUser,
   guestBanner,
@@ -64,7 +65,7 @@ test.describe("guest banner and upgrade", () => {
     await expect(page.getByText(`Your things are saved to ${email}.`)).toBeVisible();
     await expect(dialog).toBeHidden();
     await expect(guestBanner(page)).toHaveCount(0);
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(accountGroup(page)).toContainText(email);
 
     // Same user id, no longer anonymous, and every item is still there.
     const upgraded = await readSession(context);
@@ -77,14 +78,14 @@ test.describe("guest banner and upgrade", () => {
 
     // The page is interactive again (the dialog left no scroll lock behind), and stays upgraded.
     await page.reload();
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(accountGroup(page)).toContainText(email);
     await expect(guestBanner(page)).toHaveCount(0);
 
     // Sign out, then back in with the same email: the items come with the account.
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/$/);
     await signInWithEmail(page, email);
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(accountGroup(page)).toContainText(email);
     await expect(guestBanner(page)).toHaveCount(0);
 
     const returning = await readSession(context);
@@ -156,7 +157,7 @@ test.describe("guest banner and upgrade", () => {
     );
     await page.reload();
     await counted;
-    await expect(page.getByText("Guest session")).toBeVisible();
+    await expect(accountGroup(page)).toContainText("Guest");
     await expect(guestBanner(page)).toHaveCount(0);
 
     // A new tab is a new visit: the banner is back.

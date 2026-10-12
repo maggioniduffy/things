@@ -7,7 +7,7 @@ import { focusRing } from "./focus-ring";
 const buttonVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center gap-2 rounded-control text-body font-medium whitespace-nowrap",
-    "transition-colors duration-(--duration-fast) ease-out-soft",
+    "transition-[color,background-color,border-color] duration-(--duration-fast) ease-out-soft",
     "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     focusRing,

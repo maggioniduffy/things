@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { trackConsoleErrors } from "./helpers";
+import { accountGroup } from "./helpers/session";
 import { getOtpCode, uniqueEmail } from "./mailpit";
 
 /** Walks the two-step form: email, code from the local mail catcher, verify. */
@@ -25,11 +26,11 @@ test.describe("email code sign-in", () => {
     await signInWithEmail(page, email);
 
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(accountGroup(page)).toContainText(email);
 
     await page.reload();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(accountGroup(page)).toContainText(email);
 
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/$/);
@@ -40,13 +41,16 @@ test.describe("email code sign-in", () => {
   });
 
   test("honors next after signing in", async ({ page }) => {
-    await page.goto("/app/c/abc");
-    await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fc%2Fabc$/);
+    const collection = "/app/c/6f1c2b9e-3d4a-4c5b-8e7f-0a1b2c3d4e5f";
+    await page.goto(collection);
+    await expect(page).toHaveURL(
+      /\/login\?next=%2Fapp%2Fc%2F6f1c2b9e-3d4a-4c5b-8e7f-0a1b2c3d4e5f$/,
+    );
 
     await signInWithEmail(page, uniqueEmail());
 
-    // The route may 404 until the app shell exists; only the URL matters here.
-    await expect(page).toHaveURL(/\/app\/c\/abc$/);
+    // The collection does not exist (a "not found" board), but the URL is where we were headed.
+    await expect(page).toHaveURL(new RegExp(`${collection}$`));
   });
 
   test("a wrong code shows an inline error and stays on the code step", async ({ page }) => {
@@ -93,7 +97,7 @@ test.describe("guest and redirects", () => {
     await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
 
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByText("Guest session")).toBeVisible();
+    await expect(accountGroup(page)).toContainText("Guest");
 
     // A guest may still open /login to sign in to a real account.
     await page.goto("/login");
@@ -103,7 +107,7 @@ test.describe("guest and redirects", () => {
     // And "Try without an account" with an existing session just goes back to the app.
     await page.getByRole("button", { name: "Try without an account" }).click();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByText("Guest session")).toBeVisible();
+    await expect(accountGroup(page)).toContainText("Guest");
     consoleErrors.assertNone();
   });
 
@@ -111,7 +115,7 @@ test.describe("guest and redirects", () => {
     await page.goto("/login");
     await page.getByRole("button", { name: "Try without an account" }).click();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByText("Guest session")).toBeVisible();
+    await expect(accountGroup(page)).toContainText("Guest");
   });
 
   test("redirects a signed-in user away from /login", async ({ page }) => {

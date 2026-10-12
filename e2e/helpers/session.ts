@@ -101,6 +101,59 @@ export async function createNotes(session: AppSession, count: number, prefix = "
   expect(response.status, await response.clone().text()).toBe(201);
 }
 
+export type SeedItem = {
+  kind: string;
+  title?: string | null;
+  url?: string;
+  domain?: string;
+  file_name?: string;
+  collection_id?: string | null;
+  is_favorite?: boolean;
+  is_read?: boolean;
+  /** ISO timestamps; set to move the item to Archive or Trash. */
+  archived_at?: string;
+  deleted_at?: string;
+};
+
+let seedCounter = 0;
+
+/**
+ * Inserts items of chosen kinds/states as the signed-in user (RLS applies, like `createNotes`).
+ * Positions are generated in call order. Returns the inserted rows' ids and titles.
+ */
+export async function seedItems(session: AppSession, items: SeedItem[]) {
+  // One request per row: PostgREST bulk inserts need identical keys in every object.
+  const inserted: { id: string; title: string | null }[] = [];
+  for (const item of items) {
+    const response = await fetch(`${SUPABASE_URL()}/rest/v1/items`, {
+      method: "POST",
+      headers: { ...restHeaders(session), Prefer: "return=representation" },
+      body: JSON.stringify({ ...item, position: `s${String(seedCounter++).padStart(6, "0")}` }),
+    });
+    expect(response.status, await response.clone().text()).toBe(201);
+    inserted.push(...((await response.json()) as { id: string; title: string | null }[]));
+  }
+  return inserted;
+}
+
+/** Creates a collection for the signed-in user and returns its id. */
+export async function createCollection(
+  session: AppSession,
+  name: string,
+  emoji: string | null = null,
+): Promise<string> {
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/collections`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=representation" },
+    body: JSON.stringify({ name, emoji, position: `c${String(seedCounter++).padStart(6, "0")}` }),
+  });
+  expect(response.status, await response.clone().text()).toBe(201);
+  const rows = (await response.json()) as { id: string }[];
+  const id = rows[0]?.id;
+  if (!id) throw new Error("Collection insert returned no row.");
+  return id;
+}
+
 /** Titles of the signed-in user's items, oldest first. */
 export async function listItemTitles(session: AppSession): Promise<string[]> {
   const response = await fetch(`${SUPABASE_URL()}/rest/v1/items?select=title&order=position`, {
@@ -126,6 +179,11 @@ export async function startGuest(page: Page) {
   await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(guestBanner(page)).toBeVisible();
+}
+
+/** Sidebar footer: "Guest" or the signed-in email. */
+export function accountGroup(page: Page) {
+  return page.getByRole("group", { name: "Account" });
 }
 
 export function guestBanner(page: Page) {

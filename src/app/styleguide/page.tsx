@@ -45,7 +45,7 @@ export default function StyleguidePage() {
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
-                className="rounded-control text-body text-ink-muted hover:bg-accent hover:text-ink focus-visible:outline-ring inline-flex h-8 items-center px-3 font-medium whitespace-nowrap transition-colors duration-(--duration-fast) focus-visible:outline-2"
+                className="rounded-control text-body text-ink-muted hover:bg-accent hover:text-ink focus-visible:outline-ring inline-flex h-8 items-center px-3 font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-(--duration-fast) focus-visible:outline-2"
               >
                 {item.label}
               </a>
