@@ -12,7 +12,7 @@
   --color-surface: rgb(255 255 255 / 0.65);
   --color-ink: #0f0f12;
   --color-ink-muted: #4a4a52;
-  --color-ink-subtle: #8b8b94;
+  --color-ink-subtle: #6b6b74; /* darkened from the plan's #8B8B94 (3.1:1) to meet AA 4.5:1 on paper */
   --color-line: rgb(15 15 18 / 0.12);
 
   /* Aurora stops */
@@ -24,7 +24,7 @@
   --color-aurora-olive: #a9a55c;
 
   /* Focus ring, based on aurora-violet */
-  --color-focus: color-mix(in srgb, var(--color-aurora-violet) 75%, transparent);
+  --color-focus: var(--color-aurora-violet); /* solid: 3.4:1 on paper (WCAG 1.4.11 needs 3:1) */
 
   /* Radii */
   --radius-control: 8px;

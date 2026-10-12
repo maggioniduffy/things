@@ -26,3 +26,10 @@ describe("cn with token utilities", () => {
     expect(cn("rounded-control", "rounded-card")).toBe("rounded-card");
   });
 });
+
+describe("cn token groups", () => {
+  it("treats shadow-card as a shadow size, not a shadow color", () => {
+    expect(cn("shadow-card", "shadow-ink/10")).toBe("shadow-card shadow-ink/10");
+    expect(cn("shadow-card", "shadow-none")).toBe("shadow-none");
+  });
+});

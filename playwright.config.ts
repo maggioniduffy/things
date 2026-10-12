@@ -29,6 +29,8 @@ export default defineConfig({
     command: "pnpm build && pnpm start",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    // /styleguide is dev-only; this flag keeps it reachable in the production build under test.
+    env: { STYLEGUIDE: "1" },
     timeout: 180_000,
   },
 });
