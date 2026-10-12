@@ -154,6 +154,30 @@ export async function createCollection(
   return id;
 }
 
+/** Creates a tag for the signed-in user, attaches it to `itemIds` and returns the tag id. */
+export async function tagItems(
+  session: AppSession,
+  name: string,
+  itemIds: string[],
+): Promise<string> {
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/tags`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=representation" },
+    body: JSON.stringify({ name }),
+  });
+  expect(response.status, await response.clone().text()).toBe(201);
+  const tagId = ((await response.json()) as { id: string }[])[0]?.id;
+  if (!tagId) throw new Error("Tag insert returned no row.");
+
+  const links = await fetch(`${SUPABASE_URL()}/rest/v1/item_tags`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=minimal" },
+    body: JSON.stringify(itemIds.map((itemId) => ({ item_id: itemId, tag_id: tagId }))),
+  });
+  expect(links.status, await links.clone().text()).toBe(201);
+  return tagId;
+}
+
 /** Titles of the signed-in user's items, oldest first. */
 export async function listItemTitles(session: AppSession): Promise<string[]> {
   const response = await fetch(`${SUPABASE_URL()}/rest/v1/items?select=title&order=position`, {

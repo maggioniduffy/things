@@ -151,7 +151,6 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         variant="ghost"
         size="sm"
         label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
-        aria-pressed={!sidebarCollapsed}
         className="hidden md:inline-flex"
         onClick={toggleSidebar}
       >
@@ -207,21 +206,21 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         >
           <ListIcon />
         </IconButton>
+        {/* aria-disabled instead of disabled: the button stays focusable and hoverable, so the
+            tooltip explains why canvas isn't available yet. */}
         <Tooltip>
           <TooltipTrigger asChild>
-            {/* A disabled button gets no pointer events, so the span carries the tooltip. */}
-            <span tabIndex={0} className="rounded-control inline-flex">
-              <IconButton
-                variant="ghost"
-                size="sm"
-                label="Canvas view"
-                tooltip={false}
-                disabled
-                aria-pressed={false}
-              >
-                <FrameIcon />
-              </IconButton>
-            </span>
+            <IconButton
+              variant="ghost"
+              size="sm"
+              label="Canvas view"
+              tooltip={false}
+              aria-disabled="true"
+              className="cursor-not-allowed opacity-50"
+              onClick={(event) => event.preventDefault()}
+            >
+              <FrameIcon />
+            </IconButton>
           </TooltipTrigger>
           <TooltipContent>Canvas is coming soon</TooltipContent>
         </Tooltip>

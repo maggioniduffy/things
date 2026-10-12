@@ -16,10 +16,26 @@ export function makeQueryClient(): QueryClient {
 }
 
 let browserQueryClient: QueryClient | undefined;
+let browserQueryClientUser: string | undefined;
 
-/** Server: always a fresh client (never share data between requests). Browser: a singleton. */
-export function getQueryClient(): QueryClient {
+/**
+ * Server: always a fresh client (never share data between requests). Browser: a singleton per
+ * signed-in user. A different `userId` (sign out, then another account or guest in the same tab)
+ * gets a new, empty client, so one account's cached items never render for the next.
+ */
+export function getQueryClient(userId?: string): QueryClient {
   if (environmentManager.isServer()) return makeQueryClient();
-  browserQueryClient ??= makeQueryClient();
+  if (!browserQueryClient || (userId !== undefined && userId !== browserQueryClientUser)) {
+    browserQueryClient?.clear();
+    browserQueryClient = makeQueryClient();
+  }
+  if (userId !== undefined) browserQueryClientUser = userId;
   return browserQueryClient;
+}
+
+/** Drops every cached query in the browser, e.g. on sign-out. */
+export function clearBrowserQueryClient(): void {
+  browserQueryClient?.clear();
+  browserQueryClient = undefined;
+  browserQueryClientUser = undefined;
 }

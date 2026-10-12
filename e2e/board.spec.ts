@@ -7,6 +7,7 @@ import {
   readSession,
   seedItems,
   startGuest,
+  tagItems,
 } from "./helpers/session";
 
 const MARKER = "__marker";
@@ -59,10 +60,10 @@ test.describe("app shell and board", () => {
 
     const collectionId = await createCollection(session, "Reading list", "📚");
     // Inserted out of alphabetical order so the Title sort visibly differs from Manual.
-    await seedItems(session, [
+    const seeded = await seedItems(session, [
       { kind: "note", title: "Charlie note" },
       { kind: "note", title: "Alpha note" },
-      { kind: "note", title: "Bravo note" },
+      { kind: "note", title: "Bravo note", is_read: true },
       { kind: "pdf", title: "Delta paper", file_name: "delta.pdf" },
       { kind: "code", title: "Echo snippet", is_favorite: true },
       {
@@ -82,13 +83,21 @@ test.describe("app shell and board", () => {
       { kind: "link", title: "Archived link", archived_at: new Date().toISOString() },
       { kind: "image", title: "Trashed image", deleted_at: new Date().toISOString() },
     ]);
+    const tagged = seeded.filter((item) =>
+      ["Delta paper", "Echo snippet"].includes(item.title ?? ""),
+    );
+    const tagId = await tagItems(
+      session,
+      "reading",
+      tagged.map((item) => item.id),
+    );
 
     await page.reload();
     await expect(page.getByRole("heading", { level: 1, name: "Inbox" })).toBeVisible();
 
     await expectCount(page, "Inbox", 5);
     await expectCount(page, "All", 7);
-    await expectCount(page, "Unread", 7);
+    await expectCount(page, "Unread", 6);
     await expectCount(page, "Favorites", 1);
     await expectCount(page, "Archive", 1);
     await expectCount(page, "Trash", 1);
@@ -119,6 +128,22 @@ test.describe("app shell and board", () => {
 
     await goTo(page, "PDFs", /\/app\/f\/pdf$/, "PDFs");
     await expect(tileTitles(page)).toHaveText(["Delta paper"]);
+
+    await goTo(page, "Unread", /\/app\/unread$/, "Unread");
+    await expect(tileTitles(page)).toHaveText([
+      "Charlie note",
+      "Alpha note",
+      "Delta paper",
+      "Echo snippet",
+      "Zulu link",
+      "Yankee link",
+    ]);
+
+    await goTo(page, "Favorites", /\/app\/favorites$/, "Favorites");
+    await expect(tileTitles(page)).toHaveText(["Echo snippet"]);
+
+    await goTo(page, "#reading", new RegExp(`/app/t/${tagId}$`), "#reading");
+    await expect(tileTitles(page)).toHaveText(["Delta paper", "Echo snippet"]);
 
     await goTo(page, "Archive", /\/app\/archive$/, "Archive");
     await expect(tileTitles(page)).toHaveText(["Archived link"]);
@@ -221,7 +246,10 @@ test.describe("app shell and board", () => {
     await page.reload();
 
     await expect(page.locator('[data-view-mode="grid"]')).toBeVisible();
-    await expect(page.getByRole("button", { name: "Canvas view" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Canvas view" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     await page.getByRole("button", { name: "List view" }).click();
     await expect(page.locator('[data-view-mode="list"]')).toBeVisible();
     await expect(page.getByRole("button", { name: "List view" })).toHaveAttribute(

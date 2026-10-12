@@ -115,8 +115,11 @@ describe("Toolbar", () => {
   describe("view toggle", () => {
     it("disables canvas and explains why", async () => {
       renderToolbar({ type: "inbox" });
-      expect(screen.getByRole("button", { name: "Canvas view" })).toBeDisabled();
-      await userEvent.hover(screen.getByRole("button", { name: "Canvas view" }).parentElement!);
+      const canvas = screen.getByRole("button", { name: "Canvas view" });
+      expect(canvas).toHaveAttribute("aria-disabled", "true");
+      await userEvent.click(canvas);
+      expect(useUiStore.getState().viewMode).not.toBe("canvas");
+      await userEvent.hover(canvas);
       expect(await screen.findByRole("tooltip")).toHaveTextContent("Canvas is coming soon");
     });
 

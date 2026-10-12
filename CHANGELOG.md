@@ -16,7 +16,13 @@
 #### Changed
 
 - Tooltips share one app-level `TooltipProvider`, so skip-delay grouping works.
-- Buttons, icon buttons and inputs transition only background, border and text color, so the focus ring no longer animates in.
+- Buttons, icon buttons, inputs and the landing page's links transition only background, border and text color, so the focus ring no longer animates in.
+
+#### Fixed (gate review)
+
+- The browser query cache is tied to the signed-in user and cleared on sign-out, so after signing out, the next account or guest in the same tab never sees the previous account's items. Covered by `e2e/account-switch.spec.ts`.
+- A failing "load more" no longer retries in a loop; it shows "Couldn't load more things." with a "Try again" button.
+- The disabled canvas toggle is focusable with `aria-disabled`, so keyboard and screen-reader users get the "Canvas is coming soon" hint; the sidebar toggle no longer double-announces its state.
 
 #### Notes
 

@@ -27,11 +27,20 @@ export function Board({ view, sort }: BoardProps) {
 
   const items = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data]);
 
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+  const { hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } = query;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !hasNextPage || typeof IntersectionObserver === "undefined") return;
+    // After a failed page, wait for the user's retry: re-observing a visible sentinel would
+    // refetch immediately and loop.
+    if (
+      !node ||
+      !hasNextPage ||
+      isFetchNextPageError ||
+      typeof IntersectionObserver === "undefined"
+    ) {
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting) && !isFetchingNextPage) {
@@ -42,7 +51,7 @@ export function Board({ view, sort }: BoardProps) {
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage, items.length]);
 
   let content;
   if (info.unknown) {
@@ -83,7 +92,14 @@ export function Board({ view, sort }: BoardProps) {
           </ul>
         )}
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />
-        {hasNextPage ? (
+        {hasNextPage && isFetchNextPageError && !isFetchingNextPage ? (
+          <div role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center">
+            <p className="text-body text-ink">Couldn&apos;t load more things.</p>
+            <Button variant="secondary" onClick={() => void fetchNextPage()}>
+              Try again
+            </Button>
+          </div>
+        ) : hasNextPage ? (
           <div className="flex justify-center px-4 py-6">
             <Button
               variant="secondary"

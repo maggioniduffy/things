@@ -41,7 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
 
   return (
-    <QueryProvider>
+    <QueryProvider userId={claims.sub}>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <div className="bg-paper flex h-dvh flex-col">
           {isGuest ? <GuestBanner /> : null}

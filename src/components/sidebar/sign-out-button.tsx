@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { clearBrowserQueryClient } from "@/lib/query-client";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignOutButton() {
@@ -12,6 +13,8 @@ export function SignOutButton() {
   async function signOut() {
     setPending(true);
     await createClient().auth.signOut();
+    // Nothing from this account may render for whoever signs in next in this tab.
+    clearBrowserQueryClient();
     router.replace("/");
     router.refresh();
   }
