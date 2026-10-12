@@ -134,3 +134,4 @@ Verified facts that **override `docs/plan.md` and model memory** where they diff
 - **Item columns**: every query selects an explicit column list without the `search` tsvector.
 - **Query keys**: `['items', viewKey, sort]`, `['counts']`, `['collections']`, `['tags']`, `['smart-views']`. Query option factories take the Supabase client as an argument so the same options run on the server (prefetch) and in the browser.
 - Phase 2 renders items as minimal placeholder rows/tiles (title, kind, domain); real cards are Phase 4.
+- **Keyset pagination verified against local Postgres 17** (Opus, WP 2.2 follow-up): 120 rows with duplicate `position`s, duplicate microsecond `created_at`s, null titles and titles containing `, ( ) " \ .` and non-ASCII page through in exactly 3 pages for every sort, with no duplicates or gaps, in the same order as Postgres' own `order by`. PostgREST returns `timestamptz` at full microsecond precision, so `created_at` cursors are exact.
