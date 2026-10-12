@@ -1,10 +1,14 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GUEST_BANNER_DISMISSED_KEY, resetGuestBannerDismissedForTests } from "@/lib/auth/guest";
+import { makeCounts, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
 import { GuestBanner } from "./guest-banner";
 
-const itemsQuery = vi.hoisted(() => ({ result: { count: 0 as number | null, error: null } }));
+// What the counts query (item_counts) returns when the banner has to fetch it itself.
+const countsQuery = vi.hoisted(() => ({
+  result: { data: [] as unknown, error: null as unknown },
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
@@ -12,15 +16,13 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
-    from: () => ({
-      select: () => ({ is: () => Promise.resolve(itemsQuery.result) }),
-    }),
+    from: () => ({ select: () => Promise.resolve(countsQuery.result) }),
     auth: {},
   }),
 }));
 
 beforeEach(() => {
-  itemsQuery.result = { count: 0, error: null };
+  countsQuery.result = { data: [], error: null };
 });
 
 afterEach(() => {
@@ -29,7 +31,7 @@ afterEach(() => {
 
 describe("GuestBanner", () => {
   it("is a labelled region with the calm default copy and a primary action", async () => {
-    render(<GuestBanner />);
+    renderWithQuery(<GuestBanner />);
     const region = await screen.findByRole("region", { name: "Guest account" });
     expect(region).toHaveTextContent(
       "You're using Things as a guest. Add an email to keep your things.",
@@ -41,8 +43,23 @@ describe("GuestBanner", () => {
   });
 
   it("switches to the stronger copy once the guest has saved 10 things", async () => {
-    itemsQuery.result = { count: 10, error: null };
-    render(<GuestBanner />);
+    const client = makeTestQueryClient();
+    client.setQueryData(["counts"], makeCounts({ all: 8, archive: 2, trash: 5 }));
+    renderWithQuery(<GuestBanner />, client);
+    expect(
+      await screen.findByText(
+        "You've saved 10 things as a guest. Add an email so you don't lose them.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("updates the reminder as soon as the counts cache changes", async () => {
+    const client = makeTestQueryClient();
+    client.setQueryData(["counts"], makeCounts({ all: 9 }));
+    renderWithQuery(<GuestBanner />, client);
+    expect(await screen.findByText(/You're using Things as a guest/)).toBeInTheDocument();
+
+    act(() => client.setQueryData(["counts"], makeCounts({ all: 10 })));
     expect(
       await screen.findByText(
         "You've saved 10 things as a guest. Add an email so you don't lose them.",
@@ -51,14 +68,14 @@ describe("GuestBanner", () => {
   });
 
   it("keeps the default copy when the count query fails", async () => {
-    itemsQuery.result = { count: null, error: { message: "boom" } as never };
-    render(<GuestBanner />);
+    countsQuery.result = { data: null, error: { message: "boom" } };
+    renderWithQuery(<GuestBanner />);
     expect(await screen.findByText(/You're using Things as a guest/)).toBeInTheDocument();
   });
 
   it("hides on dismiss and remembers it for the tab session", async () => {
     const user = userEvent.setup();
-    render(<GuestBanner />);
+    renderWithQuery(<GuestBanner />);
     await user.click(await screen.findByRole("button", { name: "Dismiss for now" }));
     expect(screen.queryByRole("region", { name: "Guest account" })).not.toBeInTheDocument();
     expect(window.sessionStorage.getItem(GUEST_BANNER_DISMISSED_KEY)).toBe("1");
@@ -66,13 +83,13 @@ describe("GuestBanner", () => {
 
   it("stays hidden when this tab already dismissed it", () => {
     window.sessionStorage.setItem(GUEST_BANNER_DISMISSED_KEY, "1");
-    render(<GuestBanner />);
+    renderWithQuery(<GuestBanner />);
     expect(screen.queryByRole("region", { name: "Guest account" })).not.toBeInTheDocument();
   });
 
   it("opens the upgrade dialog from Keep my things", async () => {
     const user = userEvent.setup();
-    render(<GuestBanner />);
+    renderWithQuery(<GuestBanner />);
     await user.click(await screen.findByRole("button", { name: "Keep my things" }));
     expect(await screen.findByRole("dialog", { name: "Keep your things" })).toBeInTheDocument();
   });

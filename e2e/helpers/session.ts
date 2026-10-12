@@ -28,6 +28,11 @@ function requireEnv(name: string): string {
 const SUPABASE_URL = () => requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 const PUBLISHABLE_KEY = () => requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
+/** The local stack's public URL and publishable key, for specs that build their own client. */
+export function supabasePublicEnv() {
+  return { url: SUPABASE_URL(), publishableKey: PUBLISHABLE_KEY() };
+}
+
 export type AppSession = {
   accessToken: string;
   user: { id: string; email?: string; is_anonymous?: boolean };
@@ -101,6 +106,83 @@ export async function createNotes(session: AppSession, count: number, prefix = "
   expect(response.status, await response.clone().text()).toBe(201);
 }
 
+export type SeedItem = {
+  kind: string;
+  title?: string | null;
+  url?: string;
+  domain?: string;
+  file_name?: string;
+  collection_id?: string | null;
+  is_favorite?: boolean;
+  is_read?: boolean;
+  /** ISO timestamps; set to move the item to Archive or Trash. */
+  archived_at?: string;
+  deleted_at?: string;
+};
+
+let seedCounter = 0;
+
+/**
+ * Inserts items of chosen kinds/states as the signed-in user (RLS applies, like `createNotes`).
+ * Positions are generated in call order. Returns the inserted rows' ids and titles.
+ */
+export async function seedItems(session: AppSession, items: SeedItem[]) {
+  // One request per row: PostgREST bulk inserts need identical keys in every object.
+  const inserted: { id: string; title: string | null }[] = [];
+  for (const item of items) {
+    const response = await fetch(`${SUPABASE_URL()}/rest/v1/items`, {
+      method: "POST",
+      headers: { ...restHeaders(session), Prefer: "return=representation" },
+      body: JSON.stringify({ ...item, position: `s${String(seedCounter++).padStart(6, "0")}` }),
+    });
+    expect(response.status, await response.clone().text()).toBe(201);
+    inserted.push(...((await response.json()) as { id: string; title: string | null }[]));
+  }
+  return inserted;
+}
+
+/** Creates a collection for the signed-in user and returns its id. */
+export async function createCollection(
+  session: AppSession,
+  name: string,
+  emoji: string | null = null,
+): Promise<string> {
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/collections`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=representation" },
+    body: JSON.stringify({ name, emoji, position: `c${String(seedCounter++).padStart(6, "0")}` }),
+  });
+  expect(response.status, await response.clone().text()).toBe(201);
+  const rows = (await response.json()) as { id: string }[];
+  const id = rows[0]?.id;
+  if (!id) throw new Error("Collection insert returned no row.");
+  return id;
+}
+
+/** Creates a tag for the signed-in user, attaches it to `itemIds` and returns the tag id. */
+export async function tagItems(
+  session: AppSession,
+  name: string,
+  itemIds: string[],
+): Promise<string> {
+  const response = await fetch(`${SUPABASE_URL()}/rest/v1/tags`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=representation" },
+    body: JSON.stringify({ name }),
+  });
+  expect(response.status, await response.clone().text()).toBe(201);
+  const tagId = ((await response.json()) as { id: string }[])[0]?.id;
+  if (!tagId) throw new Error("Tag insert returned no row.");
+
+  const links = await fetch(`${SUPABASE_URL()}/rest/v1/item_tags`, {
+    method: "POST",
+    headers: { ...restHeaders(session), Prefer: "return=minimal" },
+    body: JSON.stringify(itemIds.map((itemId) => ({ item_id: itemId, tag_id: tagId }))),
+  });
+  expect(links.status, await links.clone().text()).toBe(201);
+  return tagId;
+}
+
 /** Titles of the signed-in user's items, oldest first. */
 export async function listItemTitles(session: AppSession): Promise<string[]> {
   const response = await fetch(`${SUPABASE_URL()}/rest/v1/items?select=title&order=position`, {
@@ -126,6 +208,11 @@ export async function startGuest(page: Page) {
   await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(guestBanner(page)).toBeVisible();
+}
+
+/** Sidebar footer: "Guest" or the signed-in email. */
+export function accountGroup(page: Page) {
+  return page.getByRole("group", { name: "Account" });
 }
 
 export function guestBanner(page: Page) {

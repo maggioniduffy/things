@@ -16,7 +16,7 @@ export function SiteHeader() {
       <Link
         href="/login"
         className={cn(
-          "rounded-control text-body text-ink-muted hover:text-ink px-2 py-1 font-medium transition-colors duration-(--duration-fast)",
+          "rounded-control text-body text-ink-muted hover:text-ink px-2 py-1 font-medium transition-[color,background-color,border-color] duration-(--duration-fast)",
           focusRing,
         )}
       >

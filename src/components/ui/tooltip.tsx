@@ -19,16 +19,9 @@ function TooltipProvider({
   );
 }
 
-/** Self-contained: carries its own provider, so no global setup is needed. */
-function Tooltip({
-  delayDuration = TOOLTIP_DELAY_MS,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return (
-    <TooltipProvider delayDuration={delayDuration}>
-      <TooltipPrimitive.Root data-slot="tooltip" delayDuration={delayDuration} {...props} />
-    </TooltipProvider>
-  );
+/** Needs an ancestor TooltipProvider (mounted once in the root layout). */
+function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
