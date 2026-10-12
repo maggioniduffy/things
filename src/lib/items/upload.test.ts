@@ -26,7 +26,7 @@ type TusOptions = {
   metadata: Record<string, string>;
   chunkSize: number;
   uploadDataDuringCreation: boolean;
-  removeFingerprintOnSuccess: boolean;
+  storeFingerprintForResuming: boolean;
   retryDelays: number[];
   onBeforeRequest: (request: { setHeader(name: string, value: string): void }) => Promise<void>;
   onShouldRetry: (error: unknown) => boolean;
@@ -134,7 +134,7 @@ describe("safeObjectName", () => {
 describe("paths", () => {
   it("builds the file and thumbnail object paths", () => {
     expect(filePath("u1", "i1", "Canción final.PDF")).toBe("u1/i1/Cancion_final.PDF");
-    expect(thumbnailPath("u1", "i1")).toBe("u1/i1/thumb.webp");
+    expect(thumbnailPath("u1", "i1")).toBe("u1/i1/.thumb.webp");
   });
 });
 
@@ -360,7 +360,7 @@ describe("uploadFile: resumable branch (> 6 MB)", () => {
     });
     expect(options.chunkSize).toBe(6 * 1024 * 1024);
     expect(options.uploadDataDuringCreation).toBe(true);
-    expect(options.removeFingerprintOnSuccess).toBe(true);
+    expect(options.storeFingerprintForResuming).toBe(false);
     expect(options.retryDelays).toEqual([0, 1000, 3000]);
 
     // The access token is read fresh for every request.

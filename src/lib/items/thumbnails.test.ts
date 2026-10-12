@@ -187,7 +187,7 @@ describe("createThumbnail: video", () => {
         created = element as HTMLVideoElement;
         // jsdom does not implement media loading.
         created.load = vi.fn();
-        Object.defineProperty(created, "videoWidth", { value: 1280 });
+        Object.defineProperty(created, "videoWidth", { value: 1280, configurable: true });
         Object.defineProperty(created, "videoHeight", { value: 720 });
       }
       return element;
@@ -206,7 +206,7 @@ describe("createThumbnail: video", () => {
     const pending = createThumbnail(new File(["v"], "a.mp4", { type: "video/mp4" }), "video");
     const video = created as HTMLVideoElement;
     expect(video.muted).toBe(true);
-    expect(video.preload).toBe("metadata");
+    expect(video.preload).toBe("auto");
     expect(video.playsInline).toBe(true);
     expect(video.getAttribute("src")).toBe("blob:video-1");
 
@@ -229,6 +229,17 @@ describe("createThumbnail: video", () => {
     expect(video.currentTime).toBeCloseTo(0.6);
     video.dispatchEvent(new Event("seeked"));
     expect((await pending)?.type).toBe("image/webp");
+  });
+
+  it("returns null for an audio-only file without a picture", async () => {
+    const pending = createThumbnail(new File(["v"], "a.mp4", { type: "video/mp4" }), "video");
+    const video = created as HTMLVideoElement;
+    Object.defineProperty(video, "videoWidth", { value: 0 });
+    setDuration(video, 0);
+    video.dispatchEvent(new Event("loadeddata"));
+    expect(await pending).toBeNull();
+    expect(drawn).toEqual([]);
+    expect(revoked).toEqual(["blob:video-1"]);
   });
 
   it("returns null on a media error", async () => {

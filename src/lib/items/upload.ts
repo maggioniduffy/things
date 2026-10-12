@@ -58,9 +58,12 @@ export function filePath(userId: string, itemId: string, fileName: string): stri
   return `${userId}/${itemId}/${safeObjectName(fileName)}`;
 }
 
-/** Object path of an item's thumbnail. */
+/**
+ * Object path of an item's thumbnail. The leading dot keeps it apart from the item's own file:
+ * `safeObjectName` strips leading dots, so a user file named "thumb.webp" can never collide.
+ */
 export function thumbnailPath(userId: string, itemId: string): string {
-  return `${userId}/${itemId}/thumb.webp`;
+  return `${userId}/${itemId}/.thumb.webp`;
 }
 
 /** Client-side size check, run before anything is inserted. `null` means the file is fine. */
@@ -249,7 +252,8 @@ async function uploadResumable({
       metadata: { bucketName: BUCKET, objectName: path, contentType, cacheControl: "3600" },
       chunkSize: TUS_CHUNK_BYTES,
       uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
+      // No resume UI: don't leave upload URLs in localStorage after a failed or aborted upload.
+      storeFingerprintForResuming: false,
       retryDelays: [0, 1000, 3000],
       // tus' default retries 5xx. For a guest a 500 is the quota trigger: retrying only delays the toast.
       onShouldRetry: (error) => {

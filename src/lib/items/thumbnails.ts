@@ -97,6 +97,8 @@ function videoThumbnail(file: File | Blob): Promise<Blob | null> {
       resolve(blob);
     };
     const capture = () => {
+      // Audio-only files can arrive as video/*: no picture, no thumbnail.
+      if (video.videoWidth === 0 || video.videoHeight === 0) return finish(null);
       drawAndEncode(video, video.videoWidth, video.videoHeight).then(finish, () => finish(null));
     };
 
@@ -104,7 +106,8 @@ function videoThumbnail(file: File | Blob): Promise<Blob | null> {
 
     video.muted = true;
     video.playsInline = true;
-    video.preload = "metadata";
+    // "auto": with "metadata", Safari may never fire `loadeddata`.
+    video.preload = "auto";
     video.addEventListener("error", () => finish(null), { once: true });
     video.addEventListener(
       "loadeddata",

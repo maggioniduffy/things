@@ -38,6 +38,8 @@ export function useSignedUrls(paths: readonly (string | null | undefined)[]): Ma
     },
     enabled: wanted.length > 0,
     staleTime: STALE_TIME_MS,
+    // Stale data alone isn't refetched in a tab that stays focused; re-sign before the hour is up.
+    refetchInterval: STALE_TIME_MS,
     placeholderData: keepPreviousData,
   });
 
