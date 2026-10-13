@@ -41,7 +41,7 @@ function renderSidebar() {
         id: COLLECTION_ID,
         name: "Reading list",
         emoji: "📚",
-        color: "aurora-violet",
+        color: "violet",
         position: "a0",
       },
     ],
@@ -77,7 +77,7 @@ describe("new collection", () => {
     expect(mocks.collections.create).toHaveBeenCalledWith({
       name: "Ideas",
       emoji: "💡",
-      color: "aurora-blue",
+      color: "blue",
     });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
