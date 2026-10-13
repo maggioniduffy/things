@@ -27,13 +27,13 @@ import {
 } from "./cache";
 import { attachTags, ensureTags } from "@/lib/tags/mutations";
 import { itemQueryKey, itemTagsQueryKey } from "./item-query";
+import { ITEM_STATE_MUTATION_KEY, REORDER_MUTATION_KEY } from "./mutation-keys";
 import type { BoardItem, ItemsPage } from "./queries";
 import { BUCKET, thumbnailPath } from "./upload";
 
 type Client = SupabaseClient<Database>;
 type Items = InfiniteData<ItemsPage>;
 
-const ITEM_MUTATION_KEY = ["item-state"] as const;
 const TAG_MUTATION_KEY = ["item-tag"] as const;
 
 /** Fields the drawer edits in place. */
@@ -221,7 +221,7 @@ export function useItemActions(): ItemActions {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationKey: ITEM_MUTATION_KEY,
+    mutationKey: ITEM_STATE_MUTATION_KEY,
     mutationFn: ({ change }: { change: ItemChange }) => change.write(createClient()),
     onMutate: async ({ change }) => {
       // A fetch that started before this change would overwrite it with older data.
@@ -241,7 +241,11 @@ export function useItemActions(): ItemActions {
     onSettled: async (_data, _error, { change }) => {
       // Several changes can overlap: only the last one to settle refetches, or an early refetch
       // would flash older data over a later optimistic edit.
-      if (queryClient.isMutating({ mutationKey: ITEM_MUTATION_KEY }) > 1) return;
+      // Reorders refetch the same lists, so they count as overlapping too.
+      const inFlight =
+        queryClient.isMutating({ mutationKey: ITEM_STATE_MUTATION_KEY }) +
+        queryClient.isMutating({ mutationKey: REORDER_MUTATION_KEY });
+      if (inFlight > 1) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["items"] }),
         queryClient.invalidateQueries({ queryKey: ["counts"] }),

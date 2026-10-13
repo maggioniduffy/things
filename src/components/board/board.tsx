@@ -17,6 +17,7 @@ import { BoardSkeleton, ToolbarPlaceholder } from "./board-skeleton";
 import { EmptyState } from "./empty-state";
 import { ItemGrid } from "./item-grid";
 import { ItemList } from "./item-list";
+import { SortableItems } from "./sortable-items";
 import { Toolbar, useEffectiveViewMode, useViewInfo } from "./toolbar";
 
 type BoardProps = { view: ViewSpec; sort: SortMode };
@@ -37,6 +38,9 @@ export function Board({ view, sort }: BoardProps) {
 
   const pages = query.data?.pages;
   const itemPages = useMemo(() => pages?.map((page) => page.items) ?? [], [pages]);
+  const lastCursor = pages?.[pages.length - 1]?.nextCursor ?? null;
+  // Dragging is for manual sort only, and never in Trash.
+  const sortable = sort === "manual" && view.type !== "trash";
   const itemCount = useMemo(
     () => pages?.reduce((total, page) => total + page.items.length, 0) ?? 0,
     [pages],
@@ -90,7 +94,22 @@ export function Board({ view, sort }: BoardProps) {
   } else {
     content = (
       <>
-        {viewMode === "list" ? (
+        {sortable ? (
+          <SortableItems
+            view={view}
+            pages={itemPages}
+            nextCursor={lastCursor}
+            variant={viewMode === "list" ? "list" : "grid"}
+          >
+            {(shown) =>
+              viewMode === "list" ? (
+                <ItemList pages={shown} onRetry={retryEnrich} onOpen={openItem} sortable />
+              ) : (
+                <ItemGrid pages={shown} onRetry={retryEnrich} onOpen={openItem} sortable />
+              )
+            }
+          </SortableItems>
+        ) : viewMode === "list" ? (
           <ItemList pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />
         ) : (
           <ItemGrid pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />

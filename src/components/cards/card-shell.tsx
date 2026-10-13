@@ -1,7 +1,7 @@
 "use client";
 
 import { StarIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { KindIcon } from "@/components/kind-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,19 @@ function CardMarkers({ item }: { item: BoardItem }) {
   );
 }
 
+/**
+ * Lets a wrapper (the sortable board) change how every card renders its root and add a drag
+ * handle, without each per-kind card forwarding new props.
+ */
+export type CardChrome = {
+  /** Root element; a sortable card sits in a wrapper `<li>` and renders a `<div>`. */
+  as: "li" | "div";
+  /** Reorder handle, placed above the open button. */
+  dragHandle?: ReactNode;
+};
+
+export const CardChromeContext = createContext<CardChrome>({ as: "li" });
+
 type CardShellProps = Omit<CardProps, "thumbnailUrl"> & {
   card: CardType;
   status: CardStatus;
@@ -90,7 +103,7 @@ type CardShellProps = Omit<CardProps, "thumbnailUrl"> & {
 
 /**
  * Shared frame of every card: the grid tile or list row, the pending/failed footer, the markers
- * and the full-card open button. Renders an `<li>`, so it must sit inside a `<ul>`.
+ * and the full-card open button. Renders an `<li>` (inside a `<ul>`) unless `CardChromeContext` says `div`.
  *
  * The first `<p>` child of a grid tile is its title (e2e relies on that).
  */
@@ -109,6 +122,7 @@ export function CardShell({
   surfaceClassName,
   onOpen,
 }: CardShellProps) {
+  const { as: Root, dragHandle } = useContext(CardChromeContext);
   const displayTitle = itemDisplayTitle(item);
   const { pending, failed, failedCopy, retry } = status;
   // One accessible name per card; collapse line breaks of note titles.
@@ -116,7 +130,7 @@ export function CardShell({
 
   if (variant === "list") {
     return (
-      <li
+      <Root
         data-slot="item-row"
         data-card={card}
         data-item-id={item.id}
@@ -124,6 +138,7 @@ export function CardShell({
         aria-busy={pending || undefined}
         className="group border-line hover:bg-accent relative flex min-h-12 items-center gap-3 border-b px-2 py-2.5 transition-colors duration-(--duration-fast)"
       >
+        {dragHandle}
         <KindIcon kind={item.kind} className="text-ink-subtle size-4 shrink-0" />
         <span className="text-body text-ink min-w-0 flex-1 truncate">{displayTitle}</span>
         {pending ? <Skeleton className="hidden h-3 w-24 sm:block" /> : null}
@@ -145,12 +160,12 @@ export function CardShell({
           onClick={() => onOpen?.(item)}
           className="rounded-control absolute inset-0 z-10 cursor-pointer"
         />
-      </li>
+      </Root>
     );
   }
 
   return (
-    <li
+    <Root
       data-slot="item-tile"
       data-card={card}
       data-item-id={item.id}
@@ -164,6 +179,7 @@ export function CardShell({
         className,
       )}
     >
+      {dragHandle}
       {media}
       <div className="flex items-center justify-between gap-2">
         <Badge>{kindSingularLabel(item.kind)}</Badge>
@@ -197,6 +213,6 @@ export function CardShell({
         onClick={() => onOpen?.(item)}
         className="rounded-card absolute inset-0 z-10 cursor-pointer"
       />
-    </li>
+    </Root>
   );
 }
