@@ -15,7 +15,7 @@ const COLLECTIONS_KEY = ["collections"] as const;
 export type CollectionInput = {
   name: string;
   emoji?: string | null;
-  /** An aurora token name, e.g. `aurora-violet`; anything else is stored as none. */
+  /** An aurora color name, e.g. `violet`; anything else is stored as none. */
   color?: string | null;
 };
 export type CollectionPatch = Partial<CollectionInput>;

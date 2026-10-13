@@ -1,12 +1,8 @@
-/** Aurora token names a collection color can be (stored as-is in `collections.color`). */
-export const AURORA_COLORS = [
-  "aurora-pink",
-  "aurora-violet",
-  "aurora-blue",
-  "aurora-red",
-  "aurora-coral",
-  "aurora-olive",
-] as const;
+/**
+ * Collection colors as stored in `collections.color` (the DB check allows exactly these).
+ * Each maps to the `--color-aurora-<name>` token.
+ */
+export const AURORA_COLORS = ["pink", "violet", "blue", "red", "coral", "olive"] as const;
 
 export type AuroraColor = (typeof AURORA_COLORS)[number];
 
@@ -16,13 +12,12 @@ export function isAuroraColor(value: unknown): value is AuroraColor {
 
 /** The CSS color of a stored token name, or undefined for none (or a name we do not know). */
 export function auroraColorVar(color: string | null | undefined): string | undefined {
-  return isAuroraColor(color) ? `var(--color-${color})` : undefined;
+  return isAuroraColor(color) ? `var(--color-aurora-${color})` : undefined;
 }
 
-/** "aurora-violet" -> "Violet", for labels. */
+/** "violet" -> "Violet", for labels. */
 export function auroraColorLabel(color: AuroraColor): string {
-  const name = color.slice("aurora-".length);
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return color.charAt(0).toUpperCase() + color.slice(1);
 }
 
 export const MAX_COLLECTION_NAME_LENGTH = 60;

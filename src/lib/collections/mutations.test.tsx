@@ -17,7 +17,7 @@ const B: SidebarCollection = {
   id: "66666666-6666-4666-8666-666666666666",
   name: "Work",
   emoji: null,
-  color: "aurora-blue",
+  color: "blue",
   position: "a1",
 };
 
@@ -113,11 +113,11 @@ describe("create", () => {
 
     let pending!: Promise<SidebarCollection | null>;
     act(() => {
-      pending = actions().create({ name: "  Ideas ", emoji: "💡", color: "aurora-violet" });
+      pending = actions().create({ name: "  Ideas ", emoji: "💡", color: "violet" });
     });
     await waitFor(() => expect(cached(queryClient)).toHaveLength(3));
     const added = cached(queryClient)![2]!;
-    expect(added).toMatchObject({ name: "Ideas", emoji: "💡", color: "aurora-violet" });
+    expect(added).toMatchObject({ name: "Ideas", emoji: "💡", color: "violet" });
     expect(added.position > B.position).toBe(true);
     expect(state.calls[0]).toMatchObject({ op: "insert", payload: added });
 
@@ -169,19 +169,19 @@ describe("update", () => {
 
     let pending!: Promise<boolean>;
     act(() => {
-      pending = actions().update(A.id, { name: " Books ", emoji: null, color: "aurora-pink" });
+      pending = actions().update(A.id, { name: " Books ", emoji: null, color: "pink" });
     });
     await waitFor(() => expect(cached(queryClient)?.[0]?.name).toBe("Books"));
     expect(cached(queryClient)?.[0]).toEqual({
       ...A,
       name: "Books",
       emoji: null,
-      color: "aurora-pink",
+      color: "pink",
     });
     expect(cached(queryClient)?.[1]).toEqual(B);
     expect(state.calls[0]).toMatchObject({
       op: "update",
-      payload: { name: "Books", emoji: null, color: "aurora-pink" },
+      payload: { name: "Books", emoji: null, color: "pink" },
       eq: ["id", A.id],
     });
 

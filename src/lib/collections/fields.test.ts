@@ -25,13 +25,13 @@ describe("parseEmoji", () => {
 
 describe("aurora colors", () => {
   it("maps a token name to its CSS variable, and anything else to undefined", () => {
-    expect(auroraColorVar("aurora-violet")).toBe("var(--color-aurora-violet)");
-    expect(auroraColorVar("red")).toBeUndefined();
+    expect(auroraColorVar("violet")).toBe("var(--color-aurora-violet)");
+    expect(auroraColorVar("green")).toBeUndefined();
     expect(auroraColorVar(null)).toBeUndefined();
   });
 
   it("labels a token in sentence case", () => {
-    expect(auroraColorLabel("aurora-olive")).toBe("Olive");
+    expect(auroraColorLabel("olive")).toBe("Olive");
   });
 });
 
