@@ -8,6 +8,7 @@ import { ItemDrawerHost } from "@/components/drawer/item-drawer";
 import { ExternalDropZone } from "@/components/capture/external-drop-zone";
 import { PasteListener } from "@/components/capture/paste-listener";
 import { QuickAdd } from "@/components/capture/quick-add";
+import { CanvasView } from "@/components/canvas/canvas-view";
 import { Button } from "@/components/ui/button";
 import { useRetryEnrich } from "@/lib/items/mutations";
 import { itemsInfiniteQueryOptions } from "@/lib/items/queries";
@@ -27,7 +28,7 @@ type BoardProps = { view: ViewSpec; sort: SortMode };
 export function Board({ view, sort }: BoardProps) {
   const query = useInfiniteQuery(itemsInfiniteQueryOptions(createClient(), view, sort));
   const info = useViewInfo(view);
-  const viewMode = useEffectiveViewMode();
+  const viewMode = useEffectiveViewMode(view);
   const clearSelection = useUiStore((state) => state.clearSelection);
 
   const currentViewKey = viewKey(view);
@@ -99,6 +100,8 @@ export function Board({ view, sort }: BoardProps) {
   const sortable = sort === "manual" && view.type !== "trash" && view.type !== "smart";
   const dnd: CardDnd | undefined =
     view.type === "trash" ? undefined : sortable ? "sortable" : "draggable";
+  const canvas = viewMode === "canvas";
+  const allItems = useMemo(() => itemPages.flat(), [itemPages]);
   const itemCount = useMemo(
     () => pages?.reduce((total, page) => total + page.items.length, 0) ?? 0,
     [pages],
@@ -130,6 +133,13 @@ export function Board({ view, sort }: BoardProps) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage, itemCount]);
 
+  // The canvas has no "load more": it needs every item, so it drains the remaining pages.
+  useEffect(() => {
+    if (canvas && hasNextPage && !isFetchingNextPage && !isFetchNextPageError) {
+      void fetchNextPage();
+    }
+  }, [canvas, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
+
   let content;
   if (info.unknown) {
     content = <EmptyState view={view} unknown />;
@@ -149,6 +159,28 @@ export function Board({ view, sort }: BoardProps) {
     );
   } else if (itemCount === 0) {
     content = <EmptyState view={view} name={info.name} />;
+  } else if (canvas && hasNextPage && !isFetchNextPageError) {
+    // Mounting the canvas once, with everything loaded, auto-places new items in a single column.
+    content = <BoardSkeleton />;
+  } else if (canvas) {
+    content = (
+      <>
+        {hasNextPage ? (
+          <div role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center">
+            <p className="text-body text-ink">Couldn&apos;t load all your things.</p>
+            <Button variant="secondary" onClick={() => void fetchNextPage()}>
+              Try again
+            </Button>
+          </div>
+        ) : null}
+        <CanvasView
+          key={`${currentViewKey}:${sort}`}
+          items={allItems}
+          onOpen={openItem}
+          onRetry={retryEnrich}
+        />
+      </>
+    );
   } else {
     content = (
       <>

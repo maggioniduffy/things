@@ -130,10 +130,18 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
   }
 }
 
-/** The persisted mode, with canvas shown as grid until the canvas ships (Phase 6). */
-export function useEffectiveViewMode(): Exclude<ViewMode, "canvas"> {
+/** Only the Inbox and collections are places with a canvas; other views are filters. */
+export function hasCanvas(view: ViewSpec): boolean {
+  return view.type === "inbox" || view.type === "collection";
+}
+
+/**
+ * The persisted mode, with canvas shown as grid on views that have none. The persisted mode stays
+ * "canvas", so returning to a collection shows the canvas again.
+ */
+export function useEffectiveViewMode(view: ViewSpec): ViewMode {
   const viewMode = useUiStore((state) => state.viewMode);
-  return viewMode === "canvas" ? "grid" : viewMode;
+  return viewMode === "canvas" && !hasCanvas(view) ? "grid" : viewMode;
 }
 
 function isSortMode(value: string): value is SortMode {
@@ -150,7 +158,8 @@ export function Toolbar({ view, sort }: ToolbarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const viewMode = useEffectiveViewMode();
+  const viewMode = useEffectiveViewMode(view);
+  const canvasAvailable = hasCanvas(view);
   const setViewMode = useUiStore((state) => state.setViewMode);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
@@ -244,23 +253,29 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         >
           <ListIcon />
         </IconButton>
-        {/* aria-disabled instead of disabled: the button stays focusable and hoverable, so the
-            tooltip explains why canvas isn't available yet. */}
+        {/* Where there is no canvas, aria-disabled instead of disabled: the button stays focusable
+            and hoverable, so the tooltip explains why. */}
         <Tooltip>
           <TooltipTrigger asChild>
             <IconButton
-              variant="ghost"
+              variant={viewMode === "canvas" ? "outline" : "ghost"}
               size="sm"
               label="Canvas view"
               tooltip={false}
-              aria-disabled="true"
-              className="cursor-not-allowed opacity-50"
-              onClick={(event) => event.preventDefault()}
+              aria-pressed={canvasAvailable ? viewMode === "canvas" : undefined}
+              aria-disabled={canvasAvailable ? undefined : "true"}
+              className={canvasAvailable ? undefined : "cursor-not-allowed opacity-50"}
+              onClick={(event) => {
+                if (!canvasAvailable) event.preventDefault();
+                else setViewMode("canvas");
+              }}
             >
               <FrameIcon />
             </IconButton>
           </TooltipTrigger>
-          <TooltipContent>Canvas is coming soon</TooltipContent>
+          <TooltipContent>
+            {canvasAvailable ? "Canvas view" : "Canvas is for the Inbox and collections"}
+          </TooltipContent>
         </Tooltip>
       </div>
 

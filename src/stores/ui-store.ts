@@ -8,6 +8,10 @@ type UiState = {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
 
+  /** Canvas minimap shown or hidden. */
+  canvasMinimap: boolean;
+  toggleCanvasMinimap: () => void;
+
   selectedIds: string[];
   /** The last card clicked without Shift: where a Shift-click range starts. */
   anchorId: string | null;
@@ -74,6 +78,9 @@ export const useUiStore = create<UiState>()(
       viewMode: "grid",
       setViewMode: (viewMode) => set({ viewMode }),
 
+      canvasMinimap: false,
+      toggleCanvasMinimap: () => set((state) => ({ canvasMinimap: !state.canvasMinimap })),
+
       selectedIds: [],
       anchorId: null,
       select: (id, options) =>
@@ -125,7 +132,7 @@ export const useUiStore = create<UiState>()(
     {
       name: UI_STORE_KEY,
       storage: createJSONStorage(() => safeLocalStorage),
-      partialize: (state) => ({ viewMode: state.viewMode }),
+      partialize: (state) => ({ viewMode: state.viewMode, canvasMinimap: state.canvasMinimap }),
       // Keep the server and first client render identical; rehydrate in an effect instead.
       skipHydration: true,
     },
