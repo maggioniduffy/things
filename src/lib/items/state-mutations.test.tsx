@@ -72,17 +72,19 @@ function makeFakeClient() {
             });
             // item_tags deletes chain a second eq().
             return Object.assign(run, {
-              eq: (_column: string, tagId: string) =>
+              in: (_column: string, tagIds: string[]) =>
                 thenable(async () => {
-                  state.tagDeletes.push({ item_id: call.value, tag_id: tagId });
+                  for (const tagId of tagIds) {
+                    state.tagDeletes.push({ item_id: call.value, tag_id: tagId });
+                  }
                   return state.result();
                 }),
             });
           },
         }),
-        insert: (row: { item_id: string; tag_id: string }) =>
+        upsert: (rows: { item_id: string; tag_id: string }[]) =>
           thenable(async () => {
-            state.tagInserts.push(row);
+            state.tagInserts.push(...rows);
             return state.result();
           }),
       };

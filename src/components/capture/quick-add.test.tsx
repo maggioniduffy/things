@@ -69,6 +69,22 @@ describe("QuickAdd", () => {
     expect(useUiStore.getState().quickAddOpen).toBe(false);
   });
 
+  it("saves 'Read later #Thesis #ux' as a titled note with both tags", async () => {
+    renderOpen();
+    await userEvent.type(field(), "Read later #Thesis #ux{Enter}");
+    expect(capture.captureNote).toHaveBeenCalledWith("Read later #Thesis #ux", {
+      title: "Read later",
+      tagNames: ["Thesis", "ux"],
+    });
+  });
+
+  it("leaves a link's text alone even when it has a #fragment", async () => {
+    renderOpen();
+    await userEvent.type(field(), "https://example.com/post#section{Enter}");
+    expect(capture.captureLink).toHaveBeenCalledWith("https://example.com/post#section");
+    expect(capture.captureNote).not.toHaveBeenCalled();
+  });
+
   it("inserts a newline on Shift+Enter instead of saving", async () => {
     renderOpen();
     await userEvent.type(field(), "line one{Shift>}{Enter}{/Shift}line two");

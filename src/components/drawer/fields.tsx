@@ -1,16 +1,18 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { XIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
-import { itemTagsQueryOptions } from "@/lib/items/item-query";
+import { itemTagsQueryKey, itemTagsQueryOptions } from "@/lib/items/item-query";
 import type { BoardItem } from "@/lib/items/queries";
 import { useTagActions, type ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
 import { collectionsQueryOptions, tagsQueryOptions } from "@/lib/sidebar/queries";
+import { useTagManager } from "@/lib/tags/mutations";
+import { MAX_TAG_LENGTH, parseHashtags } from "@/lib/tags/parse";
 import { cn } from "@/lib/utils";
 
 /**
@@ -47,10 +49,16 @@ export function useDraft(value: string, commit: (draft: string) => void) {
 }
 
 export function TitleField({ item, actions }: { item: BoardItem; actions: ItemActions }) {
+  const { addTagsByName } = useTagActions();
   const { draft, setDraft, flush } = useDraft(item.title ?? "", (next) => {
-    const title = next.trim();
-    if (title === (item.title ?? "")) return;
-    void actions.edit(item, { title: title === "" ? null : title });
+    const typed = next.trim();
+    // `#tags` in the title become tags and leave the title; a title that is only tags stays as typed.
+    const { names, text } = parseHashtags(typed);
+    const title = names.length > 0 && text !== "" ? text : typed;
+    if (title !== (item.title ?? "")) {
+      void actions.edit(item, { title: title === "" ? null : title });
+    }
+    if (names.length > 0) void addTagsByName(item.id, names);
   });
   return (
     <Input
@@ -70,9 +78,15 @@ export function TitleField({ item, actions }: { item: BoardItem; actions: ItemAc
 }
 
 export function NoteField({ item, actions }: { item: BoardItem; actions: ItemActions }) {
+  const { addTagsByName } = useTagActions();
   const { draft, setDraft, flush } = useDraft(item.note ?? "", (next) => {
     if (next === (item.note ?? "")) return;
     void actions.edit(item, { note: next });
+    // The note keeps its text; only `#tags` that were not in it before are attached, so a tag
+    // removed by hand does not come back with the next edit.
+    const had = new Set(parseHashtags(item.note ?? "").names.map((name) => name.toLowerCase()));
+    const added = parseHashtags(next).names.filter((name) => !had.has(name.toLowerCase()));
+    if (added.length > 0) void addTagsByName(item.id, added);
   });
   return (
     <textarea
@@ -131,9 +145,26 @@ export function CollectionField({ item, actions }: { item: BoardItem; actions: I
 export function TagsField({ item }: { item: BoardItem }) {
   const id = useId();
   const client = createClient();
+  const queryClient = useQueryClient();
   const allTags = useQuery(tagsQueryOptions(client));
   const attached = useQuery(itemTagsQueryOptions(client, item.id));
   const { addTag, removeTag } = useTagActions();
+  const { create } = useTagManager();
+  const [newName, setNewName] = useState("");
+
+  async function submitNew() {
+    const name = newName;
+    if (name.trim() === "") return;
+    setNewName("");
+    // An existing tag (any casing) is reused; a new one appears at once and is saved behind it.
+    const tag = await create(name);
+    if (
+      tag &&
+      !(queryClient.getQueryData<string[]>(itemTagsQueryKey(item.id)) ?? []).includes(tag.id)
+    ) {
+      await addTag(item.id, tag.id);
+    }
+  }
 
   const tags = allTags.data ?? [];
   const attachedIds = new Set(attached.data ?? []);
@@ -182,9 +213,20 @@ export function TagsField({ item }: { item: BoardItem }) {
             </option>
           ))}
         </select>
-      ) : tags.length === 0 && !allTags.isPending ? (
-        <p className="text-meta text-ink-subtle">No tags yet.</p>
       ) : null}
+      <Input
+        aria-label="New tag"
+        value={newName}
+        placeholder="New tag, then Enter"
+        maxLength={MAX_TAG_LENGTH}
+        onChange={(event) => setNewName(event.target.value)}
+        onKeyDown={(event) => {
+          // Enter while an IME is composing confirms the composition, not the field.
+          if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+          event.preventDefault();
+          void submitNew();
+        }}
+      />
     </div>
   );
 }
