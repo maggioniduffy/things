@@ -37,6 +37,7 @@ const mocks = vi.hoisted(() => ({
   toast: Object.assign(vi.fn(), { error: vi.fn() }),
   uploadFile: vi.fn(),
   createThumbnail: vi.fn(),
+  attachTagNames: vi.fn(async () => {}),
   client: undefined as unknown,
 }));
 
@@ -52,6 +53,10 @@ vi.mock("./upload", async (importOriginal) => ({
   uploadFile: mocks.uploadFile,
 }));
 vi.mock("./thumbnails", () => ({ createThumbnail: mocks.createThumbnail }));
+vi.mock("@/lib/tags/mutations", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/tags/mutations")>()),
+  attachTagNames: mocks.attachTagNames,
+}));
 
 // ---------------------------------------------------------------------------
 // A Supabase stand-in whose insert and update results the test can hold back
@@ -241,6 +246,8 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
   mocks.uploadFile.mockResolvedValue(undefined);
   mocks.createThumbnail.mockResolvedValue(null);
+  mocks.attachTagNames.mockReset();
+  mocks.attachTagNames.mockResolvedValue(undefined);
   useUploadStore.setState({ progress: {} });
   useUiStore.setState({ viewMode: "grid", selectedIds: [] });
 });
@@ -598,6 +605,36 @@ describe("capturing notes and text", () => {
     });
     expect(fake.state.updates).toHaveLength(0);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("saves a title and attaches tags only after the row is inserted", async () => {
+    const { fake, capture } = setup();
+    mocks.attachTagNames.mockImplementation(async () => {
+      expect(fake.state.inserts).toHaveLength(1);
+    });
+    await act(() =>
+      capture.current.captureNote("Read later #Thesis #ux", {
+        title: "Read later",
+        tagNames: ["Thesis", "ux"],
+      }),
+    );
+    expect(fake.state.inserts[0]).toMatchObject({
+      title: "Read later",
+      note: "Read later #Thesis #ux",
+    });
+    expect(mocks.attachTagNames).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      fake.state.inserts[0]?.id,
+      ["Thesis", "ux"],
+    );
+  });
+
+  it("attaches no tags when the insert fails", async () => {
+    const { fake, capture } = setup();
+    fake.state.insertResult = () => ({ error: new Error("boom") });
+    await act(() => capture.current.captureNote("x #ux", { title: "x", tagNames: ["ux"] }));
+    expect(mocks.attachTagNames).not.toHaveBeenCalled();
   });
 
   it("ignores an empty note", async () => {

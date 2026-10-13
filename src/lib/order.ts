@@ -7,3 +7,11 @@ import { generateKeyBetween } from "fractional-indexing";
 export function keyBefore(first: string | null): string {
   return generateKeyBetween(null, first);
 }
+
+/**
+ * A `position` key that sorts after `last` (or the first key ever, `a0`, when there is none).
+ * Same base-62 alphabet as `keyBefore`.
+ */
+export function keyAfter(last: string | null): string {
+  return generateKeyBetween(last, null);
+}

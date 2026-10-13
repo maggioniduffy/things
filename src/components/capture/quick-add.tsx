@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { useCapture } from "@/lib/items/mutations";
+import { noteTagging } from "@/lib/tags/parse";
 import type { ViewSpec } from "@/lib/views";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
@@ -47,7 +48,11 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
 
   function saveText() {
     if (empty) return;
-    saveRequests(capture, capRequests(requestsFromText(text)));
+    // Typed `#tags` are attached to notes; links keep their text as it is.
+    const requests = requestsFromText(text).map((request) =>
+      request.type === "note" ? { ...request, ...noteTagging(request.text) } : request,
+    );
+    saveRequests(capture, capRequests(requests));
     close();
   }
 

@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { keyBefore } from "@/lib/order";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
+import { attachTagNames } from "@/lib/tags/mutations";
 import { SORT_MODES, viewHref, viewKey, type SortMode, type ViewSpec } from "@/lib/views";
 import { useUploadStore } from "@/stores/upload-store";
 import type { UnfurlResult } from "@/lib/unfurl/types";
@@ -144,9 +145,17 @@ export function buildLinkRow(base: RowBase, url: string): BoardItem {
   return { ...baseRow(base, detectUrlKind(url)), url, domain: domainOf(url) };
 }
 
-export function buildNoteRow(base: RowBase, text: string): BoardItem {
-  return { ...baseRow(base, "note"), note: text.trim(), enrich_status: "done" };
+export function buildNoteRow(base: RowBase, text: string, title?: string): BoardItem {
+  return {
+    ...baseRow(base, "note"),
+    title: title ?? null,
+    note: text.trim(),
+    enrich_status: "done",
+  };
 }
+
+/** Extras of a note typed in quick add: a title and the `#tags` found in its text. */
+export type NoteOptions = { title?: string; tagNames?: string[] };
 
 /** File name without its last extension ("report.final.pdf" -> "report.final"). */
 function titleFromFileName(name: string): string {
@@ -547,7 +556,7 @@ export function useRetryEnrich(): (item: BoardItem) => Promise<void> {
 
 export function useCapture(view: ViewSpec): {
   captureLink(url: string): Promise<void>;
-  captureNote(text: string): Promise<void>;
+  captureNote(text: string, options?: NoteOptions): Promise<void>;
   captureFile(file: File): Promise<void>;
   captureText(text: string): Promise<void>;
   retryEnrich(item: BoardItem): Promise<void>;
@@ -586,6 +595,7 @@ export function useCapture(view: ViewSpec): {
       deps: FlowDeps,
       row: BoardItem,
       enrich: (() => Promise<void>) | null,
+      tagNames: readonly string[] = [],
     ): Promise<void> {
       const position = reservePosition(deps.client);
       position.catch(() => undefined);
@@ -602,6 +612,8 @@ export function useCapture(view: ViewSpec): {
 
         if (saved) {
           announceDestination(deps, row);
+          // The item row exists now, so `item_tags` can reference it.
+          await attachTagNames(deps.client, queryClient, row.id, tagNames);
           if (enrich) {
             enriching.add(row.id);
             try {
@@ -626,9 +638,14 @@ export function useCapture(view: ViewSpec): {
       await run(deps, row, () => enrichLink(deps, { id: row.id, url, kind: row.kind }));
     }
 
-    async function captureNote(text: string): Promise<void> {
+    async function captureNote(text: string, options?: NoteOptions): Promise<void> {
       if (text.trim() === "") return;
-      await run(makeDeps(), buildNoteRow(baseFor(), text), null);
+      await run(
+        makeDeps(),
+        buildNoteRow(baseFor(), text, options?.title),
+        null,
+        options?.tagNames ?? [],
+      );
     }
 
     async function captureFile(file: File): Promise<void> {

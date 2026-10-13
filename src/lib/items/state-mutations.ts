@@ -25,6 +25,7 @@ import {
   removeFromPages,
   viewFromKey,
 } from "./cache";
+import { attachTags, ensureTags } from "@/lib/tags/mutations";
 import { itemQueryKey, itemTagsQueryKey } from "./item-query";
 import type { BoardItem, ItemsPage } from "./queries";
 import { BUCKET, thumbnailPath } from "./upload";
@@ -298,34 +299,38 @@ export function useItemActions(): ItemActions {
 // Tags (attach / detach existing tags)
 // ---------------------------------------------------------------------------
 
-type TagChange = { itemId: string; tagId: string; attach: boolean };
+type TagChange = { itemId: string; tagIds: string[]; attach: boolean };
 
 export type TagActions = {
   addTag(itemId: string, tagId: string): Promise<void>;
   removeTag(itemId: string, tagId: string): Promise<void>;
+  /**
+   * Attaches tags by name (e.g. from inline `#tags`): creates the missing ones in one insert,
+   * reuses existing ones ignoring case, then attaches all of them in one insert.
+   */
+  addTagsByName(itemId: string, names: readonly string[]): Promise<void>;
 };
 
-/** Optimistic attach/detach of an existing tag on an item (`item_tags` rows). */
+/** Optimistic attach/detach of tags on an item (`item_tags` rows). */
 export function useTagActions(): TagActions {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationKey: TAG_MUTATION_KEY,
-    mutationFn: async ({ itemId, tagId, attach }: TagChange) => {
+    mutationFn: async ({ itemId, tagIds, attach }: TagChange) => {
       const client = createClient();
       if (attach) {
-        const { error } = await client.from("item_tags").insert({ item_id: itemId, tag_id: tagId });
-        if (error) throw error;
+        await attachTags(client, itemId, tagIds);
       } else {
         const { error } = await client
           .from("item_tags")
           .delete()
           .eq("item_id", itemId)
-          .eq("tag_id", tagId);
+          .in("tag_id", tagIds);
         if (error) throw error;
       }
     },
-    onMutate: async ({ itemId, tagId, attach }) => {
+    onMutate: async ({ itemId, tagIds, attach }) => {
       const key = itemTagsQueryKey(itemId);
       await Promise.all([
         queryClient.cancelQueries({ queryKey: key }),
@@ -337,15 +342,13 @@ export function useTagActions(): TagActions {
       queryClient.setQueryData<string[]>(key, (current) => {
         const ids = current ?? [];
         return attach
-          ? ids.includes(tagId)
-            ? ids
-            : [...ids, tagId]
-          : ids.filter((id) => id !== tagId);
+          ? [...ids, ...tagIds.filter((tagId) => !ids.includes(tagId))]
+          : ids.filter((id) => !tagIds.includes(id));
       });
       if (!attach) {
-        // The item leaves that tag's own view at once.
+        // The item leaves those tags' own views at once.
         for (const [listKey, data] of lists) {
-          if (!data || listKey[1] !== `tag:${tagId}`) continue;
+          if (!data || !tagIds.some((tagId) => listKey[1] === `tag:${tagId}`)) continue;
           queryClient.setQueryData(listKey, removeFromPages(data, itemId));
         }
       }
@@ -377,8 +380,19 @@ export function useTagActions(): TagActions {
       }
     };
     return {
-      addTag: (itemId, tagId) => run({ itemId, tagId, attach: true }),
-      removeTag: (itemId, tagId) => run({ itemId, tagId, attach: false }),
+      addTag: (itemId, tagId) => run({ itemId, tagIds: [tagId], attach: true }),
+      removeTag: (itemId, tagId) => run({ itemId, tagIds: [tagId], attach: false }),
+      addTagsByName: async (itemId, names) => {
+        if (names.length === 0) return;
+        let tags;
+        try {
+          tags = await ensureTags(createClient(), queryClient, names);
+        } catch {
+          toast.error("Couldn't add those tags.");
+          return;
+        }
+        await run({ itemId, tagIds: tags.map((tag) => tag.id), attach: true });
+      },
     };
-  }, [mutateAsync]);
+  }, [mutateAsync, queryClient]);
 }

@@ -1,9 +1,12 @@
 import { toast } from "sonner";
 import { parseUrlInput } from "@/lib/items/detect-kind";
+import type { NoteOptions } from "@/lib/items/mutations";
 
 /** One thing to save, as read from a paste, a drop or the quick add field. */
 export type CaptureRequest =
-  { type: "file"; file: File } | { type: "url"; url: string } | { type: "note"; text: string };
+  | { type: "file"; file: File }
+  | { type: "url"; url: string }
+  | { type: "note"; text: string; title?: string; tagNames?: string[] };
 
 /** Most things saved by one gesture; the rest are dropped with a toast. */
 export const MAX_CAPTURES = 20;
@@ -12,7 +15,7 @@ export const CAPPED_COPY = `Saved the first ${MAX_CAPTURES} items.`;
 /** The part of `useCapture` that saving requests needs. */
 export type Capture = {
   captureLink(url: string): Promise<void>;
-  captureNote(text: string): Promise<void>;
+  captureNote(text: string, options?: NoteOptions): Promise<void>;
   captureFile(file: File): Promise<void>;
 };
 
@@ -130,7 +133,14 @@ export function saveRequests(
         void capture.captureLink(request.url);
         break;
       case "note":
-        void capture.captureNote(request.text);
+        if (request.title === undefined && request.tagNames === undefined) {
+          void capture.captureNote(request.text);
+        } else {
+          void capture.captureNote(request.text, {
+            title: request.title,
+            tagNames: request.tagNames,
+          });
+        }
         break;
     }
   }

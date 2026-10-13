@@ -55,6 +55,7 @@ function makeFakeClient() {
     attached: [] as string[],
     tagInserts: [] as { item_id: string; tag_id: string }[],
     tagDeletes: [] as { item_id: string; tag_id: string }[],
+    tagCreates: [] as { id: string; name: string }[],
     updateResult: (): Result => ({ error: null }),
   };
   const thenable = (run: () => Result | Promise<Result>) => ({
@@ -79,7 +80,12 @@ function makeFakeClient() {
           }),
         then: (resolve: (value: Result) => void, reject: (reason: unknown) => void) =>
           Promise.resolve({
-            data: table === "item_tags" ? state.attached.map((tag_id) => ({ tag_id })) : [],
+            data:
+              table === "item_tags"
+                ? state.attached.map((tag_id) => ({ tag_id }))
+                : table === "tags"
+                  ? [...TAGS, ...state.tagCreates.map((row) => ({ ...row, color: null }))]
+                  : [],
             error: null,
           }).then(resolve, reject),
         update: (patch: Partial<BoardItem>) => ({
@@ -100,22 +106,37 @@ function makeFakeClient() {
                 return { error: null };
               }),
               {
-                eq: (_column: string, tagId: string) =>
+                in: (_column: string, tagIds: string[]) =>
                   thenable(() => {
-                    state.tagDeletes.push({ item_id: value, tag_id: tagId });
-                    state.attached = state.attached.filter((id) => id !== tagId);
+                    for (const tagId of tagIds) {
+                      state.tagDeletes.push({ item_id: value, tag_id: tagId });
+                    }
+                    state.attached = state.attached.filter((id) => !tagIds.includes(id));
                     void column;
                     return { error: null };
                   }),
               },
             ),
         }),
-        insert: (row: { item_id: string; tag_id: string }) =>
+        upsert: (rows: { item_id: string; tag_id: string }[]) =>
           thenable(() => {
-            state.tagInserts.push(row);
-            state.attached.push(row.tag_id);
+            state.tagInserts.push(...rows);
+            state.attached.push(...rows.map((row) => row.tag_id));
             return { error: null };
           }),
+        /** `tags` inserts: `insert(rows).select()`. */
+        insert: (payload: { id: string; name: string } | { id: string; name: string }[]) => {
+          const rows = Array.isArray(payload) ? payload : [payload];
+          state.tagCreates.push(...rows);
+          const created = rows.map((row) => ({ id: row.id, name: row.name, color: null }));
+          return {
+            select: () =>
+              Object.assign(
+                thenable(() => ({ data: created, error: null })),
+                { single: () => thenable(() => ({ data: created[0], error: null })) },
+              ),
+          };
+        },
       };
       return chain;
     },
@@ -280,6 +301,46 @@ describe("editing", () => {
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue("Renamed");
   });
 
+  it("turns #tags typed in the title into tags and strips them from the title", async () => {
+    const { state } = renderDrawer(NOTE);
+    const title = await screen.findByRole("textbox", { name: "Title" });
+    await userEvent.clear(title);
+    await userEvent.type(title, "Read later #ALPHA #fresh{Enter}");
+    await waitFor(() => expect(state.updates[0]?.patch).toEqual({ title: "Read later" }));
+    // "alpha" exists (any casing) and is reused; "fresh" is created; one insert attaches both.
+    await waitFor(() => expect(state.tagInserts).toHaveLength(2));
+    expect(state.tagCreates.map((row) => row.name)).toEqual(["fresh"]);
+    expect(state.tagInserts[0]).toEqual({ item_id: ID, tag_id: TAG_A });
+    expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue("Read later");
+  });
+
+  it("keeps a title that is only tags as typed", async () => {
+    const { state } = renderDrawer(NOTE);
+    const title = await screen.findByRole("textbox", { name: "Title" });
+    await userEvent.clear(title);
+    await userEvent.type(title, "#beta{Enter}");
+    await waitFor(() => expect(state.updates[0]?.patch).toEqual({ title: "#beta" }));
+    await waitFor(() => expect(state.tagInserts).toEqual([{ item_id: ID, tag_id: TAG_B }]));
+  });
+
+  it("attaches #tags new to the note without changing the note text", async () => {
+    const { state } = renderDrawer(NOTE);
+    const note = await screen.findByRole("textbox", { name: "Note" });
+    await userEvent.type(note, " #beta");
+    await userEvent.tab();
+    await waitFor(() => expect(state.updates[0]?.patch).toEqual({ note: "Some text #beta" }));
+    await waitFor(() => expect(state.tagInserts).toEqual([{ item_id: ID, tag_id: TAG_B }]));
+  });
+
+  it("does not re-attach a #tag that was already in the note", async () => {
+    const { state } = renderDrawer(makeItem({ ...NOTE, note: "Some #beta text" }));
+    const note = await screen.findByRole("textbox", { name: "Note" });
+    await userEvent.type(note, "!");
+    await userEvent.tab();
+    await waitFor(() => expect(state.updates).toHaveLength(1));
+    expect(state.tagInserts).toEqual([]);
+  });
+
   it("clears the title to null when emptied", async () => {
     const { state } = renderDrawer(NOTE);
     const title = await screen.findByRole("textbox", { name: "Title" });
@@ -321,6 +382,34 @@ describe("editing", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Remove tag alpha" }));
     await waitFor(() => expect(state.tagDeletes).toEqual([{ item_id: ID, tag_id: TAG_A }]));
+  });
+});
+
+describe("creating a tag in the drawer", () => {
+  it("creates a new tag on Enter and attaches it", async () => {
+    const { state } = renderDrawer(NOTE);
+    const input = await screen.findByRole("textbox", { name: "New tag" });
+    await userEvent.type(input, "#Fresh{Enter}");
+    await waitFor(() => expect(state.tagCreates.map((row) => row.name)).toEqual(["Fresh"]));
+    await waitFor(() => expect(state.tagInserts).toHaveLength(1));
+    expect(state.tagInserts[0]?.item_id).toBe(ID);
+    expect(state.tagInserts[0]?.tag_id).toBe(state.tagCreates[0]?.id);
+    expect(input).toHaveValue("");
+    expect(await screen.findByText("Fresh")).toBeInTheDocument();
+  });
+
+  it("attaches an existing tag typed in another casing instead of creating one", async () => {
+    const { state } = renderDrawer(NOTE);
+    await userEvent.type(await screen.findByRole("textbox", { name: "New tag" }), "BETA{Enter}");
+    await waitFor(() => expect(state.tagInserts).toEqual([{ item_id: ID, tag_id: TAG_B }]));
+    expect(state.tagCreates).toEqual([]);
+  });
+
+  it("does nothing for an empty name", async () => {
+    const { state } = renderDrawer(NOTE);
+    await userEvent.type(await screen.findByRole("textbox", { name: "New tag" }), "  {Enter}");
+    expect(state.tagCreates).toEqual([]);
+    expect(state.tagInserts).toEqual([]);
   });
 });
 

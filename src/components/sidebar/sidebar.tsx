@@ -4,17 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArchiveIcon,
   CircleDotIcon,
-  FolderIcon,
-  HashIcon,
   InboxIcon,
   LayersIcon,
+  PlusIcon,
   SparklesIcon,
   StarIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
 import { KindIcon } from "@/components/kind-icon";
+import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
@@ -25,6 +25,8 @@ import {
 } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
 import { ITEM_KINDS, viewHref } from "@/lib/views";
+import { CollectionDialog } from "./collection-dialog";
+import { CollectionRow, TagRow } from "./manage-rows";
 import { NavItem } from "./nav-item";
 import { SignOutButton } from "./sign-out-button";
 
@@ -37,20 +39,26 @@ type SidebarProps = {
 function Section({
   label,
   heading = true,
+  action,
   children,
 }: {
   label: string;
   /** Show the label as a visible heading. System groups are labelled for screen readers only. */
   heading?: boolean;
+  /** A control at the right end of the heading, e.g. "New collection". */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1">
       {heading ? (
-        <h2 id={id} className="text-meta text-ink-subtle px-2.5 pt-1 pb-0.5 font-medium">
-          {label}
-        </h2>
+        <div className="flex items-center justify-between pr-1">
+          <h2 id={id} className="text-meta text-ink-subtle px-2.5 pt-1 pb-0.5 font-medium">
+            {label}
+          </h2>
+          {action}
+        </div>
       ) : null}
       <ul
         aria-labelledby={heading ? id : undefined}
@@ -69,6 +77,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
   const { data: collections } = useQuery(collectionsQueryOptions(client));
   const { data: tags } = useQuery(tagsQueryOptions(client));
   const { data: smartViews } = useQuery(smartViewsQueryOptions(client));
+  const [creatingCollection, setCreatingCollection] = useState(false);
 
   const kindsWithItems = ITEM_KINDS.filter((kind) => (counts?.kinds[kind] ?? 0) > 0);
 
@@ -141,18 +150,28 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
         ) : null}
 
         <Separator />
-        <Section label="Collections">
+        <Section
+          label="Collections"
+          action={
+            <IconButton
+              variant="ghost"
+              size="sm"
+              label="New collection"
+              className="size-6"
+              onClick={() => setCreatingCollection(true)}
+            >
+              <PlusIcon className="size-4" />
+            </IconButton>
+          }
+        >
           {collections && collections.length > 0 ? (
             collections.map((collection) => (
-              <li key={collection.id}>
-                <NavItem
-                  href={viewHref({ type: "collection", collectionId: collection.id })}
-                  icon={collection.emoji ? <span>{collection.emoji}</span> : <FolderIcon />}
-                  label={collection.name}
-                  count={counts?.collections[collection.id]}
-                  onNavigate={onNavigate}
-                />
-              </li>
+              <CollectionRow
+                key={collection.id}
+                collection={collection}
+                count={counts?.collections[collection.id]}
+                onNavigate={onNavigate}
+              />
             ))
           ) : (
             <li className="text-meta text-ink-subtle px-2.5 py-1">No collections yet</li>
@@ -164,14 +183,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
             <Separator />
             <Section label="Tags">
               {tags.map((tag) => (
-                <li key={tag.id}>
-                  <NavItem
-                    href={viewHref({ type: "tag", tagId: tag.id })}
-                    icon={<HashIcon />}
-                    label={`#${tag.name}`}
-                    onNavigate={onNavigate}
-                  />
-                </li>
+                <TagRow key={tag.id} tag={tag} onNavigate={onNavigate} />
               ))}
             </Section>
           </>
@@ -217,6 +229,8 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
           </li>
         </Section>
       </nav>
+
+      <CollectionDialog open={creatingCollection} onOpenChange={setCreatingCollection} />
 
       <Separator />
       <div role="group" aria-label="Account" className="flex shrink-0 items-center gap-2 p-3">
