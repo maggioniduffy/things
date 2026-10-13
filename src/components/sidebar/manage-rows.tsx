@@ -2,6 +2,7 @@
 
 import { FolderIcon, HashIcon } from "lucide-react";
 import { useState } from "react";
+import { collectionTarget, tagTarget } from "@/components/dnd/targets";
 import { auroraColorVar } from "@/lib/collections/fields";
 import { useCollectionActions } from "@/lib/collections/mutations";
 import type { SidebarCollection, SidebarTag } from "@/lib/sidebar/queries";
@@ -51,6 +52,7 @@ export function CollectionRow({
         count={count}
         onNavigate={onNavigate}
         hasMenu
+        drop={collectionTarget(collection.id, collection.name)}
       />
       <RowMenu
         name={collection.name}
@@ -84,6 +86,7 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
         label={`#${tag.name}`}
         onNavigate={onNavigate}
         hasMenu
+        drop={tagTarget(tag.id, tag.name)}
       />
       <RowMenu
         name={`Tag ${tag.name}`}

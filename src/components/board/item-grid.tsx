@@ -1,17 +1,16 @@
 "use client";
 
-import { ItemCard } from "@/components/cards/item-card";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import type { BoardItem } from "@/lib/items/queries";
-import { SortableCard } from "./sortable-items";
+import { BoardCard, type CardDnd } from "./board-cards";
 
 type ItemGridProps = {
   /** Loaded pages of items, in order. */
   pages: readonly (readonly BoardItem[])[];
   onRetry?: (item: BoardItem) => void | Promise<void>;
   onOpen?: (item: BoardItem) => void;
-  /** Cards are draggable; render inside `SortableItems`. */
-  sortable?: boolean;
+  /** Drag mode of the cards; "sortable" needs a `SortableItems` around the grid. */
+  dnd?: CardDnd;
 };
 
 /**
@@ -22,19 +21,19 @@ function GridPage({
   items,
   onRetry,
   onOpen,
-  sortable,
+  dnd,
 }: {
   items: readonly BoardItem[];
   onRetry: ItemGridProps["onRetry"];
   onOpen: ItemGridProps["onOpen"];
-  sortable: boolean;
+  dnd: CardDnd | undefined;
 }) {
-  const Card = sortable ? SortableCard : ItemCard;
   const signedUrls = useSignedUrls(items.map((item) => item.thumbnail_path));
   return (
     <>
       {items.map((item) => (
-        <Card
+        <BoardCard
+          dnd={dnd}
           key={item.id}
           item={item}
           variant="grid"
@@ -48,14 +47,14 @@ function GridPage({
 }
 
 /** The card grid of a board. */
-export function ItemGrid({ pages, onRetry, onOpen, sortable = false }: ItemGridProps) {
+export function ItemGrid({ pages, onRetry, onOpen, dnd }: ItemGridProps) {
   return (
     <ul
       className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 px-4 sm:px-6"
       data-view-mode="grid"
     >
       {pages.map((items, index) => (
-        <GridPage key={index} items={items} onRetry={onRetry} onOpen={onOpen} sortable={sortable} />
+        <GridPage key={index} items={items} onRetry={onRetry} onOpen={onOpen} dnd={dnd} />
       ))}
     </ul>
   );

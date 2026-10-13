@@ -13,6 +13,13 @@ import {
 } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
+import { SIDEBAR_ZONE_ATTRIBUTE } from "@/components/dnd/collision";
+import {
+  ARCHIVE_TARGET,
+  FAVORITES_TARGET,
+  INBOX_TARGET,
+  TRASH_TARGET,
+} from "@/components/dnd/targets";
 import { KindIcon } from "@/components/kind-icon";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
@@ -82,7 +89,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
   const kindsWithItems = ITEM_KINDS.filter((kind) => (counts?.kinds[kind] ?? 0) > 0);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col" {...{ [SIDEBAR_ZONE_ATTRIBUTE]: "" }}>
       <div className="flex h-14 shrink-0 items-center px-4">
         <Logo />
       </div>
@@ -98,6 +105,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<InboxIcon />}
               label="Inbox"
               count={counts?.inbox}
+              drop={INBOX_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -125,6 +133,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<StarIcon />}
               label="Favorites"
               count={counts?.favorites}
+              drop={FAVORITES_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -215,6 +224,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<ArchiveIcon />}
               label="Archive"
               count={counts?.archive}
+              drop={ARCHIVE_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -224,6 +234,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<Trash2Icon />}
               label="Trash"
               count={counts?.trash}
+              drop={TRASH_TARGET}
               onNavigate={onNavigate}
             />
           </li>
