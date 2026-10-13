@@ -2,6 +2,8 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useMemo, useRef } from "react";
+import { useOpenItem } from "@/components/drawer/item-param";
+import { ItemDrawerHost } from "@/components/drawer/item-drawer";
 import { ExternalDropZone } from "@/components/capture/external-drop-zone";
 import { PasteListener } from "@/components/capture/paste-listener";
 import { QuickAdd } from "@/components/capture/quick-add";
@@ -31,6 +33,7 @@ export function Board({ view, sort }: BoardProps) {
   }, [currentViewKey, clearSelection]);
 
   const retryEnrich = useRetryEnrich();
+  const openItem = useOpenItem();
 
   const pages = query.data?.pages;
   const itemPages = useMemo(() => pages?.map((page) => page.items) ?? [], [pages]);
@@ -88,9 +91,9 @@ export function Board({ view, sort }: BoardProps) {
     content = (
       <>
         {viewMode === "list" ? (
-          <ItemList pages={itemPages} onRetry={retryEnrich} />
+          <ItemList pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />
         ) : (
-          <ItemGrid pages={itemPages} onRetry={retryEnrich} />
+          <ItemGrid pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />
         )}
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />
         {hasNextPage && isFetchNextPageError && !isFetchingNextPage ? (
@@ -123,6 +126,9 @@ export function Board({ view, sort }: BoardProps) {
         <Toolbar view={view} sort={sort} />
       </Suspense>
       {content}
+      <Suspense fallback={null}>
+        <ItemDrawerHost view={view} />
+      </Suspense>
       <PasteListener view={view} />
       <ExternalDropZone view={view} />
       <QuickAdd view={view} />

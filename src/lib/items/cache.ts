@@ -1,6 +1,6 @@
 import type { InfiniteData } from "@tanstack/react-query";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
-import { ITEM_KINDS, type SystemView, type ViewSpec } from "@/lib/views";
+import { ITEM_KINDS, type SortMode, type SystemView, type ViewSpec } from "@/lib/views";
 import type { BoardItem, ItemsPage } from "./queries";
 
 // Pure helpers for editing the cached `["items", viewKey, sort]` lists and the `["counts"]` cache
@@ -74,7 +74,71 @@ export function itemMatchesView(item: BoardItem, view: ViewSpec): boolean {
   }
 }
 
+/**
+ * Whether an item that is already listed in `view` should stay there after an edit. Same as
+ * `itemMatchesView`, except tag and smart views (membership lives elsewhere) keep any live item.
+ */
+export function itemStaysInView(item: BoardItem, view: ViewSpec): boolean {
+  if (view.type === "tag" || view.type === "smart") {
+    return item.deleted_at === null && item.archived_at === null;
+  }
+  return itemMatchesView(item, view);
+}
+
 type Items = InfiniteData<ItemsPage>;
+
+function compareText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** Negative when `a` comes before `b` in `sort` order (same keys as `fetchItemsPage`). */
+export function compareForSort(a: BoardItem, b: BoardItem, sort: SortMode): number {
+  switch (sort) {
+    case "manual":
+      return compareText(a.position, b.position) || compareText(a.id, b.id);
+    case "newest":
+      return compareText(b.created_at, a.created_at) || compareText(b.id, a.id);
+    case "oldest":
+      return compareText(a.created_at, b.created_at) || compareText(a.id, b.id);
+    case "title": {
+      // Null titles sort last.
+      if (a.title === null && b.title !== null) return 1;
+      if (a.title !== null && b.title === null) return -1;
+      return compareText(a.title ?? "", b.title ?? "") || compareText(a.id, b.id);
+    }
+  }
+}
+
+/**
+ * Inserts `item` where `sort` puts it among the loaded rows. A list that already holds the id, or
+ * whose loaded part ends before the item's place (more pages follow), comes back unchanged: the
+ * refetch after the mutation settles shows it once that page loads.
+ */
+export function insertSortedInPages(data: Items, item: BoardItem, sort: SortMode): Items {
+  if (data.pages.some((page) => page.items.some((existing) => existing.id === item.id))) {
+    return data;
+  }
+  for (const [pageIndex, page] of data.pages.entries()) {
+    const at = page.items.findIndex((existing) => compareForSort(item, existing, sort) < 0);
+    if (at === -1) continue;
+    const items = [...page.items.slice(0, at), item, ...page.items.slice(at)];
+    return {
+      ...data,
+      pages: data.pages.map((candidate, index) =>
+        index === pageIndex ? { ...page, items } : candidate,
+      ),
+    };
+  }
+  const lastIndex = data.pages.length - 1;
+  const last = data.pages[lastIndex];
+  if (!last || last.nextCursor !== null) return data;
+  return {
+    ...data,
+    pages: data.pages.map((page, index) =>
+      index === lastIndex ? { ...page, items: [...page.items, item] } : page,
+    ),
+  };
+}
 
 /** Puts `item` first in page 0. A list that already holds the id comes back unchanged. */
 export function prependToPages(data: Items, item: BoardItem): Items {
