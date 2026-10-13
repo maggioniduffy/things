@@ -7,12 +7,18 @@ import {
   InboxIcon,
   LayersIcon,
   PlusIcon,
-  SparklesIcon,
   StarIcon,
   Trash2Icon,
 } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
+import { SIDEBAR_ZONE_ATTRIBUTE } from "@/components/dnd/collision";
+import {
+  ARCHIVE_TARGET,
+  FAVORITES_TARGET,
+  INBOX_TARGET,
+  TRASH_TARGET,
+} from "@/components/dnd/targets";
 import { KindIcon } from "@/components/kind-icon";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
@@ -26,9 +32,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ITEM_KINDS, viewHref } from "@/lib/views";
 import { CollectionDialog } from "./collection-dialog";
-import { CollectionRow, TagRow } from "./manage-rows";
+import { CollectionRow, SmartViewRow, TagRow } from "./manage-rows";
 import { NavItem } from "./nav-item";
 import { SignOutButton } from "./sign-out-button";
+import { SmartViewDialog } from "./smart-view-dialog";
+import { SortableRows } from "./sortable-rows";
 
 type SidebarProps = {
   /** Signed-in email, or null for a guest. */
@@ -78,11 +86,12 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
   const { data: tags } = useQuery(tagsQueryOptions(client));
   const { data: smartViews } = useQuery(smartViewsQueryOptions(client));
   const [creatingCollection, setCreatingCollection] = useState(false);
+  const [creatingSmartView, setCreatingSmartView] = useState(false);
 
   const kindsWithItems = ITEM_KINDS.filter((kind) => (counts?.kinds[kind] ?? 0) > 0);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col" {...{ [SIDEBAR_ZONE_ATTRIBUTE]: "" }}>
       <div className="flex h-14 shrink-0 items-center px-4">
         <Logo />
       </div>
@@ -98,6 +107,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<InboxIcon />}
               label="Inbox"
               count={counts?.inbox}
+              drop={INBOX_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -125,6 +135,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<StarIcon />}
               label="Favorites"
               count={counts?.favorites}
+              drop={FAVORITES_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -165,14 +176,18 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
           }
         >
           {collections && collections.length > 0 ? (
-            collections.map((collection) => (
-              <CollectionRow
-                key={collection.id}
-                collection={collection}
-                count={counts?.collections[collection.id]}
-                onNavigate={onNavigate}
-              />
-            ))
+            <SortableRows section="collections" rows={collections}>
+              {(shown) =>
+                shown.map((collection) => (
+                  <CollectionRow
+                    key={collection.id}
+                    collection={collection}
+                    count={counts?.collections[collection.id]}
+                    onNavigate={onNavigate}
+                  />
+                ))
+              }
+            </SortableRows>
           ) : (
             <li className="text-meta text-ink-subtle px-2.5 py-1">No collections yet</li>
           )}
@@ -189,23 +204,33 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
           </>
         ) : null}
 
-        {smartViews && smartViews.length > 0 ? (
-          <>
-            <Separator />
-            <Section label="Smart views">
-              {smartViews.map((smartView) => (
-                <li key={smartView.id}>
-                  <NavItem
-                    href={viewHref({ type: "smart", viewId: smartView.id })}
-                    icon={<SparklesIcon />}
-                    label={smartView.name}
-                    onNavigate={onNavigate}
-                  />
-                </li>
-              ))}
-            </Section>
-          </>
-        ) : null}
+        <Separator />
+        <Section
+          label="Smart views"
+          action={
+            <IconButton
+              variant="ghost"
+              size="sm"
+              label="New smart view"
+              className="size-6"
+              onClick={() => setCreatingSmartView(true)}
+            >
+              <PlusIcon className="size-4" />
+            </IconButton>
+          }
+        >
+          {smartViews && smartViews.length > 0 ? (
+            <SortableRows section="smart-views" rows={smartViews}>
+              {(shown) =>
+                shown.map((smartView) => (
+                  <SmartViewRow key={smartView.id} smartView={smartView} onNavigate={onNavigate} />
+                ))
+              }
+            </SortableRows>
+          ) : (
+            <li className="text-meta text-ink-subtle px-2.5 py-1">No smart views yet</li>
+          )}
+        </Section>
 
         <Separator />
         <Section label="Archive and trash" heading={false}>
@@ -215,6 +240,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<ArchiveIcon />}
               label="Archive"
               count={counts?.archive}
+              drop={ARCHIVE_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -224,6 +250,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<Trash2Icon />}
               label="Trash"
               count={counts?.trash}
+              drop={TRASH_TARGET}
               onNavigate={onNavigate}
             />
           </li>
@@ -231,6 +258,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       </nav>
 
       <CollectionDialog open={creatingCollection} onOpenChange={setCreatingCollection} />
+      <SmartViewDialog open={creatingSmartView} onOpenChange={setCreatingSmartView} />
 
       <Separator />
       <div role="group" aria-label="Account" className="flex shrink-0 items-center gap-2 p-3">

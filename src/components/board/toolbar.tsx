@@ -22,6 +22,8 @@ import {
 import { IconButton } from "@/components/ui/icon-button";
 import { SearchField } from "@/components/ui/search-field";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { describeRules, parseRules } from "@/lib/filters";
+import { effectiveSort } from "@/lib/items/queries";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -55,7 +57,22 @@ export type ViewInfo = {
   name: string | null;
   /** The collection, tag or smart view is not in the loaded sidebar data. */
   unknown: boolean;
+  /** Smart views: a short plain-language summary of the rules. */
+  summary?: string | null;
 };
+
+/** "Kind: PDFs · Unread", or a line saying there are no rules yet. */
+function summarize(
+  rules: Parameters<typeof describeRules>[0] | undefined,
+  collections: readonly { id: string; name: string }[] | undefined,
+  tags: readonly { id: string; name: string }[] | undefined,
+): string {
+  const parts = describeRules(parseRules(rules ?? {}).rules, {
+    collections: collections ?? [],
+    tags: tags ?? [],
+  });
+  return parts.length > 0 ? parts.join(" · ") : "No rules: shows everything that isn't archived.";
+}
 
 /**
  * Title and existence of a view. Collections, tags and smart views come from the sidebar queries
@@ -65,9 +82,12 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
   const client = createClient();
   const collections = useQuery({
     ...collectionsQueryOptions(client),
-    enabled: view.type === "collection",
+    enabled: view.type === "collection" || view.type === "smart",
   });
-  const tags = useQuery({ ...tagsQueryOptions(client), enabled: view.type === "tag" });
+  const tags = useQuery({
+    ...tagsQueryOptions(client),
+    enabled: view.type === "tag" || view.type === "smart",
+  });
   const smartViews = useQuery({
     ...smartViewsQueryOptions(client),
     enabled: view.type === "smart",
@@ -96,7 +116,14 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
       if (!smartViews.data) return { title: "Smart view", name: null, unknown: false };
       const found = smartViews.data.find((smartView) => smartView.id === view.viewId);
       if (!found) return { title: "Not found", name: null, unknown: true };
-      return { title: found.name, name: found.name, unknown: false };
+      return {
+        title: found.icon ? `${found.icon} ${found.name}` : found.name,
+        name: found.name,
+        unknown: false,
+        summary: found.invalidRules
+          ? "These rules couldn't be read. Edit the smart view to fix them."
+          : summarize(found.rules, collections.data, tags.data),
+      };
     }
     default:
       return { title: SYSTEM_TITLES[view.type], name: null, unknown: false };
@@ -117,7 +144,8 @@ type ToolbarProps = { view: ViewSpec; sort: SortMode };
 
 /** Reads `useSearchParams`, so render it inside a Suspense boundary. */
 export function Toolbar({ view, sort }: ToolbarProps) {
-  const { title } = useViewInfo(view);
+  const { title, summary } = useViewInfo(view);
+  const shownSort = effectiveSort(view, sort);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -159,9 +187,16 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         <PanelLeftIcon />
       </IconButton>
 
-      <h1 className="font-heading text-section tracking-heading min-w-0 flex-1 truncate font-semibold">
-        {title}
-      </h1>
+      <div className="min-w-0 flex-1">
+        <h1 className="font-heading text-section tracking-heading truncate font-semibold">
+          {title}
+        </h1>
+        {summary ? (
+          <p data-slot="rules-summary" className="text-meta text-ink-subtle truncate">
+            {summary}
+          </p>
+        ) : null}
+      </div>
 
       <SearchField
         disabled
@@ -173,14 +208,15 @@ export function Toolbar({ view, sort }: ToolbarProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="sm" aria-label={`Sort: ${SORT_LABELS[sort]}`}>
+          <Button variant="secondary" size="sm" aria-label={`Sort: ${SORT_LABELS[shownSort]}`}>
             <ArrowUpDownIcon />
-            <span className="hidden sm:inline">{SORT_LABELS[sort]}</span>
+            <span className="hidden sm:inline">{SORT_LABELS[shownSort]}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuRadioGroup value={sort} onValueChange={changeSort}>
-            {SORT_MODES.map((mode) => (
+          <DropdownMenuRadioGroup value={shownSort} onValueChange={changeSort}>
+            {/* Smart views are filters, not places: nothing to order by hand. */}
+            {SORT_MODES.filter((mode) => mode !== "manual" || view.type !== "smart").map((mode) => (
               <DropdownMenuRadioItem key={mode} value={mode}>
                 {SORT_LABELS[mode]}
               </DropdownMenuRadioItem>

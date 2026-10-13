@@ -1,19 +1,30 @@
 "use client";
 
-import { FolderIcon, HashIcon } from "lucide-react";
+import { FolderIcon, HashIcon, SparklesIcon } from "lucide-react";
 import { useState } from "react";
+import { collectionTarget, tagTarget } from "@/components/dnd/targets";
 import { auroraColorVar } from "@/lib/collections/fields";
 import { useCollectionActions } from "@/lib/collections/mutations";
-import type { SidebarCollection, SidebarTag } from "@/lib/sidebar/queries";
+import { useSmartViewActions } from "@/lib/smart-views/mutations";
+import type { SidebarCollection, SidebarSmartView, SidebarTag } from "@/lib/sidebar/queries";
 import { useTagManager } from "@/lib/tags/mutations";
+import { cn } from "@/lib/utils";
 import { viewHref } from "@/lib/views";
 import { CollectionDialog } from "./collection-dialog";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { NavItem } from "./nav-item";
 import { RowMenu } from "./row-menu";
+import { SmartViewDialog } from "./smart-view-dialog";
+import { useSortableRow } from "./sortable-rows";
 import { TagRenameDialog } from "./tag-rename-dialog";
 
 type RowProps = { onNavigate?: () => void };
+
+/** A sortable row; the one being dragged floats above its neighbours. */
+const ROW_CLASS = cn(
+  "group/row rounded-control relative",
+  "data-[dragging=true]:bg-surface data-[dragging=true]:shadow-card data-[dragging=true]:z-10",
+);
 
 /** A collection's emoji (or a folder) with a dot in its aurora color, when it has one. */
 function CollectionIcon({ collection }: { collection: SidebarCollection }) {
@@ -41,9 +52,19 @@ export function CollectionRow({
   const { remove } = useCollectionActions();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { setNodeRef, style, isDragging, handle } = useSortableRow(
+    "collections",
+    collection.id,
+    `collection ${collection.name}`,
+  );
 
   return (
-    <li className="group/row relative">
+    <li
+      ref={setNodeRef}
+      style={style}
+      data-dragging={isDragging ? "true" : undefined}
+      className={ROW_CLASS}
+    >
       <NavItem
         href={viewHref({ type: "collection", collectionId: collection.id })}
         icon={<CollectionIcon collection={collection} />}
@@ -51,7 +72,10 @@ export function CollectionRow({
         count={count}
         onNavigate={onNavigate}
         hasMenu
+        hasHandle
+        drop={collectionTarget(collection.id, collection.name)}
       />
+      {handle}
       <RowMenu
         name={collection.name}
         editLabel="Edit"
@@ -84,6 +108,7 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
         label={`#${tag.name}`}
         onNavigate={onNavigate}
         hasMenu
+        drop={tagTarget(tag.id, tag.name)}
       />
       <RowMenu
         name={`Tag ${tag.name}`}
@@ -98,6 +123,54 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
         title={`Delete #${tag.name}?`}
         description="Items keep everything else."
         onConfirm={() => void remove(tag.id)}
+      />
+    </li>
+  );
+}
+
+/** One smart view link with its edit / delete menu. */
+export function SmartViewRow({
+  smartView,
+  onNavigate,
+}: RowProps & { smartView: SidebarSmartView }) {
+  const { remove } = useSmartViewActions();
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { setNodeRef, style, isDragging, handle } = useSortableRow(
+    "smart-views",
+    smartView.id,
+    `smart view ${smartView.name}`,
+  );
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      data-dragging={isDragging ? "true" : undefined}
+      className={ROW_CLASS}
+    >
+      <NavItem
+        href={viewHref({ type: "smart", viewId: smartView.id })}
+        icon={smartView.icon ? <span>{smartView.icon}</span> : <SparklesIcon />}
+        label={smartView.name}
+        onNavigate={onNavigate}
+        hasMenu
+        hasHandle
+      />
+      {handle}
+      <RowMenu
+        name={smartView.name}
+        editLabel="Edit"
+        onEdit={() => setEditing(true)}
+        onDelete={() => setDeleting(true)}
+      />
+      <SmartViewDialog open={editing} onOpenChange={setEditing} smartView={smartView} />
+      <ConfirmDeleteDialog
+        open={deleting}
+        onOpenChange={setDeleting}
+        title={`Delete ${smartView.name}?`}
+        description="Only the saved filter goes away. Your items stay where they are."
+        onConfirm={() => void remove(smartView.id)}
       />
     </li>
   );

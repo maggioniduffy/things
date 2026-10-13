@@ -1,7 +1,8 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, type MouseEvent } from "react";
+import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
 import { useOpenItem } from "@/components/drawer/item-param";
 import { ItemDrawerHost } from "@/components/drawer/item-drawer";
 import { ExternalDropZone } from "@/components/capture/external-drop-zone";
@@ -15,6 +16,7 @@ import { viewKey, type SortMode, type ViewSpec } from "@/lib/views";
 import { useUiStore } from "@/stores/ui-store";
 import { BoardSkeleton, ToolbarPlaceholder } from "./board-skeleton";
 import { EmptyState } from "./empty-state";
+import type { CardDnd } from "./board-cards";
 import { ItemGrid } from "./item-grid";
 import { ItemList } from "./item-list";
 import { SortableItems } from "./sortable-items";
@@ -33,14 +35,70 @@ export function Board({ view, sort }: BoardProps) {
     clearSelection();
   }, [currentViewKey, clearSelection]);
 
+  const boardDnd = useBoardDnd();
+  const wasJustDragged = boardDnd?.wasJustDragged;
+  const isDragActive = boardDnd?.isDragActive;
+
+  // Escape clears the selection, unless it belongs to something else: a drag being cancelled, an
+  // open dialog or drawer, or a text field.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (useUiStore.getState().selectedIds.length === 0) return;
+      if (isDragActive?.() || wasJustDragged?.()) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("input, textarea, select, [contenteditable]")
+      ) {
+        return;
+      }
+      useUiStore.getState().clearSelection();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isDragActive, wasJustDragged]);
+
+  // ⌘/Ctrl-click toggles a card, Shift-click selects from the last one clicked. Caught before the
+  // card's own open button so a modified click never opens the drawer.
+  const onClickCapture = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const additive = event.metaKey || event.ctrlKey;
+      if (!additive && !event.shiftKey) return;
+      if (!(event.target instanceof Element) || wasJustDragged?.()) return;
+      const card = event.target.closest<HTMLElement>("[data-item-id]");
+      const id = card?.dataset.itemId;
+      if (!id) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const { toggle, selectRange } = useUiStore.getState();
+      if (event.shiftKey) {
+        // Screen order, read from the DOM: it follows what the user sees, dropped cards included.
+        const ordered = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>("[data-item-id]"),
+          (node) => node.dataset.itemId ?? "",
+        );
+        selectRange(ordered, id, { additive });
+      } else {
+        toggle(id);
+      }
+    },
+    [wasJustDragged],
+  );
+
   const retryEnrich = useRetryEnrich();
   const openItem = useOpenItem();
 
   const pages = query.data?.pages;
   const itemPages = useMemo(() => pages?.map((page) => page.items) ?? [], [pages]);
   const lastCursor = pages?.[pages.length - 1]?.nextCursor ?? null;
-  // Dragging is for manual sort only, and never in Trash.
-  const sortable = sort === "manual" && view.type !== "trash";
+  // Reordering is for manual sort only. Every other sort can still drop cards on the sidebar.
+  // Nothing drags in Trash.
+  // Smart views are filters, not places: nothing to reorder there either.
+  const sortable = sort === "manual" && view.type !== "trash" && view.type !== "smart";
+  const dnd: CardDnd | undefined =
+    view.type === "trash" ? undefined : sortable ? "sortable" : "draggable";
   const itemCount = useMemo(
     () => pages?.reduce((total, page) => total + page.items.length, 0) ?? 0,
     [pages],
@@ -94,26 +152,28 @@ export function Board({ view, sort }: BoardProps) {
   } else {
     content = (
       <>
-        {sortable ? (
-          <SortableItems
-            view={view}
-            pages={itemPages}
-            nextCursor={lastCursor}
-            variant={viewMode === "list" ? "list" : "grid"}
-          >
-            {(shown) =>
-              viewMode === "list" ? (
-                <ItemList pages={shown} onRetry={retryEnrich} onOpen={openItem} sortable />
-              ) : (
-                <ItemGrid pages={shown} onRetry={retryEnrich} onOpen={openItem} sortable />
-              )
-            }
-          </SortableItems>
-        ) : viewMode === "list" ? (
-          <ItemList pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />
-        ) : (
-          <ItemGrid pages={itemPages} onRetry={retryEnrich} onOpen={openItem} />
-        )}
+        <div onClickCapture={onClickCapture} className="contents">
+          {sortable ? (
+            <SortableItems
+              view={view}
+              pages={itemPages}
+              nextCursor={lastCursor}
+              variant={viewMode === "list" ? "list" : "grid"}
+            >
+              {(shown) =>
+                viewMode === "list" ? (
+                  <ItemList pages={shown} onRetry={retryEnrich} onOpen={openItem} dnd="sortable" />
+                ) : (
+                  <ItemGrid pages={shown} onRetry={retryEnrich} onOpen={openItem} dnd="sortable" />
+                )
+              }
+            </SortableItems>
+          ) : viewMode === "list" ? (
+            <ItemList pages={itemPages} onRetry={retryEnrich} onOpen={openItem} dnd={dnd} />
+          ) : (
+            <ItemGrid pages={itemPages} onRetry={retryEnrich} onOpen={openItem} dnd={dnd} />
+          )}
+        </div>
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />
         {hasNextPage && isFetchNextPageError && !isFetchingNextPage ? (
           <div role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center">

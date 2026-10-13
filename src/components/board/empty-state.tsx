@@ -54,7 +54,10 @@ export function emptyCopy(view: ViewSpec, name?: string | null, unknown = false)
         body: "Add the tag to a thing and it will show up here.",
       };
     case "smart":
-      return { heading: "Smart views are coming soon.", body: "Saved filters will live here." };
+      return {
+        heading: "Nothing matches yet.",
+        body: "Things that match this smart view's rules will show up here.",
+      };
   }
 }
 

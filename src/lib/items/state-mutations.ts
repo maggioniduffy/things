@@ -78,7 +78,10 @@ function restore(queryClient: QueryClient, id: string, snapshot: Snapshot): void
 }
 
 /** Applies a change to every cached list, the sidebar counts and the item's own entry. */
-function applyChange(queryClient: QueryClient, { before, after }: ItemChange): void {
+export function applyChange(
+  queryClient: QueryClient,
+  { before, after }: Pick<ItemChange, "before" | "after">,
+): void {
   for (const [key, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
     if (!data) continue;
     const [, vk, sort] = key;

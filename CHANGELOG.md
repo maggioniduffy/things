@@ -19,6 +19,30 @@
 - App icons, favicon and Open Graph images from the Claude Design brand sheet: `src/app/icon.png`, `apple-icon.png`, `favicon.ico`, `opengraph-image.png`, `twitter-image.png`, plus `public/brand/*` (PWA icons, ink and aurora icons, `og-brand.png`) and a static web app manifest (`public/manifest.webmanifest`; it needs literal colors, which the no-raw-hex guard keeps out of `src`).
 - `scripts/render-brand-assets.mjs` regenerates all PNGs from the design (Playwright Chromium).
 
+### Phase 5 — Organize and drag-and-drop
+
+#### Added
+
+- Collections (name, emoji, aurora color) and tags: create, rename, recolor and delete from the sidebar, optimistic with rollback. Typing `#tag` in a title or note adds the tag.
+- Manual sort: cards reorder by drag in grid and list, with a drag overlay and keyboard support (space, arrows, space). A reorder writes only the moved row (fractional positions in `lib/order.ts`) and persists after reload. Dragging to reorder is off in the other sort modes.
+- Multi-select: ⌘/Ctrl-click toggles a card, Shift-click selects a range, Escape clears. The selection clears when the view changes.
+- Drag one card, or the whole selection, onto a sidebar collection, Inbox, a tag, Favorites, Archive or Trash. Each drop is one request (one `items` update or one `item_tags` upsert), shows at once and rolls back with a toast on error; Archive and Trash have Undo. Sidebar targets scale and show an aurora border while a card is over them (opacity only with reduced motion). Keyboard drags reach the sidebar too.
+- Collections and smart views reorder in the sidebar by pointer or keyboard; one row is written per move.
+- Smart views: a builder for name, emoji and rules (kinds, collections, tags that must all match, domains, read, favorite, saved within N days, text). `/app/v/[id]` lists the matches with a rules summary under the title. Rules are the zod `Rules` schema in `lib/filters.ts`; a stored rule set that doesn't parse shows every live item instead of breaking the page.
+
+#### Fixed (gate review)
+
+- "Saved within" is capped at 36,500 days; a larger number made the smart view fail to load.
+- Domains with characters a domain can't contain are dropped from smart-view rules instead of making the request fail.
+- Sidebar reorder keeps working after the mobile sidebar sheet closes (the desktop and mobile sidebars each register a handler; closing one no longer removes the other).
+
+#### Notes
+
+- Pattern from the WP 5.0 spike: Motion `layout` is off during any dnd-kit drag and the sortable transform lives on an inner element; see research-notes.
+- Text rules use the `search` column with accents stripped from the query; Phase 7's `search_items` RPC replaces this.
+- Items that stop matching a smart view or join a tag after a drop update on the next refetch, not optimistically.
+- Very large selections send every id in one request, without chunking.
+
 ### Phase 3 — Capture
 
 #### Added
@@ -96,7 +120,7 @@
 #### Notes
 
 - Tag routes use the tag id, not its name, so renaming a tag never breaks a link.
-- Smart views show an empty state until the smart-view builder lands (WP 5.4).
+- Smart views showed an empty state until the smart-view builder landed in Phase 5.
 - Invalid `/app` routes show the 404 page with HTTP status 200, because the loading skeleton starts streaming before the route is validated. `/app` is private and not indexed.
 - Keyset pagination was verified against local Postgres 17 with duplicate positions and timestamps, null titles and titles containing PostgREST syntax characters.
 

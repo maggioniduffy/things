@@ -42,6 +42,63 @@ describe("selection", () => {
   });
 });
 
+describe("range selection", () => {
+  const order = ["a", "b", "c", "d", "e", "f"];
+
+  it("selects from the anchor to the target, in screen order", () => {
+    const { select, selectRange } = useUiStore.getState();
+    select("b");
+    selectRange(order, "e");
+    expect(useUiStore.getState().selectedIds).toEqual(["b", "c", "d", "e"]);
+  });
+
+  it("works backwards and keeps the anchor for the next range", () => {
+    const { select, selectRange } = useUiStore.getState();
+    select("d");
+    selectRange(order, "b");
+    expect(useUiStore.getState().selectedIds).toEqual(["b", "c", "d"]);
+    expect(useUiStore.getState().anchorId).toBe("d");
+    selectRange(order, "f");
+    expect(useUiStore.getState().selectedIds).toEqual(["d", "e", "f"]);
+  });
+
+  it("selects the target alone and anchors there when there is no anchor", () => {
+    useUiStore.getState().selectRange(order, "c");
+    expect(useUiStore.getState().selectedIds).toEqual(["c"]);
+    expect(useUiStore.getState().anchorId).toBe("c");
+  });
+
+  it("treats an anchor that left the list like no anchor", () => {
+    useUiStore.getState().select("gone");
+    useUiStore.getState().selectRange(order, "c");
+    expect(useUiStore.getState().selectedIds).toEqual(["c"]);
+  });
+
+  it("ignores a target that is not in the list", () => {
+    useUiStore.getState().select("a");
+    useUiStore.getState().selectRange(order, "zzz");
+    expect(useUiStore.getState().selectedIds).toEqual(["a"]);
+  });
+
+  it("additive keeps the cards selected outside the range", () => {
+    const { select, toggle, selectRange } = useUiStore.getState();
+    select("a");
+    toggle("e"); // anchor moves to e
+    selectRange(order, "c", { additive: true });
+    expect(useUiStore.getState().selectedIds).toEqual(["a", "c", "d", "e"]);
+  });
+
+  it("toggle and select move the anchor, clearSelection resets it", () => {
+    const { toggle, select, clearSelection } = useUiStore.getState();
+    toggle("a");
+    expect(useUiStore.getState().anchorId).toBe("a");
+    select("b", { additive: true });
+    expect(useUiStore.getState().anchorId).toBe("b");
+    clearSelection();
+    expect(useUiStore.getState()).toMatchObject({ selectedIds: [], anchorId: null });
+  });
+});
+
 describe("layout flags", () => {
   it("toggles the sidebar and sets the mobile sidebar and palette", () => {
     const s = useUiStore.getState();

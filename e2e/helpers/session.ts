@@ -148,11 +148,17 @@ export async function createCollection(
   session: AppSession,
   name: string,
   emoji: string | null = null,
+  /** A valid fractional-indexing key; the default is not one, so reorder specs set it. */
+  position?: string,
 ): Promise<string> {
   const response = await fetch(`${SUPABASE_URL()}/rest/v1/collections`, {
     method: "POST",
     headers: { ...restHeaders(session), Prefer: "return=representation" },
-    body: JSON.stringify({ name, emoji, position: `c${String(seedCounter++).padStart(6, "0")}` }),
+    body: JSON.stringify({
+      name,
+      emoji,
+      position: position ?? `c${String(seedCounter++).padStart(6, "0")}`,
+    }),
   });
   expect(response.status, await response.clone().text()).toBe(201);
   const rows = (await response.json()) as { id: string }[];

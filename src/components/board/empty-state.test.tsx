@@ -50,7 +50,7 @@ const CASES: [string, ViewSpec, string, string | null][] = [
     "This collection is empty.",
     "Things you file here will show up here.",
   ],
-  ["smart view", { type: "smart", viewId: ID }, "Smart views are coming soon.", null],
+  ["smart view", { type: "smart", viewId: ID }, "Nothing matches yet.", null],
 ];
 
 describe("emptyCopy", () => {

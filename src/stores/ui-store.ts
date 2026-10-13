@@ -9,9 +9,22 @@ type UiState = {
   setViewMode: (mode: ViewMode) => void;
 
   selectedIds: string[];
-  /** Replaces the selection with `id`, or adds it when `additive` is set. */
+  /** The last card clicked without Shift: where a Shift-click range starts. */
+  anchorId: string | null;
+  /** Replaces the selection with `id`, or adds it when `additive` is set. Sets the anchor. */
   select: (id: string, options?: { additive?: boolean }) => void;
+  /** Adds or removes `id`. Sets the anchor. */
   toggle: (id: string) => void;
+  /**
+   * Selects the cards from the anchor to `toId`, both included, taking their order from
+   * `orderedIds` (what is on screen). Replaces the selection, or extends it when `additive` is
+   * set. Without a usable anchor it selects `toId` alone. The anchor stays put.
+   */
+  selectRange: (
+    orderedIds: readonly string[],
+    toId: string,
+    options?: { additive?: boolean },
+  ) => void;
   clearSelection: () => void;
 
   sidebarCollapsed: boolean;
@@ -62,8 +75,10 @@ export const useUiStore = create<UiState>()(
       setViewMode: (viewMode) => set({ viewMode }),
 
       selectedIds: [],
+      anchorId: null,
       select: (id, options) =>
         set((state) => ({
+          anchorId: id,
           selectedIds: options?.additive
             ? state.selectedIds.includes(id)
               ? state.selectedIds
@@ -72,12 +87,29 @@ export const useUiStore = create<UiState>()(
         })),
       toggle: (id) =>
         set((state) => ({
+          anchorId: id,
           selectedIds: state.selectedIds.includes(id)
             ? state.selectedIds.filter((selected) => selected !== id)
             : [...state.selectedIds, id],
         })),
+      selectRange: (orderedIds, toId, options) =>
+        set((state) => {
+          const to = orderedIds.indexOf(toId);
+          if (to === -1) return state;
+          const from = state.anchorId === null ? -1 : orderedIds.indexOf(state.anchorId);
+          if (from === -1) return { anchorId: toId, selectedIds: [toId] };
+          const range = orderedIds.slice(Math.min(from, to), Math.max(from, to) + 1);
+          const kept = options?.additive
+            ? state.selectedIds.filter((id) => !range.includes(id))
+            : [];
+          return { selectedIds: [...kept, ...range] };
+        }),
       clearSelection: () =>
-        set((state) => (state.selectedIds.length ? { selectedIds: [] } : state)),
+        set((state) =>
+          state.selectedIds.length || state.anchorId !== null
+            ? { selectedIds: [], anchorId: null }
+            : state,
+        ),
 
       sidebarCollapsed: false,
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { BoardDndProvider } from "@/components/dnd/board-dnd-provider";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
@@ -23,25 +24,27 @@ export function AppShell({ email, children }: AppShellProps) {
   const setMobileOpen = useUiStore((state) => state.setMobileSidebarOpen);
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <div
-        data-slot="sidebar"
-        className={cn(
-          "border-line bg-surface w-[260px] shrink-0 border-r backdrop-blur-md",
-          collapsed ? "hidden" : "hidden md:block",
-        )}
-      >
-        <Sidebar email={email} />
+    <BoardDndProvider>
+      <div className="flex min-h-0 flex-1">
+        <div
+          data-slot="sidebar"
+          className={cn(
+            "border-line bg-surface w-[260px] shrink-0 border-r backdrop-blur-md",
+            collapsed ? "hidden" : "hidden md:block",
+          )}
+        >
+          <Sidebar email={email} />
+        </div>
+
+        <Drawer direction="left" open={mobileOpen} onOpenChange={setMobileOpen}>
+          <DrawerContent aria-describedby={undefined} className="bg-paper md:hidden">
+            <DrawerTitle className="sr-only">Navigation</DrawerTitle>
+            <Sidebar email={email} onNavigate={() => setMobileOpen(false)} />
+          </DrawerContent>
+        </Drawer>
+
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</main>
       </div>
-
-      <Drawer direction="left" open={mobileOpen} onOpenChange={setMobileOpen}>
-        <DrawerContent aria-describedby={undefined} className="bg-paper md:hidden">
-          <DrawerTitle className="sr-only">Navigation</DrawerTitle>
-          <Sidebar email={email} onNavigate={() => setMobileOpen(false)} />
-        </DrawerContent>
-      </Drawer>
-
-      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">{children}</main>
-    </div>
+    </BoardDndProvider>
   );
 }
