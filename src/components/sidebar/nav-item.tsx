@@ -15,10 +15,21 @@ type NavItemProps = {
   count?: number;
   /** Called when the link is clicked, e.g. to close the mobile drawer. */
   onNavigate?: () => void;
+  /**
+   * The row has a `RowMenu` over its right edge (inside a `group/row`). While the menu shows,
+   * the link leaves room for it and the count steps aside so they never overlap.
+   */
+  hasMenu?: boolean;
 };
 
+/** When a row's menu is showing: hover, focus within, or the menu open. Always on small screens. */
+const MENU_ROOM =
+  "max-md:pr-10 group-hover/row:pr-10 group-focus-within/row:pr-10 group-has-[[data-state=open]]/row:pr-10";
+const COUNT_HIDDEN_WITH_MENU =
+  "md:group-hover/row:hidden md:group-focus-within/row:hidden md:group-has-[[data-state=open]]/row:hidden";
+
 /** One sidebar link. Marked `aria-current="page"` when its href is the current pathname. */
-export function NavItem({ href, icon, label, count, onNavigate }: NavItemProps) {
+export function NavItem({ href, icon, label, count, onNavigate, hasMenu }: NavItemProps) {
   const pathname = usePathname();
   const active = pathname === href;
 
@@ -31,6 +42,7 @@ export function NavItem({ href, icon, label, count, onNavigate }: NavItemProps) 
         "rounded-control text-body flex h-9 items-center gap-2.5 px-2.5",
         "ease-out-soft transition-[color,background-color,border-color] duration-(--duration-fast)",
         active ? "bg-accent text-ink font-medium" : "text-ink-muted hover:bg-accent hover:text-ink",
+        hasMenu && MENU_ROOM,
         focusRing,
       )}
     >
@@ -42,7 +54,13 @@ export function NavItem({ href, icon, label, count, onNavigate }: NavItemProps) 
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {count !== undefined && count > 0 ? (
-        <span data-slot="nav-count" className="text-meta text-ink-subtle shrink-0 tabular-nums">
+        <span
+          data-slot="nav-count"
+          className={cn(
+            "text-meta text-ink-subtle shrink-0 tabular-nums",
+            hasMenu && COUNT_HIDDEN_WITH_MENU,
+          )}
+        >
           {count}
         </span>
       ) : null}
