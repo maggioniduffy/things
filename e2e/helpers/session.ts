@@ -118,6 +118,8 @@ export type SeedItem = {
   /** ISO timestamps; set to move the item to Archive or Trash. */
   archived_at?: string;
   deleted_at?: string;
+  /** A valid fractional-indexing key; the default is not one, so reorder specs set it. */
+  position?: string;
 };
 
 let seedCounter = 0;
@@ -133,7 +135,7 @@ export async function seedItems(session: AppSession, items: SeedItem[]) {
     const response = await fetch(`${SUPABASE_URL()}/rest/v1/items`, {
       method: "POST",
       headers: { ...restHeaders(session), Prefer: "return=representation" },
-      body: JSON.stringify({ ...item, position: `s${String(seedCounter++).padStart(6, "0")}` }),
+      body: JSON.stringify({ position: `s${String(seedCounter++).padStart(6, "0")}`, ...item }),
     });
     expect(response.status, await response.clone().text()).toBe(201);
     inserted.push(...((await response.json()) as { id: string; title: string | null }[]));

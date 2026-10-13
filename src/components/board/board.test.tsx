@@ -163,4 +163,47 @@ describe("Board", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Not found" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to Inbox" })).toBeInTheDocument();
   });
+
+  describe("sortable mode", () => {
+    function handles() {
+      return screen.queryAllByRole("button", { name: /^Reorder / });
+    }
+
+    it("shows a reorder handle per card in manual sort, in grid and list", () => {
+      const client = makeTestQueryClient();
+      seedItems(client, ["First", "Second"]);
+      const { unmount } = renderWithQuery(<Board view={INBOX} sort="manual" />, client);
+      expect(handles().map((h) => h.getAttribute("aria-label"))).toEqual([
+        "Reorder First",
+        "Reorder Second",
+      ]);
+      unmount();
+
+      useUiStore.setState({ viewMode: "list" });
+      renderWithQuery(<Board view={INBOX} sort="manual" />, client);
+      expect(handles()).toHaveLength(2);
+    });
+
+    it("shows no handles in other sorts", () => {
+      const client = makeTestQueryClient();
+      client.setQueryData(itemsQueryKey(INBOX, "newest"), {
+        pages: [{ items: [makeItem({ title: "First" })], nextCursor: null }],
+        pageParams: [null],
+      });
+      renderWithQuery(<Board view={INBOX} sort="newest" />, client);
+      expect(screen.getByText("First")).toBeInTheDocument();
+      expect(handles()).toHaveLength(0);
+    });
+
+    it("shows no handles in Trash", () => {
+      const client = makeTestQueryClient();
+      client.setQueryData(itemsQueryKey({ type: "trash" }, "manual"), {
+        pages: [{ items: [makeItem({ title: "Gone" })], nextCursor: null }],
+        pageParams: [null],
+      });
+      renderWithQuery(<Board view={{ type: "trash" }} sort="manual" />, client);
+      expect(screen.getByText("Gone")).toBeInTheDocument();
+      expect(handles()).toHaveLength(0);
+    });
+  });
 });

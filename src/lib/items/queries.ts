@@ -95,12 +95,13 @@ function stripJoin(row: RowWithJoin): BoardItem {
   return item;
 }
 
-/** Fetches one page (PAGE_SIZE rows) of a view in the given sort, after `cursor`. */
+/** Fetches one page (`limit` rows, PAGE_SIZE by default) of a view in the given sort, after `cursor`. */
 export async function fetchItemsPage(
   client: Client,
   view: ViewSpec,
   sort: SortMode,
   cursor: ItemsCursor | null,
+  limit: number = PAGE_SIZE,
 ): Promise<ItemsPage> {
   // Smart views arrive in WP 5.4: empty without a request.
   if (view.type === "smart") return { items: [], nextCursor: null };
@@ -190,13 +191,13 @@ export async function fetchItemsPage(
 
   // One extra row tells us whether another page exists.
   const { data, error } = await query
-    .limit(PAGE_SIZE + 1)
+    .limit(limit + 1)
     .overrideTypes<RowWithJoin[], { merge: false }>();
   if (error) throw error;
 
   const rows = data.map(stripJoin);
-  const hasMore = rows.length > PAGE_SIZE;
-  const items = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
   const last = items[items.length - 1];
   const nextCursor: ItemsCursor | null =
     hasMore && last ? { value: sortValue(last, sort), id: last.id } : null;

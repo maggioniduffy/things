@@ -99,6 +99,7 @@ Verified facts that **override `docs/plan.md` and model memory** where they diff
 - **Local Supabase works in cloud containers**: start Docker (`dockerd &`), then
   `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io pnpm supabase start -x studio,imgproxy,vector,logflare,edge-runtime,supavisor,realtime,postgres-meta`
   (default registry `public.ecr.aws` is rate-limited here). Postgres 17, API on 54321, DB on 54322, Mailpit on 54324. Local keys are the well-known demo keys printed by `supabase status`.
+  If Docker Hub also answers `429 Too Many Requests` (seen in Phase 5), pull the missing image from Google's Docker Hub mirror and retag it, e.g. `docker pull mirror.gcr.io/supabase/postgres:<tag> && docker tag mirror.gcr.io/supabase/postgres:<tag> supabase/postgres:<tag>`, then run `supabase start` again.
 - **Storage quota mechanism (resolves orchestration §5.2)**: probed with a trigger on `storage.objects`:
   - The final object row is inserted by the storage service as `service_role` — `auth.jwt()` inside a storage trigger does **not** identify the user, so RLS-style checks on JWT claims can't enforce quotas there.
   - At `BEFORE INSERT`, `NEW.metadata->>'size'` already holds the **real byte size** (server-measured) and `NEW.owner_id` holds the uploader's user id.
