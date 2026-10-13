@@ -208,7 +208,7 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 1 Supabase, auth, guests | done (gate passed after open-redirect fix) | Phase 1 PR |
 | 2 Shell & data layer | done (gate passed after cache-isolation fix) | maggioniduffy/things#5 |
 | 3 Capture | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
-| 4 Browse | next | |
+| 4 Browse | in progress: WP 4.1 and 4.4 done; 4.2, 4.3 and gate next | |
 | 5 Organize & DnD | | |
 | 6 Canvas | | |
 | 7 Search & palette | | |

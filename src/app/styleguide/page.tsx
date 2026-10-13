@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/brand";
 import { BrandSection } from "./_sections/brand";
+import { CardsSection } from "./_sections/cards";
 import { ColorsSection } from "./_sections/colors";
 import { ComponentsSection } from "./_sections/components";
 import { ShapeMotionSection } from "./_sections/shape-motion";
@@ -21,6 +22,7 @@ const NAV = [
   { id: "shape-motion", label: "Radii, shadows, motion" },
   { id: "brand", label: "Brand" },
   { id: "components", label: "Components" },
+  { id: "cards", label: "Cards" },
 ] as const;
 
 export default function StyleguidePage() {
@@ -59,6 +61,7 @@ export default function StyleguidePage() {
         <ShapeMotionSection />
         <BrandSection />
         <ComponentsSection />
+        <CardsSection />
       </main>
     </div>
   );

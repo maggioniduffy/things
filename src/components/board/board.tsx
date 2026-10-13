@@ -6,47 +6,18 @@ import { ExternalDropZone } from "@/components/capture/external-drop-zone";
 import { PasteListener } from "@/components/capture/paste-listener";
 import { QuickAdd } from "@/components/capture/quick-add";
 import { Button } from "@/components/ui/button";
-import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { useRetryEnrich } from "@/lib/items/mutations";
-import { itemsInfiniteQueryOptions, type BoardItem } from "@/lib/items/queries";
+import { itemsInfiniteQueryOptions } from "@/lib/items/queries";
 import { createClient } from "@/lib/supabase/client";
 import { viewKey, type SortMode, type ViewSpec } from "@/lib/views";
 import { useUiStore } from "@/stores/ui-store";
 import { BoardSkeleton, ToolbarPlaceholder } from "./board-skeleton";
 import { EmptyState } from "./empty-state";
-import { ItemTile, type ItemTileVariant } from "./item-tile";
+import { ItemGrid } from "./item-grid";
+import { ItemList } from "./item-list";
 import { Toolbar, useEffectiveViewMode, useViewInfo } from "./toolbar";
 
 type BoardProps = { view: ViewSpec; sort: SortMode };
-
-/**
- * One loaded page of tiles. Thumbnails are signed per page, so loading another page or adding a
- * card never re-signs (and re-downloads) the thumbnails of pages that did not change.
- */
-function BoardPage({
-  items,
-  variant,
-  onRetry,
-}: {
-  items: BoardItem[];
-  variant: ItemTileVariant;
-  onRetry: (item: BoardItem) => Promise<void>;
-}) {
-  const signedUrls = useSignedUrls(items.map((item) => item.thumbnail_path));
-  return (
-    <>
-      {items.map((item) => (
-        <ItemTile
-          key={item.id}
-          item={item}
-          variant={variant}
-          thumbnailUrl={item.thumbnail_path ? signedUrls.get(item.thumbnail_path) : null}
-          onRetry={onRetry}
-        />
-      ))}
-    </>
-  );
-}
 
 export function Board({ view, sort }: BoardProps) {
   const query = useInfiniteQuery(itemsInfiniteQueryOptions(createClient(), view, sort));
@@ -62,6 +33,7 @@ export function Board({ view, sort }: BoardProps) {
   const retryEnrich = useRetryEnrich();
 
   const pages = query.data?.pages;
+  const itemPages = useMemo(() => pages?.map((page) => page.items) ?? [], [pages]);
   const itemCount = useMemo(
     () => pages?.reduce((total, page) => total + page.items.length, 0) ?? 0,
     [pages],
@@ -116,20 +88,9 @@ export function Board({ view, sort }: BoardProps) {
     content = (
       <>
         {viewMode === "list" ? (
-          <ul className="border-line mx-4 border-t sm:mx-6" data-view-mode="list">
-            {pages?.map((page, index) => (
-              <BoardPage key={index} items={page.items} variant="list" onRetry={retryEnrich} />
-            ))}
-          </ul>
+          <ItemList pages={itemPages} onRetry={retryEnrich} />
         ) : (
-          <ul
-            className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 px-4 sm:px-6"
-            data-view-mode="grid"
-          >
-            {pages?.map((page, index) => (
-              <BoardPage key={index} items={page.items} variant="grid" onRetry={retryEnrich} />
-            ))}
-          </ul>
+          <ItemGrid pages={itemPages} onRetry={retryEnrich} />
         )}
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />
         {hasNextPage && isFetchNextPageError && !isFetchingNextPage ? (
