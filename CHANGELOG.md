@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Landing
+
+#### Changed
+
+- Signed-in accounts that open the landing page (`/`) are redirected to `/app`, as on `/login`. Guests stay on the landing page.
+- A visitor with a session (in practice a returning guest) sees "Open app" in the header and as the hero's primary button, in place of "Sign in" and "Try without an account".
+
 ### Brand assets
 
 #### Added

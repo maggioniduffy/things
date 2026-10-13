@@ -33,8 +33,9 @@ export function safeNextPath(value: string | null | undefined): string | null {
 
 /**
  * Pure routing decision for the proxy: where to redirect, or null to continue.
- * Signed-out users are kept out of /app; signed-in (non-guest) users skip /login.
- * Anonymous guests may visit /login to sign in to a real account.
+ * Signed-out users are kept out of /app; signed-in (non-guest) users skip / and /login.
+ * Anonymous guests may visit both: the landing shows them an "Open app" button, and /login
+ * lets them sign in to a real account.
  */
 export function resolveAuthRedirect({
   pathname,
@@ -49,7 +50,7 @@ export function resolveAuthRedirect({
     const next = safeNextPath(`${pathname}${search}`);
     return next ? `/login?next=${encodeURIComponent(next)}` : "/login";
   }
-  if (pathname === "/login" && claims && !claims.is_anonymous) {
+  if ((pathname === "/" || pathname === "/login") && claims && !claims.is_anonymous) {
     return "/app";
   }
   return null;

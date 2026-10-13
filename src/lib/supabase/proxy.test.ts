@@ -25,7 +25,8 @@ describe("resolveAuthRedirect", () => {
     { name: "signed in on /login", pathname: "/login", search: "", claims: user, to: "/app" },
     { name: "guest on /login stays", pathname: "/login", search: "", claims: guest, to: null },
     { name: "signed out on /login stays", pathname: "/login", search: "", claims: null, to: null },
-    { name: "signed in on /", pathname: "/", search: "", claims: user, to: null },
+    { name: "signed in on /", pathname: "/", search: "", claims: user, to: "/app" },
+    { name: "guest on / stays", pathname: "/", search: "", claims: guest, to: null },
     { name: "signed out on /", pathname: "/", search: "", claims: null, to: null },
     { name: "/apple is not /app", pathname: "/apple", search: "", claims: null, to: null },
     {

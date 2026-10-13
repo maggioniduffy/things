@@ -108,6 +108,13 @@ test.describe("guest and redirects", () => {
     await page.getByRole("button", { name: "Try without an account" }).click();
     await expect(page).toHaveURL(/\/app$/);
     await expect(accountGroup(page)).toContainText("Guest");
+
+    // A returning guest stays on the landing page and gets "Open app" buttons.
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("banner").getByRole("link", { name: "Open app" })).toBeVisible();
+    await page.getByRole("main").getByRole("link", { name: "Open app" }).click();
+    await expect(page).toHaveURL(/\/app$/);
     consoleErrors.assertNone();
   });
 
@@ -118,12 +125,15 @@ test.describe("guest and redirects", () => {
     await expect(accountGroup(page)).toContainText("Guest");
   });
 
-  test("redirects a signed-in user away from /login", async ({ page }) => {
+  test("redirects a signed-in user away from /login and the landing page", async ({ page }) => {
     await page.goto("/login");
     await signInWithEmail(page, uniqueEmail());
     await expect(page).toHaveURL(/\/app$/);
 
     await page.goto("/login");
+    await expect(page).toHaveURL(/\/app$/);
+
+    await page.goto("/");
     await expect(page).toHaveURL(/\/app$/);
   });
 
