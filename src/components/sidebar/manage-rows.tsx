@@ -50,6 +50,7 @@ export function CollectionRow({
         label={collection.name}
         count={count}
         onNavigate={onNavigate}
+        hasMenu
       />
       <RowMenu
         name={collection.name}
@@ -82,6 +83,7 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
         icon={<HashIcon />}
         label={`#${tag.name}`}
         onNavigate={onNavigate}
+        hasMenu
       />
       <RowMenu
         name={`Tag ${tag.name}`}

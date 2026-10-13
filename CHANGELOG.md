@@ -7,6 +7,10 @@
 - Signed-in accounts that open the landing page (`/`) are redirected to `/app`, as on `/login`. Guests stay on the landing page.
 - A visitor with a session (in practice a returning guest) sees "Open app" in the header and as the hero's primary button, in place of "Sign in" and "Try without an account".
 
+#### Fixed
+
+- Sidebar collection and tag rows: the "..." menu no longer overlaps the item count. While the menu shows, the count hides and the name stops short of the button; on small screens, where the menu is always there, the count sits beside it.
+
 ### Brand assets
 
 #### Added
