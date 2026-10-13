@@ -4,7 +4,10 @@ import { makeCounts, makeItem } from "@/test/fixtures";
 import { ITEM_KINDS, viewKey, type ViewSpec } from "@/lib/views";
 import {
   addToCounts,
+  compareForSort,
+  insertSortedInPages,
   itemMatchesView,
+  itemStaysInView,
   patchInPages,
   prependToPages,
   removeFromCounts,
@@ -179,5 +182,105 @@ describe("addToCounts / removeFromCounts", () => {
 
   it("never goes below zero", () => {
     expect(removeFromCounts(makeCounts(), makeItem()).all).toBe(0);
+  });
+});
+
+describe("itemStaysInView", () => {
+  it("follows itemMatchesView, except that tag and smart views keep any live item", () => {
+    const live = makeItem();
+    expect(itemStaysInView(live, { type: "tag", tagId: COLLECTION })).toBe(true);
+    expect(itemStaysInView(live, { type: "smart", viewId: COLLECTION })).toBe(true);
+    expect(
+      itemStaysInView(makeItem({ archived_at: "2026-01-02T00:00:00Z" }), {
+        type: "tag",
+        tagId: COLLECTION,
+      }),
+    ).toBe(false);
+    expect(
+      itemStaysInView(makeItem({ deleted_at: "2026-01-02T00:00:00Z" }), {
+        type: "tag",
+        tagId: COLLECTION,
+      }),
+    ).toBe(false);
+    expect(itemStaysInView(live, { type: "favorites" })).toBe(false);
+    expect(itemStaysInView(live, { type: "inbox" })).toBe(true);
+  });
+});
+
+describe("compareForSort", () => {
+  const a = makeItem({
+    id: "a",
+    position: "a1",
+    created_at: "2026-01-01T00:00:00Z",
+    title: "Alpha",
+  });
+  const b = makeItem({
+    id: "b",
+    position: "a2",
+    created_at: "2026-01-02T00:00:00Z",
+    title: "Bravo",
+  });
+
+  it("orders like the database queries", () => {
+    expect(compareForSort(a, b, "manual")).toBeLessThan(0);
+    expect(compareForSort(a, b, "newest")).toBeGreaterThan(0);
+    expect(compareForSort(a, b, "oldest")).toBeLessThan(0);
+    expect(compareForSort(a, b, "title")).toBeLessThan(0);
+  });
+
+  it("breaks ties by id and sorts null titles last", () => {
+    const twin = makeItem({ id: "z", position: "a1", created_at: a.created_at, title: "Alpha" });
+    expect(compareForSort(a, twin, "manual")).toBeLessThan(0);
+    expect(compareForSort(a, twin, "newest")).toBeGreaterThan(0);
+    const untitled = makeItem({ id: "c", title: null });
+    expect(compareForSort(untitled, a, "title")).toBeGreaterThan(0);
+    expect(compareForSort(a, untitled, "title")).toBeLessThan(0);
+  });
+});
+
+describe("insertSortedInPages", () => {
+  const first = makeItem({ id: "i1", position: "a1" });
+  const last = makeItem({ id: "i3", position: "a3" });
+  const middle = makeItem({ id: "i2", position: "a2" });
+  const ids = (data: InfiniteData<ItemsPage>) =>
+    data.pages.map((page) => page.items.map((i) => i.id));
+
+  it("places the item by sort order inside the loaded rows", () => {
+    const data: InfiniteData<ItemsPage> = {
+      pages: [{ items: [first, last], nextCursor: null }],
+      pageParams: [null],
+    };
+    expect(ids(insertSortedInPages(data, middle, "manual"))).toEqual([["i1", "i2", "i3"]]);
+  });
+
+  it("appends to the last page when nothing follows it and no more pages exist", () => {
+    const data: InfiniteData<ItemsPage> = {
+      pages: [{ items: [first], nextCursor: null }],
+      pageParams: [null],
+    };
+    expect(ids(insertSortedInPages(data, last, "manual"))).toEqual([["i1", "i3"]]);
+  });
+
+  it("leaves a list unchanged when the item belongs to a page that is not loaded", () => {
+    const data: InfiniteData<ItemsPage> = {
+      pages: [{ items: [first], nextCursor: { value: "a1", id: "i1" } }],
+      pageParams: [null],
+    };
+    expect(insertSortedInPages(data, last, "manual")).toBe(data);
+  });
+
+  it("leaves a list unchanged when it already holds the item, and handles empty lists", () => {
+    const data: InfiniteData<ItemsPage> = {
+      pages: [{ items: [first], nextCursor: null }],
+      pageParams: [null],
+    };
+    expect(insertSortedInPages(data, first, "manual")).toBe(data);
+    const empty: InfiniteData<ItemsPage> = {
+      pages: [{ items: [], nextCursor: null }],
+      pageParams: [null],
+    };
+    expect(ids(insertSortedInPages(empty, first, "newest"))).toEqual([["i1"]]);
+    const none: InfiniteData<ItemsPage> = { pages: [], pageParams: [] };
+    expect(insertSortedInPages(none, first, "newest")).toBe(none);
   });
 });
