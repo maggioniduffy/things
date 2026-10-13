@@ -6,6 +6,12 @@ import { ITEM_KINDS } from "@/lib/views";
  * Smart-view rules: a saved set of filters. Every field is optional and they all apply together
  * (AND). `tagIds` matches items that have ALL the tags. Stored as JSON in `smart_views.rules`.
  */
+/** Upper bound for "saved within": larger values push the start date outside what Date supports. */
+export const MAX_SAVED_WITHIN_DAYS = 36500;
+
+/** What a stored domain may contain; anything else could not match `items.domain` anyway. */
+const DOMAIN_PATTERN = /^[a-z0-9.-]+(:\d+)?$/;
+
 export const Rules = z.object({
   kinds: z.array(z.enum(ITEM_KINDS)).optional(),
   collectionIds: z.array(z.uuid()).optional(),
@@ -13,7 +19,7 @@ export const Rules = z.object({
   domains: z.array(z.string()).optional(),
   isRead: z.boolean().optional(),
   isFavorite: z.boolean().optional(),
-  savedWithinDays: z.number().int().positive().optional(),
+  savedWithinDays: z.number().int().positive().max(MAX_SAVED_WITHIN_DAYS).optional(),
   query: z.string().optional(), // full-text
 });
 
@@ -57,7 +63,9 @@ export function cleanRules(rules: Rules): Rules {
   if (collectionIds.length > 0) clean.collectionIds = collectionIds;
   const tagIds = unique(rules.tagIds);
   if (tagIds.length > 0) clean.tagIds = tagIds;
-  const domains = unique(rules.domains?.map((domain) => domain.trim()).filter(Boolean));
+  const domains = unique(
+    rules.domains?.map((domain) => domain.trim()).filter((domain) => DOMAIN_PATTERN.test(domain)),
+  );
   if (domains.length > 0) clean.domains = domains;
   if (rules.isRead !== undefined) clean.isRead = rules.isRead;
   if (rules.isFavorite !== undefined) clean.isFavorite = rules.isFavorite;
@@ -138,7 +146,9 @@ export function applyRules<Q extends RulesFilterable<Q>>(
     q = q.eq(`${tagEmbedAlias(index)}.tag_id`, tagId);
   });
 
-  const domains = unique(rules.domains?.map((domain) => domain.trim()).filter(Boolean));
+  const domains = unique(
+    rules.domains?.map((domain) => domain.trim()).filter((domain) => DOMAIN_PATTERN.test(domain)),
+  );
   if (domains.length > 0) q = q.in("domain", domains);
 
   if (rules.isRead !== undefined) q = q.eq("is_read", rules.isRead);
@@ -169,7 +179,7 @@ export function parseDomainList(text: string): string[] {
         .replace(/[/?#].*$/, "")
         .replace(/^www\./, ""),
     )
-    .filter(Boolean);
+    .filter((domain) => DOMAIN_PATTERN.test(domain));
   return unique(domains);
 }
 

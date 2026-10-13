@@ -44,7 +44,7 @@ export function viewFromKey(key: string): ViewSpec | null {
 
 /**
  * Whether `item` belongs in `view`, by the same rules as `fetchItemsPage`. Tag and smart views
- * answer false: tag membership lives in another table and smart views arrive in WP 5.4.
+ * answer false: tag membership lives in another table, and smart-view rules are left to the refetch.
  */
 export function itemMatchesView(item: BoardItem, view: ViewSpec): boolean {
   const deleted = item.deleted_at !== null;

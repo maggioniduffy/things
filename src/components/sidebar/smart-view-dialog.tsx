@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { normalizeCollectionName, parseEmoji } from "@/lib/collections/fields";
-import { cleanRules, parseDomainList, type Rules } from "@/lib/filters";
+import { cleanRules, MAX_SAVED_WITHIN_DAYS, parseDomainList, type Rules } from "@/lib/filters";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -193,7 +193,9 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
   const trimmedName = normalizeCollectionName(name);
   const editing = smartView !== undefined;
   const daysNumber = days.trim() === "" ? undefined : Number(days);
-  const daysInvalid = daysNumber !== undefined && (!Number.isInteger(daysNumber) || daysNumber < 1);
+  const daysInvalid =
+    daysNumber !== undefined &&
+    (!Number.isInteger(daysNumber) || daysNumber < 1 || daysNumber > MAX_SAVED_WITHIN_DAYS);
 
   function submit() {
     if (trimmedName === "" || daysInvalid) return;
@@ -339,6 +341,7 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
             type="number"
             inputMode="numeric"
             min={1}
+            max={MAX_SAVED_WITHIN_DAYS}
             step={1}
             value={days}
             placeholder="Any time"

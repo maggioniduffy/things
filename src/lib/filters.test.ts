@@ -52,6 +52,7 @@ describe("parseRules", () => {
     ["a bad uuid", { tagIds: ["nope"] }],
     ["a zero window", { savedWithinDays: 0 }],
     ["a fractional window", { savedWithinDays: 1.5 }],
+    ["a window past the date range", { savedWithinDays: 999_999_999 }],
     ["a string boolean", { isRead: "yes" }],
   ])("never throws on %s: empty rules and the invalid flag", (_name, input) => {
     expect(parseRules(input)).toEqual({ rules: {}, invalid: true });
@@ -162,7 +163,7 @@ describe("applyRules", () => {
 
   it("domains (blank entries ignored)", () => {
     const { builder, calls } = recorder();
-    applyRules(builder, { domains: ["a.com", " ", "b.org"] }, NOW);
+    applyRules(builder, { domains: ["a.com", " ", 'x"y.com', "b.org"] }, NOW);
     expect(calls).toEqual([...LIVE, ["in", "domain", ["a.com", "b.org"]]]);
   });
 
@@ -323,5 +324,12 @@ describe("parseDomainList", () => {
 
   it("is empty for blank input", () => {
     expect(parseDomainList("  , ;\n")).toEqual([]);
+  });
+
+  it("drops entries with characters a domain can't have", () => {
+    expect(parseDomainList('a"b.com, ok.com, a(b).com, local:3000')).toEqual([
+      "ok.com",
+      "local:3000",
+    ]);
   });
 });

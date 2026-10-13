@@ -142,7 +142,9 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
   const [overTarget, setOverTarget] = useState(false);
   const activeRef = useRef<ActiveDrag | null>(null);
   const reorderRef = useRef<ReorderHandler | null>(null);
-  const rowReorderRef = useRef<Partial<Record<SidebarSortSection, RowReorderHandler>>>({});
+  // The sidebar renders twice (desktop and the mobile sheet), so a section can have two handlers;
+  // the newest one runs, and unmounting one copy leaves the other registered.
+  const rowReorderRef = useRef<Partial<Record<SidebarSortSection, RowReorderHandler[]>>>({});
   const [sortingSection, setSortingSection] = useState<SidebarSortSection | null>(null);
   const justDragged = useRef(false);
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,9 +172,10 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
 
   const registerRowReorder = useCallback(
     (section: SidebarSortSection, handler: RowReorderHandler) => {
-      rowReorderRef.current[section] = handler;
+      const handlers = rowReorderRef.current;
+      handlers[section] = [...(handlers[section] ?? []), handler];
       return () => {
-        if (rowReorderRef.current[section] === handler) delete rowReorderRef.current[section];
+        handlers[section] = (handlers[section] ?? []).filter((current) => current !== handler);
       };
     },
     [],
@@ -224,7 +227,7 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
     if (sorted) {
       const overData = over?.data.current;
       if (isSidebarSortData(overData) && overData.section === sorted.section) {
-        rowReorderRef.current[sorted.section]?.(event);
+        rowReorderRef.current[sorted.section]?.at(-1)?.(event);
       }
       return;
     }
