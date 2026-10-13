@@ -1,27 +1,18 @@
 import Link from "next/link";
 import { ClipboardPasteIcon, FolderTreeIcon, SearchIcon } from "lucide-react";
-import { GuestStartButton } from "@/components/account/guest-start-button";
 import { Aurora, Logo } from "@/components/brand";
-import { Button } from "@/components/ui/button";
 import { focusRing } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/utils";
+import { HeaderAppLink, HeroActions } from "./app-entry";
 
-/** Slim top bar over the hero: logo left, "Sign in" right. */
+/** Slim top bar over the hero: logo left, "Sign in" (or "Open app") right. */
 export function SiteHeader() {
   return (
     <header className="relative z-10 mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
       <Link href="/" aria-label="Things, home" className={cn("rounded-control", focusRing)}>
         <Logo />
       </Link>
-      <Link
-        href="/login"
-        className={cn(
-          "rounded-control text-body text-ink-muted hover:text-ink px-2 py-1 font-medium transition-[color,background-color,border-color] duration-(--duration-fast)",
-          focusRing,
-        )}
-      >
-        Sign in
-      </Link>
+      <HeaderAppLink />
     </header>
   );
 }
@@ -53,12 +44,7 @@ export function Hero() {
       <p className="text-body text-ink-muted mt-5 max-w-[46ch] text-pretty sm:text-[length:var(--text-section)] sm:leading-[var(--text-section--line-height)]">
         Drop in links, files and notes. Things sorts them by format and keeps them easy to find.
       </p>
-      <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <GuestStartButton size="lg" />
-        <Button asChild size="lg" variant="secondary">
-          <Link href="/login">Sign in</Link>
-        </Button>
-      </div>
+      <HeroActions />
     </section>
   );
 }
