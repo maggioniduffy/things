@@ -33,10 +33,15 @@ import { useBatchMove } from "@/lib/items/batch-mutations";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { boardCollisionDetection } from "./collision";
-import { isSidebarDropData } from "./targets";
+import {
+  isSidebarDropData,
+  isSidebarSortData,
+  type SidebarSortData,
+  type SidebarSortSection,
+} from "./targets";
 
 const SCREEN_READER_INSTRUCTIONS =
-  "To move a card, press space or enter on its handle, use the arrow keys to choose a place in the list or an item in the sidebar, then space or enter to drop. Press escape to cancel.";
+  "To move a card, press space or enter on its handle, use the arrow keys to choose a place in the list or an item in the sidebar, then space or enter to drop. Sidebar collections and smart views can be reordered the same way. Press escape to cancel.";
 
 /** `data` every draggable card registers, so the overlay and announcements can describe it. */
 export type CardDragData = {
@@ -52,9 +57,14 @@ function isCardDragData(value: unknown): value is CardDragData {
 /** Called with the drop of a card on another card (reorder). Registered by `SortableItems`. */
 export type ReorderHandler = (event: DragEndEvent) => void;
 
+/** Called with the drop of a sidebar row on a row of its section. Registered by `SortableRows`. */
+export type RowReorderHandler = (event: DragEndEvent) => void;
+
 type BoardDnd = {
-  /** A drag is active anywhere: Motion layout must be off. */
+  /** A drag is active anywhere (a card or a sidebar row): Motion layout must be off. */
   dragging: boolean;
+  /** The section whose row is being reordered; null when no sidebar row is dragged. */
+  sortingSection: SidebarSortSection | null;
   /** Ids that travel with the drag (the card, or the whole selection); null when idle. */
   draggingIds: ReadonlySet<string> | null;
   /** True just after a drag ended, so the click that follows it does not open the drawer. */
@@ -63,6 +73,8 @@ type BoardDnd = {
   isDragActive: () => boolean;
   /** Sets who handles drops on cards. Returns a function that unregisters it. */
   registerReorder: (handler: ReorderHandler) => () => void;
+  /** Sets who handles a sidebar row dropped in `section`. Returns a function that unregisters it. */
+  registerRowReorder: (section: SidebarSortSection, handler: RowReorderHandler) => () => void;
 };
 
 const BoardDndContext = createContext<BoardDnd | null>(null);
@@ -130,6 +142,8 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
   const [overTarget, setOverTarget] = useState(false);
   const activeRef = useRef<ActiveDrag | null>(null);
   const reorderRef = useRef<ReorderHandler | null>(null);
+  const rowReorderRef = useRef<Partial<Record<SidebarSortSection, RowReorderHandler>>>({});
+  const [sortingSection, setSortingSection] = useState<SidebarSortSection | null>(null);
   const justDragged = useRef(false);
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -154,9 +168,20 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const registerRowReorder = useCallback(
+    (section: SidebarSortSection, handler: RowReorderHandler) => {
+      rowReorderRef.current[section] = handler;
+      return () => {
+        if (rowReorderRef.current[section] === handler) delete rowReorderRef.current[section];
+      };
+    },
+    [],
+  );
+
   function finish() {
     activeRef.current = null;
     setActive(null);
+    setSortingSection(null);
     setOverTarget(false);
     justDragged.current = true;
     if (clearTimer.current) clearTimeout(clearTimer.current);
@@ -167,6 +192,10 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
 
   function onDragStart({ active: dragged }: DragStartEvent) {
     const data = dragged.data.current;
+    if (isSidebarSortData(data)) {
+      setSortingSection(data.section);
+      return;
+    }
     if (!isCardDragData(data)) return;
     const id = String(dragged.id);
     // A card in the selection carries the whole selection; any other card goes alone.
@@ -188,6 +217,18 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
     const drag = activeRef.current;
     finish();
     const { over } = event;
+
+    const sorted: SidebarSortData | null = isSidebarSortData(event.active.data.current)
+      ? event.active.data.current
+      : null;
+    if (sorted) {
+      const overData = over?.data.current;
+      if (isSidebarSortData(overData) && overData.section === sorted.section) {
+        rowReorderRef.current[sorted.section]?.(event);
+      }
+      return;
+    }
+
     if (!drag || !over) return;
 
     const target = over.data.current;
@@ -205,6 +246,7 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
     const subject = (data: unknown, id: unknown): string => {
       const count = activeRef.current?.ids.length ?? 1;
       if (count > 1) return plural(count);
+      if (isSidebarSortData(data)) return data.label;
       return isCardDragData(data) ? itemDisplayTitle(data.item).replace(/\s+/g, " ") : String(id);
     };
     const place = (over: DragOverEvent["over"]): string | null => {
@@ -243,13 +285,23 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
   const draggingIds = useMemo(() => (active ? new Set(active.ids) : null), [active]);
   const value = useMemo<BoardDnd>(
     () => ({
-      dragging: active !== null,
+      dragging: active !== null || sortingSection !== null,
+      sortingSection,
       draggingIds,
       wasJustDragged,
       isDragActive,
       registerReorder,
+      registerRowReorder,
     }),
-    [active, draggingIds, wasJustDragged, isDragActive, registerReorder],
+    [
+      active,
+      sortingSection,
+      draggingIds,
+      wasJustDragged,
+      isDragActive,
+      registerReorder,
+      registerRowReorder,
+    ],
   );
 
   return (

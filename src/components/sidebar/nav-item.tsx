@@ -4,6 +4,7 @@ import { useDroppable } from "@dnd-kit/core";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
+import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
 import { dropData, type DropTarget } from "@/components/dnd/targets";
 import { focusRing } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,8 @@ type NavItemProps = {
    * the link leaves room for it and the count steps aside so they never overlap.
    */
   hasMenu?: boolean;
+  /** The row also has a reorder handle left of the menu, so the link leaves room for both. */
+  hasHandle?: boolean;
   /** Makes the row a drop target for dragged cards. Formats and smart views have none. */
   drop?: DropTarget;
 };
@@ -29,6 +32,8 @@ type NavItemProps = {
 /** When a row's menu is showing: hover, focus within, or the menu open. Always on small screens. */
 const MENU_ROOM =
   "max-md:pr-10 group-hover/row:pr-10 group-focus-within/row:pr-10 group-has-[[data-state=open]]/row:pr-10";
+const MENU_AND_HANDLE_ROOM =
+  "max-md:pr-16 group-hover/row:pr-16 group-focus-within/row:pr-16 group-has-[[data-state=open]]/row:pr-16";
 const COUNT_HIDDEN_WITH_MENU =
   "md:group-hover/row:hidden md:group-focus-within/row:hidden md:group-has-[[data-state=open]]/row:hidden";
 
@@ -46,12 +51,23 @@ const DROP_RING_STYLE: CSSProperties = {
  * `drop` target it accepts dragged cards: while one is over it the row scales to 1.03 and the
  * aurora ring fades in (150 ms; opacity only under reduced motion).
  */
-export function NavItem({ href, icon, label, count, onNavigate, hasMenu, drop }: NavItemProps) {
+export function NavItem({
+  href,
+  icon,
+  label,
+  count,
+  onNavigate,
+  hasMenu,
+  hasHandle,
+  drop,
+}: NavItemProps) {
+  // While a sidebar row is being reordered, other rows are not places to drop a card.
+  const sorting = useBoardDnd()?.sortingSection != null;
   const pathname = usePathname();
   const active = pathname === href;
   const { setNodeRef, isOver } = useDroppable({
     id: drop?.id ?? `nav:${href}`,
-    disabled: !drop,
+    disabled: !drop || sorting,
     data: drop ? dropData(drop) : undefined,
   });
   const dropping = Boolean(drop) && isOver;
@@ -67,7 +83,7 @@ export function NavItem({ href, icon, label, count, onNavigate, hasMenu, drop }:
         "ease-out-soft transition-[color,background-color,border-color,transform] duration-(--duration-fast)",
         active ? "bg-accent text-ink font-medium" : "text-ink-muted hover:bg-accent hover:text-ink",
         dropping && "bg-accent text-ink motion-safe:scale-[1.03]",
-        hasMenu && MENU_ROOM,
+        hasMenu && (hasHandle ? MENU_AND_HANDLE_ROOM : MENU_ROOM),
         focusRing,
       )}
     >

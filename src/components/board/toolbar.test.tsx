@@ -31,7 +31,15 @@ function seededClient() {
   client.setQueryData(["tags"], [{ id: TAG_ID, name: "thesis", color: null }]);
   client.setQueryData(
     ["smart-views"],
-    [{ id: SMART_ID, name: "Unread PDFs", icon: null, position: "a0" }],
+    [
+      {
+        id: SMART_ID,
+        name: "Unread PDFs",
+        icon: null,
+        position: "a0",
+        rules: { kinds: ["pdf"], isRead: false, tagIds: [TAG_ID], collectionIds: [COLLECTION_ID] },
+      },
+    ],
   );
   return client;
 }
@@ -114,6 +122,31 @@ describe("Toolbar", () => {
       nav.search = "item=abc";
       await chooseSort("Oldest");
       expect(nav.push).toHaveBeenCalledWith("/app/f/pdf?item=abc&sort=oldest", { scroll: false });
+    });
+  });
+
+  describe("smart view", () => {
+    const smart: ViewSpec = { type: "smart", viewId: SMART_ID };
+
+    it("summarizes the rules under the title", () => {
+      renderToolbar(smart);
+      expect(screen.getByRole("heading", { level: 1, name: "Unread PDFs" })).toBeInTheDocument();
+      expect(document.querySelector('[data-slot="rules-summary"]')).toHaveTextContent(
+        "Kind: PDFs · In: Reading list · Tagged: #thesis · Unread",
+      );
+    });
+
+    it("has no summary on other views", () => {
+      renderToolbar({ type: "kind", kind: "pdf" });
+      expect(document.querySelector('[data-slot="rules-summary"]')).toBeNull();
+    });
+
+    it("has no manual sort: it is a filter, not a place", async () => {
+      renderToolbar(smart, "manual");
+      await userEvent.click(screen.getByRole("button", { name: "Sort: Newest" }));
+      const items = await screen.findAllByRole("menuitemradio");
+      expect(items.map((item) => item.textContent)).toEqual(["Newest", "Oldest", "Title"]);
+      expect(screen.getByRole("menuitemradio", { name: "Newest" })).toBeChecked();
     });
   });
 

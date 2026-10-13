@@ -1,5 +1,5 @@
 import { closestCenter, pointerWithin, type CollisionDetection } from "@dnd-kit/core";
-import { isSidebarDropData } from "./targets";
+import { isSidebarDropData, isSidebarSortData } from "./targets";
 
 /** Marks the sidebar's root element: a drop there that misses every target is not a reorder. */
 export const SIDEBAR_ZONE_ATTRIBUTE = "data-dnd-sidebar";
@@ -15,17 +15,31 @@ function overSidebar(x: number, y: number): boolean {
 }
 
 /**
- * Sidebar targets win when the pointer is on one (or, with the keyboard, when the moved card's
+ * Cards: sidebar targets win when the pointer is on one (or, with the keyboard, when the moved card's
  * corner lands on one); otherwise cards compete by center distance, as in WP 5.2. A pointer over
  * the sidebar but off every target matches nothing, so the drop cannot reorder a card.
  */
 export const boardCollisionDetection: CollisionDetection = (args) => {
+  // A sidebar row being reordered only meets the rows of its own section.
+  const activeData = args.active.data.current;
+  if (isSidebarSortData(activeData)) {
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((container) => {
+        const data = container.data.current;
+        return isSidebarSortData(data) && data.section === activeData.section;
+      }),
+    });
+  }
+
   const targets = args.droppableContainers.filter((container) =>
     isSidebarDropData(container.data.current),
   );
-  const cards = args.droppableContainers.filter(
-    (container) => !isSidebarDropData(container.data.current),
-  );
+  // Sortable sidebar rows are for reordering rows, never a place to drop a card.
+  const cards = args.droppableContainers.filter((container) => {
+    const data = container.data.current;
+    return !isSidebarDropData(data) && !isSidebarSortData(data);
+  });
 
   if (args.pointerCoordinates) {
     const { x, y } = args.pointerCoordinates;

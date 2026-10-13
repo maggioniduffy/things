@@ -51,3 +51,32 @@ export function collectionTarget(id: string, name: string): DropTarget {
 export function tagTarget(id: string, name: string): DropTarget {
   return { id: `target:tag:${id}`, action: { type: "tag", id }, label: name };
 }
+
+/** The sidebar lists whose rows the user can reorder. */
+export type SidebarSortSection = "collections" | "smart-views";
+
+/**
+ * `data` of a sortable sidebar row. These rows only trade places with rows of their own section;
+ * they are never drop targets for cards (the row's link is, through `SidebarDropData`).
+ */
+export type SidebarSortData = {
+  type: "sidebar-sort";
+  section: SidebarSortSection;
+  /** The collection or smart view id. */
+  id: string;
+  /** Display name for screen reader announcements, e.g. "collection Reading". */
+  label: string;
+};
+
+export function isSidebarSortData(value: unknown): value is SidebarSortData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === "sidebar-sort"
+  );
+}
+
+/** The dnd-kit id of a sortable sidebar row. */
+export function sidebarSortId(section: SidebarSortSection, id: string): string {
+  return `sort:${section}:${id}`;
+}

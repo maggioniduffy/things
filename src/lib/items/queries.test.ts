@@ -4,6 +4,7 @@ import type { Database } from "@/types/supabase";
 import type { SortMode, ViewSpec } from "@/lib/views";
 import {
   ITEM_COLUMNS,
+  effectiveSort,
   PAGE_SIZE,
   fetchItemsPage,
   itemsInfiniteQueryOptions,
@@ -185,12 +186,110 @@ describe("fetchItemsPage view filters", () => {
     expect(page.items[0]).not.toHaveProperty("item_tags");
     expect(page.items[0]).toEqual(makeRow(1));
   });
+});
 
-  it("smart makes no request and returns an empty page", async () => {
-    const { client, urls } = setup([makeRow(1)]);
-    const page = await fetchItemsPage(client, { type: "smart", viewId: UUID_A }, "manual", null);
+describe("fetchItemsPage smart views", () => {
+  const TAG_A = "44444444-4444-4444-8444-444444444444";
+  const TAG_B = "55555555-5555-4555-8555-555555555555";
+  const view: ViewSpec = { type: "smart", viewId: UUID_A };
+
+  /** Answers smart_views with `rules` (or no row) and items with `rows`. */
+  function smartSetup(rules: unknown | undefined, rows: unknown[] = []) {
+    const urls: URL[] = [];
+    const fakeFetch: typeof fetch = async (input) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      urls.push(url);
+      const body = url.pathname.endsWith("/smart_views")
+        ? rules === undefined
+          ? []
+          : [{ rules }]
+        : rows;
+      return new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const client = createClient<Database>("http://localhost:54321", "test-key", {
+      global: { fetch: fakeFetch },
+    });
+    return { client, urls };
+  }
+
+  it("reads the view's rules, then one items request with the rules applied", async () => {
+    const { client, urls } = smartSetup({ kinds: ["pdf"], isRead: false, tagIds: [TAG_A, TAG_B] });
+    await fetchItemsPage(client, view, "newest", null);
+    expect(urls).toHaveLength(2);
+    expect(urls[0]!.pathname).toBe("/rest/v1/smart_views");
+    expect(urls[0]!.searchParams.get("id")).toBe(`eq.${UUID_A}`);
+
+    const items = urls[1]!;
+    expect(items.pathname).toBe("/rest/v1/items");
+    const p = items.searchParams;
+    expect(p.get("select")).toBe(
+      `${ITEM_COLUMNS},rule_tag_0:item_tags!inner(tag_id),rule_tag_1:item_tags!inner(tag_id)`,
+    );
+    expect(p.get("deleted_at")).toBe("is.null");
+    expect(p.get("archived_at")).toBe("is.null");
+    expect(p.get("kind")).toBe("in.(pdf)");
+    expect(p.get("is_read")).toBe("eq.false");
+    expect(p.get("rule_tag_0.tag_id")).toBe(`eq.${TAG_A}`);
+    expect(p.get("rule_tag_1.tag_id")).toBe(`eq.${TAG_B}`);
+    expect(p.get("limit")).toBe("51");
+  });
+
+  it("strips the embeds from the rows", async () => {
+    const row = {
+      ...makeRow(1),
+      rule_tag_0: [{ tag_id: TAG_A }],
+      item_tags: [{ tag_id: TAG_A }],
+    };
+    const { client } = smartSetup({ tagIds: [TAG_A] }, [row]);
+    const page = await fetchItemsPage(client, view, "newest", null);
+    expect(page.items).toEqual([makeRow(1)]);
+  });
+
+  it("a view that is gone shows an empty page without an items request", async () => {
+    const { client, urls } = smartSetup(undefined, [makeRow(1)]);
+    const page = await fetchItemsPage(client, view, "newest", null);
     expect(page).toEqual({ items: [], nextCursor: null });
-    expect(urls).toHaveLength(0);
+    expect(urls).toHaveLength(1);
+  });
+
+  it("invalid stored rules fall back to no rules (live items only)", async () => {
+    const { client, urls } = smartSetup({ kinds: ["spreadsheet"] });
+    await fetchItemsPage(client, view, "newest", null);
+    const p = urls[1]!.searchParams;
+    expect(p.get("select")).toBe(ITEM_COLUMNS);
+    expect(p.get("kind")).toBeNull();
+    expect(p.get("deleted_at")).toBe("is.null");
+  });
+
+  it("manual sort is not available: it shows newest first", async () => {
+    const { client, urls } = smartSetup({});
+    await fetchItemsPage(client, view, "manual", null);
+    expect(urls[1]!.searchParams.get("order")).toBe("created_at.desc,id.desc");
+    expect(effectiveSort(view, "manual")).toBe("newest");
+    expect(effectiveSort(view, "title")).toBe("title");
+    expect(effectiveSort({ type: "all" }, "manual")).toBe("manual");
+    expect(itemsQueryKey(view, "manual")).toEqual(["items", `smart:${UUID_A}`, "newest"]);
+  });
+
+  it.each([
+    ["newest", "created_at.lt."],
+    ["oldest", "created_at.gt."],
+    ["title", "title.gt."],
+  ] as const)("keyset pagination keeps working in %s sort", async (sort, fragment) => {
+    const { client, urls } = smartSetup({ isFavorite: true });
+    await fetchItemsPage(client, view, sort, { value: "x", id: UUID_B });
+    expect(urls[1]!.searchParams.get("or")).toContain(fragment);
+    expect(urls[1]!.searchParams.get("is_favorite")).toBe("eq.true");
+  });
+
+  it("pages past the limit with a cursor", async () => {
+    const rows = Array.from({ length: 3 }, (_, i) => makeRow(i + 1));
+    const { client } = smartSetup({}, rows);
+    const page = await fetchItemsPage(client, view, "oldest", null, 2);
+    expect(page.items).toHaveLength(2);
+    expect(page.nextCursor).toEqual({ value: rows[1]!.created_at, id: rows[1]!.id });
   });
 });
 

@@ -42,7 +42,9 @@ function seed(
   client.setQueryData(["tags"], options.tags ? [{ id: TAG_ID, name: "thesis", color: null }] : []);
   client.setQueryData(
     ["smart-views"],
-    options.smart ? [{ id: TAG_ID, name: "Unread PDFs", icon: null, position: "a0" }] : [],
+    options.smart
+      ? [{ id: TAG_ID, name: "Unread PDFs", icon: null, position: "a0", rules: {} }]
+      : [],
   );
   return client;
 }
@@ -86,7 +88,9 @@ describe("Sidebar", () => {
     renderWithQuery(<Sidebar email={null} />, seed());
     expect(screen.getByText("No collections yet")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Tags" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Smart views" })).not.toBeInTheDocument();
+    // Smart views always show, with a way to create the first one.
+    expect(screen.getByRole("heading", { name: "Smart views" })).toBeInTheDocument();
+    expect(screen.getByText("No smart views yet")).toBeInTheDocument();
   });
 
   it("lists collections with emoji and count, tags and smart views", () => {

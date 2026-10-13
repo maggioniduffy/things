@@ -209,7 +209,7 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 2 Shell & data layer | done (gate passed after cache-isolation fix) | maggioniduffy/things#5 |
 | 3 Capture | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
-| 5 Organize & DnD | WP 5.0–5.3 done | |
+| 5 Organize & DnD | WP 5.0–5.4 done; gate next | |
 | 6 Canvas | | |
 | 7 Search & palette | | |
 | 8 Polish & release | | |

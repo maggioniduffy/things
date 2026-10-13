@@ -7,7 +7,6 @@ import {
   InboxIcon,
   LayersIcon,
   PlusIcon,
-  SparklesIcon,
   StarIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -33,9 +32,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ITEM_KINDS, viewHref } from "@/lib/views";
 import { CollectionDialog } from "./collection-dialog";
-import { CollectionRow, TagRow } from "./manage-rows";
+import { CollectionRow, SmartViewRow, TagRow } from "./manage-rows";
 import { NavItem } from "./nav-item";
 import { SignOutButton } from "./sign-out-button";
+import { SmartViewDialog } from "./smart-view-dialog";
+import { SortableRows } from "./sortable-rows";
 
 type SidebarProps = {
   /** Signed-in email, or null for a guest. */
@@ -85,6 +86,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
   const { data: tags } = useQuery(tagsQueryOptions(client));
   const { data: smartViews } = useQuery(smartViewsQueryOptions(client));
   const [creatingCollection, setCreatingCollection] = useState(false);
+  const [creatingSmartView, setCreatingSmartView] = useState(false);
 
   const kindsWithItems = ITEM_KINDS.filter((kind) => (counts?.kinds[kind] ?? 0) > 0);
 
@@ -174,14 +176,18 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
           }
         >
           {collections && collections.length > 0 ? (
-            collections.map((collection) => (
-              <CollectionRow
-                key={collection.id}
-                collection={collection}
-                count={counts?.collections[collection.id]}
-                onNavigate={onNavigate}
-              />
-            ))
+            <SortableRows section="collections" rows={collections}>
+              {(shown) =>
+                shown.map((collection) => (
+                  <CollectionRow
+                    key={collection.id}
+                    collection={collection}
+                    count={counts?.collections[collection.id]}
+                    onNavigate={onNavigate}
+                  />
+                ))
+              }
+            </SortableRows>
           ) : (
             <li className="text-meta text-ink-subtle px-2.5 py-1">No collections yet</li>
           )}
@@ -198,23 +204,33 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
           </>
         ) : null}
 
-        {smartViews && smartViews.length > 0 ? (
-          <>
-            <Separator />
-            <Section label="Smart views">
-              {smartViews.map((smartView) => (
-                <li key={smartView.id}>
-                  <NavItem
-                    href={viewHref({ type: "smart", viewId: smartView.id })}
-                    icon={<SparklesIcon />}
-                    label={smartView.name}
-                    onNavigate={onNavigate}
-                  />
-                </li>
-              ))}
-            </Section>
-          </>
-        ) : null}
+        <Separator />
+        <Section
+          label="Smart views"
+          action={
+            <IconButton
+              variant="ghost"
+              size="sm"
+              label="New smart view"
+              className="size-6"
+              onClick={() => setCreatingSmartView(true)}
+            >
+              <PlusIcon className="size-4" />
+            </IconButton>
+          }
+        >
+          {smartViews && smartViews.length > 0 ? (
+            <SortableRows section="smart-views" rows={smartViews}>
+              {(shown) =>
+                shown.map((smartView) => (
+                  <SmartViewRow key={smartView.id} smartView={smartView} onNavigate={onNavigate} />
+                ))
+              }
+            </SortableRows>
+          ) : (
+            <li className="text-meta text-ink-subtle px-2.5 py-1">No smart views yet</li>
+          )}
+        </Section>
 
         <Separator />
         <Section label="Archive and trash" heading={false}>
@@ -242,6 +258,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       </nav>
 
       <CollectionDialog open={creatingCollection} onOpenChange={setCreatingCollection} />
+      <SmartViewDialog open={creatingSmartView} onOpenChange={setCreatingSmartView} />
 
       <Separator />
       <div role="group" aria-label="Account" className="flex shrink-0 items-center gap-2 p-3">

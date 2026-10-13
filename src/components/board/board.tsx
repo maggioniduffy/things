@@ -95,7 +95,8 @@ export function Board({ view, sort }: BoardProps) {
   const lastCursor = pages?.[pages.length - 1]?.nextCursor ?? null;
   // Reordering is for manual sort only. Every other sort can still drop cards on the sidebar.
   // Nothing drags in Trash.
-  const sortable = sort === "manual" && view.type !== "trash";
+  // Smart views are filters, not places: nothing to reorder there either.
+  const sortable = sort === "manual" && view.type !== "trash" && view.type !== "smart";
   const dnd: CardDnd | undefined =
     view.type === "trash" ? undefined : sortable ? "sortable" : "draggable";
   const itemCount = useMemo(

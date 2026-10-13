@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Item } from "@/types/supabase";
+import { applyRules, isRuleEmbedKey, parseRules, ruleSelect, type Rules } from "@/lib/filters";
 import { viewKey, type SortMode, type ViewSpec } from "@/lib/views";
 
 type Client = SupabaseClient<Database>;
@@ -57,12 +58,20 @@ export type ItemsCursor = { value: string | null; id: string };
 
 export type ItemsPage = { items: BoardItem[]; nextCursor: ItemsCursor | null };
 
+/**
+ * The sort a view really uses. Smart views are filters, not places: they have no manual order, so
+ * "manual" (the URL default) shows newest first there.
+ */
+export function effectiveSort(view: ViewSpec, sort: SortMode): SortMode {
+  return view.type === "smart" && sort === "manual" ? "newest" : sort;
+}
+
 /** Key shared by the server prefetch and the browser: ["items", viewKey, sort]. */
 export function itemsQueryKey(
   view: ViewSpec,
   sort: SortMode,
 ): readonly ["items", string, SortMode] {
-  return ["items", viewKey(view), sort] as const;
+  return ["items", viewKey(view), effectiveSort(view, sort)] as const;
 }
 
 /**
@@ -86,13 +95,26 @@ function sortValue(row: BoardItem, sort: SortMode): string | null {
   return row[SORT_COLUMN[sort]];
 }
 
-// Row shape when the tag view embeds item_tags for the inner join.
-type RowWithJoin = BoardItem & { item_tags?: unknown };
+// Row shape when the tag view (or a smart view's tag rules) embeds item_tags for the inner join.
+type RowWithJoin = BoardItem & { item_tags?: unknown; [embed: string]: unknown };
 
 function stripJoin(row: RowWithJoin): BoardItem {
-  const { item_tags: _joined, ...item } = row;
-  void _joined;
-  return item;
+  const item: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (key !== "item_tags" && !isRuleEmbedKey(key)) item[key] = value;
+  }
+  return item as BoardItem;
+}
+
+/** The rules of a smart view, or null when it no longer exists (RLS hides other users' views). */
+async function fetchSmartViewRules(client: Client, viewId: string): Promise<Rules | null> {
+  const { data, error } = await client
+    .from("smart_views")
+    .select("rules")
+    .eq("id", viewId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? parseRules(data.rules).rules : null;
 }
 
 /** Fetches one page (`limit` rows, PAGE_SIZE by default) of a view in the given sort, after `cursor`. */
@@ -103,10 +125,20 @@ export async function fetchItemsPage(
   cursor: ItemsCursor | null,
   limit: number = PAGE_SIZE,
 ): Promise<ItemsPage> {
-  // Smart views arrive in WP 5.4: empty without a request.
-  if (view.type === "smart") return { items: [], nextCursor: null };
+  sort = effectiveSort(view, sort);
 
-  const columns = view.type === "tag" ? `${ITEM_COLUMNS},item_tags!inner(tag_id)` : ITEM_COLUMNS;
+  let rules: Rules | null = null;
+  if (view.type === "smart") {
+    rules = await fetchSmartViewRules(client, view.viewId);
+    if (!rules) return { items: [], nextCursor: null };
+  }
+
+  const columns =
+    view.type === "tag"
+      ? `${ITEM_COLUMNS},item_tags!inner(tag_id)`
+      : rules
+        ? ruleSelect(ITEM_COLUMNS, rules)
+        : ITEM_COLUMNS;
   let query = client.from("items").select(columns);
 
   // View filters. RLS scopes rows to the user, so there is no user_id filter.
@@ -143,6 +175,9 @@ export async function fetchItemsPage(
         .is("deleted_at", null)
         .is("archived_at", null)
         .eq("item_tags.tag_id", view.tagId);
+      break;
+    case "smart":
+      if (rules) query = applyRules(query, rules);
       break;
   }
 

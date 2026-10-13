@@ -74,13 +74,22 @@ describe("sidebar queries", () => {
   });
 
   it("smart views", async () => {
-    const { client, urls } = setup([]);
+    const row = { id: "a", name: "Unread PDFs", icon: "📄", position: "a0" };
+    const { client, urls } = setup([
+      { ...row, rules: { kinds: ["pdf"], isRead: false } },
+      { ...row, id: "b", rules: { kinds: ["spreadsheet"] } },
+    ]);
     const opts = smartViewsQueryOptions(client);
     expect(opts.queryKey).toEqual(["smart-views"]);
-    await run(opts);
+    const result = await run(opts);
     expect(urls[0]!.pathname).toBe("/rest/v1/smart_views");
-    expect(urls[0]!.searchParams.get("select")).toBe("id,name,icon,position");
+    expect(urls[0]!.searchParams.get("select")).toBe("id,name,icon,position,rules");
     expect(urls[0]!.searchParams.get("order")).toBe("position.asc,id.asc");
+    // Rules are parsed; unreadable ones become empty rules and are flagged.
+    expect(result).toEqual([
+      { ...row, rules: { kinds: ["pdf"], isRead: false } },
+      { ...row, id: "b", rules: {}, invalidRules: true },
+    ]);
   });
 
   it.each([
