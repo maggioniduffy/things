@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { patchInPages } from "@/lib/items/cache";
 import type { BoardItem, ItemsPage } from "@/lib/items/queries";
@@ -61,6 +61,8 @@ export class CanvasLayoutSaver {
   /** Last layout the server confirmed per id; null = never saved (e.g. just auto-placed). */
   private readonly lastSaved = new Map<string, CanvasRect | null>();
   private readonly known = new Set<string>();
+  /** Ids whose first save failed: forgotten by `releaseFailed` so a later trigger queues them again. */
+  private readonly failedFresh = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight: Promise<void> | null = null;
 
@@ -117,6 +119,15 @@ export class CanvasLayoutSaver {
     return this.inFlight;
   }
 
+  /** Forgets nodes that never saved and whose save failed, so the next auto-placement queues them again. */
+  releaseFailed(): void {
+    for (const id of this.failedFresh) {
+      this.known.delete(id);
+      this.lastSaved.delete(id);
+    }
+    this.failedFresh.clear();
+  }
+
   dispose(): void {
     this.clearTimer();
   }
@@ -126,6 +137,7 @@ export class CanvasLayoutSaver {
     const restore = batch
       .filter((rect) => !this.pending.has(rect.id))
       .map((rect): CanvasRestore => ({ id: rect.id, rect: this.lastSaved.get(rect.id) ?? null }));
+    for (const entry of restore) if (entry.rect === null) this.failedFresh.add(entry.id);
     const rollback = restore.flatMap((entry) => (entry.rect ? [entry.rect] : []));
     this.options.onFailure?.({ restore, rollback });
   }
@@ -162,74 +174,114 @@ function patchItemCaches(
 export type CanvasLayoutSaverApi = {
   enqueue: (rects: readonly CanvasRect[]) => void;
   hasSeen: (id: string) => boolean;
+  /** Listens for nodes to move back after a failed save; returns the unsubscribe. */
+  subscribeRollback: (listener: (rects: CanvasRect[]) => void) => () => void;
 };
 
 /**
- * Debounced, optimistic saving of canvas layouts for the items currently on screen.
- * `onRollback` receives the last saved layout of nodes whose save failed, so the canvas can move
- * them back; the cache is restored and an error toast shown here.
+ * The one saver of a QueryClient. Canvases come and go (Board remounts on every view or sort
+ * change); a single instance keeps saves strictly sequential across them and lets a failure
+ * reach whichever canvas is mounted now.
  */
-export function useCanvasLayoutSaver(
-  items: readonly BoardItem[],
-  onRollback: (rects: CanvasRect[]) => void,
-): CanvasLayoutSaverApi {
-  const queryClient = useQueryClient();
+class SharedLayoutSaver implements CanvasLayoutSaverApi {
+  private readonly listeners = new Set<(rects: CanvasRect[]) => void>();
+  private mounted = 0;
+  private readonly saver: CanvasLayoutSaver;
 
-  /** The stored layout of an item before this saver touched it; null when it has none. */
-  function baselineIn(list: readonly BoardItem[]) {
-    return (id: string): CanvasRect | null => {
-      const item = list.find((candidate) => candidate.id === id);
-      if (!item || item.canvas_x === null || item.canvas_y === null) return null;
-      // A stored position without a stored size rolls back to the size the node had by default.
-      const { w, h } = defaultNodeSize(item);
-      return { id, x: item.canvas_x, y: item.canvas_y, w, h, z: item.canvas_z };
-    };
-  }
-
-  function failureHandler({
-    restore,
-    rollback,
-  }: {
-    restore: CanvasRestore[];
-    rollback: CanvasRect[];
-  }) {
-    patchItemCaches(
-      queryClient,
-      restore.map(({ id, rect }) => ({
-        id,
-        patch: rect
-          ? layoutPatch(rect)
-          : { canvas_x: null, canvas_y: null, canvas_w: null, canvas_h: null, canvas_z: 0 },
-      })),
-    );
-    if (rollback.length > 0) onRollback(rollback);
-    toast.error(LAYOUT_SAVE_ERROR);
-  }
-
-  const [saver] = useState(() => {
+  constructor(queryClient: QueryClient) {
     const client = createClient();
-    return new CanvasLayoutSaver({
+    this.saver = new CanvasLayoutSaver({
       save: async (layout) => {
         const { error } = await client.rpc("save_canvas_layout", { layout });
         if (error) throw error;
       },
-      baseline: baselineIn(items),
+      baseline: (id) => storedLayout(queryClient, id),
       onFlush: (layout) =>
         patchItemCaches(
           queryClient,
           layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
         ),
-      onFailure: failureHandler,
+      onFailure: ({ restore, rollback }) => {
+        patchItemCaches(
+          queryClient,
+          restore.map(({ id, rect }) => ({
+            id,
+            patch: rect
+              ? layoutPatch(rect)
+              : { canvas_x: null, canvas_y: null, canvas_w: null, canvas_h: null, canvas_z: 0 },
+          })),
+        );
+        if (rollback.length > 0) for (const listener of this.listeners) listener(rollback);
+        toast.error(LAYOUT_SAVE_ERROR);
+        // Nobody is looking at the canvas any more: let the next one queue those nodes again.
+        if (this.mounted === 0) this.saver.releaseFailed();
+      },
     });
-  });
+  }
 
-  // Before any passive effect (the canvas queues auto-placed items in one), so baselines and the
-  // rollback target are the latest.
-  useLayoutEffect(() => {
-    saver.update({ baseline: baselineIn(items), onFailure: failureHandler });
-  });
+  enqueue = (rects: readonly CanvasRect[]) => this.saver.enqueue(rects);
+  hasSeen = (id: string) => this.saver.hasSeen(id);
+  flush = () => this.saver.flush();
+
+  subscribeRollback = (listener: (rects: CanvasRect[]) => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  /** A canvas mounted; returns its unmount. The last one out flushes at once. */
+  attach(): () => void {
+    this.mounted += 1;
+    return () => {
+      this.mounted -= 1;
+      if (this.mounted === 0) {
+        void this.saver.flush();
+        this.saver.releaseFailed();
+      }
+    };
+  }
+}
+
+/** The stored layout of an item in any cached list (not yet patched by this saver); null if unplaced. */
+function storedLayout(queryClient: QueryClient, id: string): CanvasRect | null {
+  for (const [, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
+    if (!data || !Array.isArray(data.pages)) continue;
+    for (const page of data.pages) {
+      const item = page.items.find((candidate) => candidate.id === id);
+      if (!item) continue;
+      if (item.canvas_x === null || item.canvas_y === null) return null;
+      // A stored position without a stored size rolls back to the size the node had by default.
+      const { w, h } = defaultNodeSize(item);
+      return { id, x: item.canvas_x, y: item.canvas_y, w, h, z: item.canvas_z };
+    }
+  }
+  return null;
+}
+
+const SAVERS = new WeakMap<QueryClient, SharedLayoutSaver>();
+
+/** @internal Exposed for tests. */
+export function sharedLayoutSaver(queryClient: QueryClient): SharedLayoutSaver {
+  let saver = SAVERS.get(queryClient);
+  if (!saver) {
+    saver = new SharedLayoutSaver(queryClient);
+    SAVERS.set(queryClient, saver);
+  }
+  return saver;
+}
+
+/**
+ * Debounced, optimistic saving of canvas layouts, shared by every canvas of this QueryClient.
+ * On failure the cache is restored, an error toast shown and `subscribeRollback` listeners get the
+ * last saved layout of the nodes to move back.
+ */
+export function useCanvasLayoutSaver(): CanvasLayoutSaverApi {
+  const queryClient = useQueryClient();
+  const saver = sharedLayoutSaver(queryClient);
 
   useEffect(() => {
+    const detach = saver.attach();
     const flush = () => void saver.flush();
     const onVisibility = () => {
       if (document.visibilityState === "hidden") flush();
@@ -239,7 +291,7 @@ export function useCanvasLayoutSaver(
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", flush);
-      flush();
+      detach();
     };
   }, [saver]);
 

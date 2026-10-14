@@ -12,6 +12,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import {
@@ -24,7 +25,6 @@ import {
   nodeToCanvasRect,
   useCanvasLayoutSaver,
   type CanvasLayoutSaverApi,
-  type CanvasRect,
 } from "@/lib/canvas/save";
 import {
   MAX_ZOOM,
@@ -63,8 +63,6 @@ export type CanvasPersistTarget = { type: "inbox" } | { type: "collection"; coll
 /** What the canvas does to keep itself: queue layout changes, remember the viewport. */
 type CanvasPersistence = {
   layout: CanvasLayoutSaverApi;
-  /** Registers who moves nodes back to their last saved layout after a failed save. */
-  setRollbackHandler: (handler: (rects: CanvasRect[]) => void) => void;
   initialViewport: CanvasViewport | null;
   onViewportChange: (viewport: CanvasViewport) => void;
 };
@@ -79,12 +77,11 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
     nodesRef.current = nodes;
   });
   const layout = persistence?.layout;
-  const setRollbackHandler = persistence?.setRollbackHandler;
   const onViewportChange = persistence?.onViewportChange;
 
-  // A failed save moves the nodes back to their last saved layout.
+  // A failed save moves the nodes back to their last saved layout, whichever mount queued it.
   useEffect(() => {
-    setRollbackHandler?.((rects) => {
+    return layout?.subscribeRollback((rects) => {
       const byId = new Map(rects.map((rect) => [rect.id, rect]));
       setNodes((current) =>
         current.map((node) => {
@@ -101,7 +98,7 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
         }),
       );
     });
-  }, [setRollbackHandler]);
+  }, [layout]);
 
   // Items without a stored position were auto-placed above; save them once, in one batch.
   useEffect(() => {
@@ -144,6 +141,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
   );
 
   const onMoveEnd = useCallback(
+    // Programmatic moves count too: the initial fitView is saved on purpose, so the next open
+    // starts where this one ended.
     (_event: unknown, viewport: CanvasViewport) => onViewportChange?.(viewport),
     [onViewportChange],
   );
@@ -200,18 +199,14 @@ function PersistedCanvas({
   const initial = useInitialViewport(target);
   const onViewportChange = useViewportSaver(target);
 
-  const rollbackHandler = useRef<(rects: CanvasRect[]) => void>(() => {});
-  const layout = useCanvasLayoutSaver(props.items, (rects) => rollbackHandler.current(rects));
-  const setRollbackHandler = useCallback((handler: (rects: CanvasRect[]) => void) => {
-    rollbackHandler.current = handler;
-  }, []);
+  const layout = useCanvasLayoutSaver();
 
   const persistence = useMemo<CanvasPersistence>(
-    () => ({ layout, setRollbackHandler, initialViewport: initial.viewport, onViewportChange }),
-    [layout, setRollbackHandler, initial.viewport, onViewportChange],
+    () => ({ layout, initialViewport: initial.viewport, onViewportChange }),
+    [layout, initial.viewport, onViewportChange],
   );
   // The viewport decides how the canvas first paints, so wait for a collection's to load.
-  if (!initial.ready) return null;
+  if (!initial.ready) return <BoardSkeleton />;
   return <CanvasInner {...props} persistence={persistence} />;
 }
 

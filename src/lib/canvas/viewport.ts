@@ -11,6 +11,8 @@ export type CanvasViewport = { x: number; y: number; zoom: number };
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 2;
 export const VIEWPORT_DEBOUNCE_MS = 1000;
+/** How long a canvas waits for a collection's saved viewport before opening fitted instead. */
+export const VIEWPORT_LOAD_TIMEOUT_MS = 1500;
 
 /** A stored viewport if it has the right shape (finite numbers), with the zoom clamped; else null. */
 export function parseViewport(value: unknown): CanvasViewport | null {
@@ -74,6 +76,8 @@ export function collectionViewportQueryOptions(client: Client, collectionId: str
       return parseViewport(data?.canvas_viewport);
     },
     staleTime: Infinity,
+    // Offline the load would pause forever; it fails instead and the canvas opens fitted.
+    networkMode: "always",
   });
 }
 
@@ -123,12 +127,19 @@ export function useInitialViewport(target: CanvasViewportTarget): {
     ...collectionViewportQueryOptions(createClient(), collectionId ?? ""),
     enabled: collectionId !== null,
   });
+  const [timedOut, setTimedOut] = useState(false);
+  const waiting = collectionId !== null && query.isPending;
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setTimeout(() => setTimedOut(true), VIEWPORT_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [waiting]);
   const [inboxViewport] = useState(() =>
     target.type === "inbox" ? readInboxViewport(target.userId) : null,
   );
   if (target.type === "inbox") return { ready: true, viewport: inboxViewport };
-  // A failed load opens fitted to the content, like a first visit.
-  return { ready: !query.isPending, viewport: query.data ?? null };
+  // A failed or slow load opens fitted to the content, like a first visit.
+  return { ready: !query.isPending || timedOut, viewport: query.data ?? null };
 }
 
 /** Debounced saving of the viewport; also saves when the canvas unmounts or the page is hidden. */

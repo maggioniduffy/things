@@ -1,11 +1,63 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { makeTestQueryClient } from "@/test/fixtures";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  VIEWPORT_LOAD_TIMEOUT_MS,
   ViewportSaver,
+  useInitialViewport,
   inboxViewportKey,
   parseViewport,
   readInboxViewport,
   writeInboxViewport,
 } from "./viewport";
+
+const mocks = vi.hoisted(() => ({ maybeSingle: vi.fn() }));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }) }),
+  }),
+}));
+
+describe("useInitialViewport", () => {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={makeTestQueryClient()}>{children}</QueryClientProvider>
+  );
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("gives up waiting for a collection's viewport and opens fitted", async () => {
+    mocks.maybeSingle.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(
+      () => useInitialViewport({ type: "collection", collectionId: "c1" }),
+      { wrapper },
+    );
+    expect(result.current.ready).toBe(false);
+    await act(() => vi.advanceTimersByTimeAsync(VIEWPORT_LOAD_TIMEOUT_MS + 10));
+    expect(result.current).toEqual({ ready: true, viewport: null });
+  });
+
+  it("is ready with the saved viewport once it loads", async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: { canvas_viewport: { x: 1, y: 2, zoom: 3 } },
+      error: null,
+    });
+    const { result } = renderHook(
+      () => useInitialViewport({ type: "collection", collectionId: "c1" }),
+      { wrapper },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(result.current).toEqual({ ready: true, viewport: { x: 1, y: 2, zoom: 2 } });
+  });
+
+  it("is ready at once for the Inbox", () => {
+    const { result } = renderHook(() => useInitialViewport({ type: "inbox", userId: "u1" }), {
+      wrapper,
+    });
+    expect(result.current.ready).toBe(true);
+  });
+});
 
 describe("parseViewport", () => {
   it("accepts finite numbers and clamps the zoom to 0.1 - 2", () => {

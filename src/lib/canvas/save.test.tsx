@@ -9,6 +9,7 @@ import {
   CanvasLayoutSaver,
   LAYOUT_SAVE_ERROR,
   nodeToCanvasRect,
+  sharedLayoutSaver,
   normalizeRect,
   useCanvasLayoutSaver,
   type CanvasRect,
@@ -186,7 +187,8 @@ describe("useCanvasLayoutSaver", () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     );
-    const view = renderHook(() => useCanvasLayoutSaver([item], onRollback), { wrapper });
+    const view = renderHook(() => useCanvasLayoutSaver(), { wrapper });
+    view.result.current.subscribeRollback(onRollback);
     const cached = () => client.getQueryData<InfiniteData<ItemsPage>>(KEY)?.pages[0]?.items[0];
     return { client, item, onRollback, cached, ...view };
   }
@@ -253,5 +255,69 @@ describe("useCanvasLayoutSaver", () => {
     });
     hidden.mockRestore();
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps saves strictly sequential across a remount and rolls back the new mount's nodes", async () => {
+    const OTHER = "99999999-9999-4999-8999-999999999999";
+    const first = deferred();
+    const calls: CanvasRect[][] = [];
+    mocks.rpc.mockImplementation((_name: string, args: { layout: CanvasRect[] }) => {
+      calls.push(args.layout);
+      return calls.length === 1
+        ? first.promise.then(() => ({ error: null }))
+        : Promise.resolve({ error: null });
+    });
+    const { client, unmount } = setup();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    client.setQueryData<InfiniteData<ItemsPage>>(KEY, (data) => ({
+      pageParams: [null],
+      pages: [
+        {
+          nextCursor: null,
+          items: [
+            ...(data?.pages[0]?.items ?? []),
+            makeItem({ id: OTHER, canvas_x: 7, canvas_y: 8, canvas_w: 280, canvas_h: 240 }),
+          ],
+        },
+      ],
+    }));
+    const old = sharedLayoutSaver(client);
+    old.enqueue([
+      { id: ITEM_ID, x: 1, y: 2, w: 280, h: 240, z: 0 },
+      { id: OTHER, x: 7, y: 7, w: 280, h: 240, z: 0 },
+    ]);
+    unmount(); // last canvas gone: flushes at once
+    expect(calls).toHaveLength(1);
+
+    const next = renderHook(() => useCanvasLayoutSaver(), { wrapper });
+    const newRollback = vi.fn();
+    next.result.current.subscribeRollback(newRollback);
+    next.result.current.enqueue([{ id: ITEM_ID, x: 50, y: 60, w: 280, h: 240, z: 0 }]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(calls).toHaveLength(1); // the second waits for the first
+
+    first.reject(new Error("late failure"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toEqual([{ id: ITEM_ID, x: 50, y: 60, w: 280, h: 240, z: 0 }]);
+    // Only the node without a newer change moves back, in the canvas that is mounted now.
+    expect(newRollback).toHaveBeenCalledTimes(1);
+    expect(newRollback.mock.calls[0]?.[0]).toEqual([
+      { id: OTHER, x: 7, y: 8, w: 280, h: 240, z: 0 },
+    ]);
+  });
+
+  it("forgets a failed auto-placement once the last canvas unmounts", async () => {
+    mocks.rpc.mockResolvedValue({ error: { message: "nope" } });
+    const { result, unmount, client } = setup();
+    const FRESH = "88888888-8888-4888-8888-888888888888";
+    act(() => result.current.enqueue([{ id: FRESH, x: 1, y: 2, w: 280, h: 240, z: 0 }]));
+    await act(() => vi.advanceTimersByTimeAsync(400));
+    // Still seen in this mount: no retry loop.
+    expect(result.current.hasSeen(FRESH)).toBe(true);
+    unmount();
+    expect(sharedLayoutSaver(client).hasSeen(FRESH)).toBe(false);
   });
 });
