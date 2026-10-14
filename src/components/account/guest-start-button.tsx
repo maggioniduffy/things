@@ -11,6 +11,8 @@ import { TurnstileField, useTurnstile } from "./turnstile-field";
 
 type GuestStartButtonProps = Pick<ButtonProps, "variant" | "size" | "className"> & {
   children?: React.ReactNode;
+  /** Classes for the captcha widget rendered after the button (a sibling in the parent layout). */
+  captchaClassName?: string;
 };
 
 /**
@@ -22,6 +24,7 @@ export function GuestStartButton({
   size,
   className,
   children = "Try without an account",
+  captchaClassName,
 }: GuestStartButtonProps) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -71,7 +74,7 @@ export function GuestStartButton({
         {pending ? <LoaderCircleIcon className="animate-spin motion-reduce:animate-none" /> : null}
         {children}
       </Button>
-      <TurnstileField {...captcha.field} />
+      <TurnstileField {...captcha.field} className={captchaClassName} />
     </>
   );
 }

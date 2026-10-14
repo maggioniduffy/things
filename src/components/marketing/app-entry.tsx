@@ -27,11 +27,20 @@ export function HeaderAppLink() {
   );
 }
 
-/** Hero buttons. A returning guest gets "Open app" in place of the guest start. */
-export function HeroActions() {
+/**
+ * Hero buttons. A returning guest gets "Open app" in place of the guest start.
+ * The guest button's captcha widget is full width (flexible size), so it wraps onto its own
+ * last row instead of sitting between the two buttons and pushing them apart.
+ */
+export function HeroActions({ className }: { className?: string }) {
   const hasSession = useHasSession();
   return (
-    <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        "mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center",
+        className,
+      )}
+    >
       {hasSession ? (
         <Button asChild size="lg">
           <Link href="/app">
@@ -40,7 +49,7 @@ export function HeroActions() {
           </Link>
         </Button>
       ) : (
-        <GuestStartButton size="lg" />
+        <GuestStartButton size="lg" captchaClassName="order-last w-full sm:basis-full" />
       )}
       <Button asChild size="lg" variant="secondary">
         <Link href="/login">Sign in</Link>

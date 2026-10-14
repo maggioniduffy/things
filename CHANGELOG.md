@@ -2,6 +2,13 @@
 
 ### Landing
 
+#### Added
+
+- The landing page now explains the app end to end, in labelled sections: numbered "how it works" steps, a features section (the automatic formats, plus capture, previews, collections and tags, smart views, drag to organize, grid/list/canvas, the detail drawer and undo), guest mode, an FAQ and a closing call to action.
+- Header links to the page sections (from 768 px up), and more footer links.
+- e2e: the landing spec checks the section landmarks, the format list and the footer's FAQ link.
+- `AuroraGlow`: one soft, drifting aurora blob (static under reduced motion). Faint glows carry the hero's colors through the landing page, and a smaller aurora rises behind the closing call to action. The hero's aurora now fades out at the bottom instead of ending at the fold.
+
 #### Changed
 
 - Signed-in accounts that open the landing page (`/`) are redirected to `/app`, as on `/login`. Guests stay on the landing page.
@@ -9,6 +16,7 @@
 
 #### Fixed
 
+- The landing page's "Try without an account" and "Sign in" buttons sit side by side again. When a Turnstile site key is set, the full-width captcha widget sat between them and pushed them apart; it now wraps onto its own row (`GuestStartButton` takes `captchaClassName`).
 - Sidebar collection and tag rows: the "..." menu no longer overlaps the item count. While the menu shows, the count hides and the name stops short of the button; on small screens, where the menu is always there, the count sits beside it.
 
 ### Brand assets

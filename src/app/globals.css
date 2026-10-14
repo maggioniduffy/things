@@ -215,7 +215,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-aurora-blob] {
+  [data-aurora-blob],
+  [data-aurora-glow] {
     animation: none !important;
   }
 

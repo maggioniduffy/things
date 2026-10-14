@@ -83,3 +83,49 @@ export function Aurora({ className, variant = "hero", animated = true }: AuroraP
     </div>
   );
 }
+
+const GLOW_PAINT = {
+  pink: "bg-[radial-gradient(closest-side,var(--color-aurora-pink),transparent)]",
+  violet: "bg-[radial-gradient(closest-side,var(--color-aurora-violet),transparent)]",
+  blue: "bg-[radial-gradient(closest-side,var(--color-aurora-blue),transparent)]",
+  coral:
+    "bg-[radial-gradient(closest-side,var(--color-aurora-coral),color-mix(in_srgb,var(--color-aurora-red)_40%,transparent)_45%,transparent)]",
+} as const;
+
+const GLOW_DRIFT = {
+  pink: "animate-aurora-a",
+  violet: "animate-aurora-b",
+  blue: "animate-aurora-c",
+  coral: "animate-aurora-d",
+} as const;
+
+type AuroraGlowProps = {
+  tone: keyof typeof GLOW_PAINT;
+  /**
+   * Position and size within the (relative) parent, e.g. "-top-24 -right-32 size-[28rem]".
+   * Don't use translate utilities: the drift animation owns `transform`.
+   */
+  className?: string;
+  /** Same drift as the hills, static under prefers-reduced-motion. Default true. */
+  animated?: boolean;
+};
+
+/**
+ * One soft aurora blob (the global grain sits on top), for carrying the hero's color down a page without the full
+ * hills. Faint by default; the parent must be `relative` and should clip horizontal overflow.
+ */
+export function AuroraGlow({ tone, className, animated = true }: AuroraGlowProps) {
+  return (
+    <div
+      aria-hidden="true"
+      data-aurora
+      data-aurora-glow={tone}
+      className={cn(
+        "pointer-events-none absolute rounded-full opacity-35 blur-[64px] will-change-transform select-none",
+        GLOW_PAINT[tone],
+        animated && GLOW_DRIFT[tone],
+        className,
+      )}
+    />
+  );
+}
