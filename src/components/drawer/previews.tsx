@@ -1,7 +1,7 @@
 "use client";
 
 import { DownloadIcon, ExternalLinkIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { toast } from "sonner";
 import { itemDisplayTitle, useCardStatus } from "@/components/cards/card-status";
 import { Favicon } from "@/components/cards/card-media";
@@ -133,21 +133,44 @@ function VideoPreview({ item }: { item: BoardItem }) {
   return <LinkPreview item={item} />;
 }
 
+/** Opens the saved page in a new tab, without handing it this app as opener or referrer. */
+function SourceLink({ href, className, children, ...props }: ComponentProps<"a">) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className} {...props}>
+      {children}
+    </a>
+  );
+}
+
 function LinkPreview({ item }: { item: BoardItem }) {
   const href = safeHttpUrl(item.url);
   const site = item.site_name ?? item.domain;
+  const title = itemDisplayTitle(item);
+  const image = item.image_url ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={item.image_url}
+      alt=""
+      referrerPolicy="no-referrer"
+      className="size-full object-cover"
+    />
+  ) : null;
   return (
     <div className={`${FRAME} bg-surface`}>
-      {item.image_url ? (
-        <div className="bg-line aspect-[1.91/1] w-full overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image_url}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="size-full object-cover"
-          />
-        </div>
+      {image ? (
+        href ? (
+          // The preview image is a second way to the page; the title link carries the name.
+          <SourceLink
+            href={href}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="bg-line block aspect-[1.91/1] w-full overflow-hidden"
+          >
+            {image}
+          </SourceLink>
+        ) : (
+          <div className="bg-line aspect-[1.91/1] w-full overflow-hidden">{image}</div>
+        )
       ) : null}
       <div className="grid gap-2 p-4">
         <div className="text-meta text-ink-muted flex items-center gap-2">
@@ -155,17 +178,26 @@ function LinkPreview({ item }: { item: BoardItem }) {
           {site ? <span className="truncate">{site}</span> : null}
         </div>
         <p className="text-card text-ink font-medium [overflow-wrap:anywhere]">
-          {itemDisplayTitle(item)}
+          {href ? (
+            <SourceLink
+              href={href}
+              className="focus-visible:outline-ring rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {title}
+            </SourceLink>
+          ) : (
+            title
+          )}
         </p>
         {item.description ? (
           <p className="text-body text-ink-muted [overflow-wrap:anywhere]">{item.description}</p>
         ) : null}
         {href ? (
-          <Button asChild variant="secondary" size="sm" className="mt-1 w-fit">
-            <a href={href} target="_blank" rel="noopener noreferrer">
+          <Button asChild size="sm" className="mt-1 w-fit">
+            <SourceLink href={href}>
               <ExternalLinkIcon />
-              Open link
-            </a>
+              {item.kind === "article" ? "Read article" : "Open link"}
+            </SourceLink>
           </Button>
         ) : null}
       </div>

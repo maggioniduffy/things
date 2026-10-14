@@ -535,7 +535,7 @@ describe("previews", () => {
     expect(document.querySelector("video")).toHaveAttribute("controls");
   });
 
-  it("link: image, site, description and an Open link that opens safely in a new tab", async () => {
+  it("article: image, site, description and a Read article link that opens safely in a new tab", async () => {
     renderDrawer(
       makeItem({
         id: ID,
@@ -549,10 +549,17 @@ describe("previews", () => {
         image_url: "https://img.example/og.png",
       }),
     );
-    const open = await screen.findByRole("link", { name: /Open link/ });
-    expect(open).toHaveAttribute("href", "https://example.com/post");
-    expect(open).toHaveAttribute("target", "_blank");
-    expect(open).toHaveAttribute("rel", "noopener noreferrer");
+    const read = await screen.findByRole("link", { name: /Read article/ });
+    // The button, the title and the header icon all lead to the page, each safely in a new tab.
+    for (const link of [
+      read,
+      screen.getByRole("link", { name: "A post" }),
+      screen.getByRole("link", { name: "Open in new tab" }),
+    ]) {
+      expect(link).toHaveAttribute("href", "https://example.com/post");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
     expect(screen.getByText("Example Blog")).toBeInTheDocument();
     expect(screen.getByText("About things")).toBeInTheDocument();
     expect(document.querySelector('img[src="https://img.example/og.png"]')).not.toBeNull();
@@ -563,7 +570,7 @@ describe("previews", () => {
       makeItem({ id: ID, kind: "link", title: "Bad", is_read: true, url: "javascript:alert(1)" }),
     );
     await screen.findByRole("dialog");
-    expect(screen.queryByRole("link", { name: /Open link/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("file: icon, name, size and a Download that asks for a signed URL with the download option", async () => {
