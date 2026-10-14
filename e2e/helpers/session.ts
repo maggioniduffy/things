@@ -120,6 +120,9 @@ export type SeedItem = {
   deleted_at?: string;
   /** A valid fractional-indexing key; the default is not one, so reorder specs set it. */
   position?: string;
+  /** Canvas placement; leave out to have the item auto-placed. */
+  canvas_x?: number;
+  canvas_y?: number;
 };
 
 let seedCounter = 0;
@@ -252,4 +255,40 @@ export async function uploadBytes(
   );
   await response.arrayBuffer();
   return response.status;
+}
+
+export type SeedCanvasOptions = {
+  collectionId?: string;
+  /** Title prefix; items are titled `<prefix> 1` ... `<prefix> <count>`. */
+  prefix?: string;
+};
+
+/**
+ * Seeds `count` items for the canvas: links, notes and image items without files, cycling by index.
+ * Every fifth item has a canvas position (a 4-column grid, 340 x 280 apart; the first is at 0,0);
+ * the rest have none and get auto-placed. Returns the ids and titles in call order.
+ */
+export async function seedCanvasItems(
+  session: AppSession,
+  count: number,
+  { collectionId, prefix = "Canvas item" }: SeedCanvasOptions = {},
+) {
+  const kinds = ["link", "note", "image"] as const;
+  const items: SeedItem[] = Array.from({ length: count }, (_, index) => {
+    const kind = kinds[index % kinds.length] ?? "link";
+    const placedIndex = index / 5;
+    const placed = Number.isInteger(placedIndex);
+    return {
+      kind,
+      title: `${prefix} ${index + 1}`,
+      ...(kind === "link"
+        ? { url: `https://example.com/canvas/${index + 1}`, domain: "example.com" }
+        : {}),
+      ...(collectionId ? { collection_id: collectionId } : {}),
+      ...(placed
+        ? { canvas_x: (placedIndex % 4) * 340, canvas_y: Math.floor(placedIndex / 4) * 280 }
+        : {}),
+    };
+  });
+  return seedItems(session, items);
 }

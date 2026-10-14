@@ -228,3 +228,27 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* React Flow (canvas): chrome follows the design tokens. */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-background-pattern-color: var(--color-line);
+  --xy-selection-background-color: color-mix(in srgb, var(--color-focus) 10%, transparent);
+  --xy-selection-border: 1px solid var(--color-focus);
+  --xy-minimap-background-color: var(--color-surface);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--color-paper) 70%, transparent);
+  --xy-minimap-mask-stroke-color: var(--color-focus);
+  --xy-minimap-node-background-color: var(--color-ink-subtle);
+  --xy-minimap-node-stroke-color: transparent;
+  --xy-node-boxshadow-selected: none;
+}
+.react-flow__minimap {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+.react-flow__node:focus-visible {
+  outline: none;
+}

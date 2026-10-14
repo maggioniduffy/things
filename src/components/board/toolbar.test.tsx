@@ -151,14 +151,38 @@ describe("Toolbar", () => {
   });
 
   describe("view toggle", () => {
-    it("disables canvas and explains why", async () => {
-      renderToolbar({ type: "inbox" });
+    it.each([
+      ["the Inbox", { type: "inbox" } as ViewSpec],
+      ["a collection", { type: "collection", collectionId: COLLECTION_ID } as ViewSpec],
+    ])("enables canvas in %s", async (_name, view) => {
+      renderToolbar(view);
+      const canvas = screen.getByRole("button", { name: "Canvas view" });
+      expect(canvas).not.toHaveAttribute("aria-disabled");
+      expect(canvas).toHaveAttribute("aria-pressed", "false");
+      await userEvent.click(canvas);
+      expect(useUiStore.getState().viewMode).toBe("canvas");
+      expect(canvas).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Grid view" })).toHaveAttribute(
+        "aria-pressed",
+        "false",
+      );
+    });
+
+    it.each([
+      ["a kind", { type: "kind", kind: "pdf" } as ViewSpec],
+      ["a tag", { type: "tag", tagId: TAG_ID } as ViewSpec],
+      ["a smart view", { type: "smart", viewId: SMART_ID } as ViewSpec],
+      ["all", { type: "all" } as ViewSpec],
+    ])("disables canvas for %s and explains why", async (_name, view) => {
+      renderToolbar(view);
       const canvas = screen.getByRole("button", { name: "Canvas view" });
       expect(canvas).toHaveAttribute("aria-disabled", "true");
       await userEvent.click(canvas);
       expect(useUiStore.getState().viewMode).not.toBe("canvas");
       await userEvent.hover(canvas);
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("Canvas is coming soon");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "Canvas is for the Inbox and collections",
+      );
     });
 
     it("switches between grid and list", async () => {
@@ -174,12 +198,27 @@ describe("Toolbar", () => {
       expect(grid).toHaveAttribute("aria-pressed", "false");
     });
 
-    it("shows a persisted canvas mode as grid", () => {
+    it("shows a persisted canvas mode as grid outside the Inbox and collections", () => {
       useUiStore.setState({ viewMode: "canvas" });
-      renderToolbar({ type: "inbox" });
+      renderToolbar({ type: "kind", kind: "pdf" });
       expect(screen.getByRole("button", { name: "Grid view" })).toHaveAttribute(
         "aria-pressed",
         "true",
+      );
+      // The stored mode is untouched, so a collection shows the canvas again.
+      expect(useUiStore.getState().viewMode).toBe("canvas");
+    });
+
+    it("keeps a persisted canvas mode in the Inbox", () => {
+      useUiStore.setState({ viewMode: "canvas" });
+      renderToolbar({ type: "inbox" });
+      expect(screen.getByRole("button", { name: "Canvas view" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByRole("button", { name: "Grid view" })).toHaveAttribute(
+        "aria-pressed",
+        "false",
       );
     });
   });
