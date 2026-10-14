@@ -11,9 +11,28 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useViewer } from "@/components/providers/viewer-provider";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
-import { itemsToNodes, reconcileNodes, type ItemFlowNode } from "@/lib/canvas/layout";
+import {
+  itemsToNodes,
+  reconcileNodes,
+  unplacedNodes,
+  type ItemFlowNode,
+} from "@/lib/canvas/layout";
+import {
+  nodeToCanvasRect,
+  useCanvasLayoutSaver,
+  type CanvasLayoutSaverApi,
+  type CanvasRect,
+} from "@/lib/canvas/save";
+import {
+  MAX_ZOOM,
+  MIN_ZOOM,
+  useInitialViewport,
+  useViewportSaver,
+  type CanvasViewport,
+} from "@/lib/canvas/viewport";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { CanvasContext, type CanvasContextValue } from "./canvas-context";
@@ -32,14 +51,64 @@ type CanvasViewProps = {
   onOpen?: (item: BoardItem) => void;
   onRetry?: (item: BoardItem) => void | Promise<void>;
   /**
-   * Seam for saving (WP 6.2): called with the nodes whose position or size the user changed,
-   * once the change is final (drag or resize end).
+   * Which canvas this is, so layout and viewport are saved. Leave out for a canvas with nothing
+   * behind it (the styleguide demo); it then only holds local state.
    */
-  onLayoutChange?: (nodes: readonly ItemFlowNode[]) => void;
+  persist?: CanvasPersistTarget;
 };
 
-function CanvasInner({ items, onOpen, onRetry, onLayoutChange }: CanvasViewProps) {
+/** The Inbox or one collection. */
+export type CanvasPersistTarget = { type: "inbox" } | { type: "collection"; collectionId: string };
+
+/** What the canvas does to keep itself: queue layout changes, remember the viewport. */
+type CanvasPersistence = {
+  layout: CanvasLayoutSaverApi;
+  /** Registers who moves nodes back to their last saved layout after a failed save. */
+  setRollbackHandler: (handler: (rects: CanvasRect[]) => void) => void;
+  initialViewport: CanvasViewport | null;
+  onViewportChange: (viewport: CanvasViewport) => void;
+};
+
+type CanvasInnerProps = Omit<CanvasViewProps, "persist"> & { persistence?: CanvasPersistence };
+
+function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) {
   const [nodes, setNodes] = useState<ItemFlowNode[]>(() => itemsToNodes(items));
+  const [initialViewport] = useState(() => persistence?.initialViewport ?? null);
+  const nodesRef = useRef(nodes);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  });
+  const layout = persistence?.layout;
+  const setRollbackHandler = persistence?.setRollbackHandler;
+  const onViewportChange = persistence?.onViewportChange;
+
+  // A failed save moves the nodes back to their last saved layout.
+  useEffect(() => {
+    setRollbackHandler?.((rects) => {
+      const byId = new Map(rects.map((rect) => [rect.id, rect]));
+      setNodes((current) =>
+        current.map((node) => {
+          const rect = byId.get(node.id);
+          return rect
+            ? {
+                ...node,
+                position: { x: rect.x, y: rect.y },
+                width: rect.w,
+                height: rect.h,
+                zIndex: rect.z,
+              }
+            : node;
+        }),
+      );
+    });
+  }, [setRollbackHandler]);
+
+  // Items without a stored position were auto-placed above; save them once, in one batch.
+  useEffect(() => {
+    if (!layout) return;
+    const fresh = unplacedNodes(nodes).filter((node) => !layout.hasSeen(node.id));
+    if (fresh.length > 0) layout.enqueue(fresh.map(nodeToCanvasRect));
+  }, [nodes, layout]);
   const minimap = useUiStore((state) => state.canvasMinimap);
 
   // New, removed and patched items reach the nodes; local positions survive a refetch.
@@ -50,13 +119,33 @@ function CanvasInner({ items, onOpen, onRetry, onLayoutChange }: CanvasViewProps
     setNodes((current) => reconcileNodes(current, items));
   }
 
-  const onNodesChange = useCallback((changes: NodeChange<ItemFlowNode>[]) => {
-    setNodes((current) => applyNodeChanges(changes, current));
-  }, []);
+  const onNodesChange = useCallback(
+    (changes: NodeChange<ItemFlowNode>[]) => {
+      const next = applyNodeChanges(changes, nodesRef.current);
+      nodesRef.current = next;
+      setNodes(next);
+      // Resize end (`resizing === false`; plain measuring leaves it undefined): save the new size.
+      const resized = new Set(
+        changes.flatMap((change) =>
+          change.type === "dimensions" && change.resizing === false ? [change.id] : [],
+        ),
+      );
+      if (layout && resized.size > 0) {
+        layout.enqueue(next.filter((node) => resized.has(node.id)).map(nodeToCanvasRect));
+      }
+    },
+    [layout],
+  );
 
   const onNodeDragStop = useCallback(
-    (_event: unknown, _node: ItemFlowNode, dragged: ItemFlowNode[]) => onLayoutChange?.(dragged),
-    [onLayoutChange],
+    (_event: unknown, _node: ItemFlowNode, dragged: ItemFlowNode[]) =>
+      layout?.enqueue(dragged.map(nodeToCanvasRect)),
+    [layout],
+  );
+
+  const onMoveEnd = useCallback(
+    (_event: unknown, viewport: CanvasViewport) => onViewportChange?.(viewport),
+    [onViewportChange],
   );
 
   const thumbnails = useSignedUrls(items.map((item) => item.thumbnail_path));
@@ -72,9 +161,12 @@ function CanvasInner({ items, onOpen, onRetry, onLayoutChange }: CanvasViewProps
         onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop}
         nodeTypes={NODE_TYPES}
-        minZoom={0.1}
-        maxZoom={2}
-        fitView
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
+        onMoveEnd={onMoveEnd}
+        // A saved viewport wins; otherwise start fitted to the content.
+        defaultViewport={initialViewport ?? undefined}
+        fitView={initialViewport === null}
         fitViewOptions={FIT_VIEW_OPTIONS}
         onlyRenderVisibleElements={nodes.length > VISIBLE_ONLY_ABOVE}
         // Left-drag on empty space draws a marquee; space-drag, middle mouse, trackpad scroll and
@@ -96,8 +188,35 @@ function CanvasInner({ items, onOpen, onRetry, onLayoutChange }: CanvasViewProps
   );
 }
 
+function PersistedCanvas({
+  persist,
+  ...props
+}: Omit<CanvasViewProps, "persist"> & { persist: CanvasPersistTarget }) {
+  const { userId } = useViewer();
+  const target = useMemo(
+    () => (persist.type === "inbox" ? { type: "inbox" as const, userId } : persist),
+    [persist, userId],
+  );
+  const initial = useInitialViewport(target);
+  const onViewportChange = useViewportSaver(target);
+
+  const rollbackHandler = useRef<(rects: CanvasRect[]) => void>(() => {});
+  const layout = useCanvasLayoutSaver(props.items, (rects) => rollbackHandler.current(rects));
+  const setRollbackHandler = useCallback((handler: (rects: CanvasRect[]) => void) => {
+    rollbackHandler.current = handler;
+  }, []);
+
+  const persistence = useMemo<CanvasPersistence>(
+    () => ({ layout, setRollbackHandler, initialViewport: initial.viewport, onViewportChange }),
+    [layout, setRollbackHandler, initial.viewport, onViewportChange],
+  );
+  // The viewport decides how the canvas first paints, so wait for a collection's to load.
+  if (!initial.ready) return null;
+  return <CanvasInner {...props} persistence={persistence} />;
+}
+
 /** The infinite board of an Inbox or collection. Fills its parent; give that parent a height. */
-export function CanvasView(props: CanvasViewProps) {
+export function CanvasView({ persist, ...props }: CanvasViewProps) {
   return (
     <div
       role="region"
@@ -107,7 +226,7 @@ export function CanvasView(props: CanvasViewProps) {
     >
       <div className="absolute inset-0">
         <ReactFlowProvider>
-          <CanvasInner {...props} />
+          {persist ? <PersistedCanvas persist={persist} {...props} /> : <CanvasInner {...props} />}
         </ReactFlowProvider>
       </div>
     </div>

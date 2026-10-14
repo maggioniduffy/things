@@ -83,7 +83,8 @@ export function autoPlace(
   return result;
 }
 
-function nodeRect(node: ItemFlowNode): Rect {
+/** The rect a node occupies now: its position and size, falling back to the item's default size. */
+export function nodeRect(node: ItemFlowNode): Rect {
   const fallback = defaultNodeSize(node.data.item);
   return {
     x: node.position.x,
@@ -146,6 +147,14 @@ export function reconcileNodes(
   const unchanged =
     next.length === previous.length && next.every((node, i) => node === previous[i]);
   return unchanged ? (previous as ItemFlowNode[]) : next;
+}
+
+/**
+ * Nodes whose item has no stored canvas position, i.e. the ones `reconcileNodes` auto-placed (or
+ * that were auto-placed and not saved yet). They still need to be saved.
+ */
+export function unplacedNodes(nodes: readonly ItemFlowNode[]): ItemFlowNode[] {
+  return nodes.filter((node) => !hasCanvasPosition(node.data.item));
 }
 
 /** Nodes for a list of items: stored positions and sizes, defaults by kind, the rest auto-placed. */

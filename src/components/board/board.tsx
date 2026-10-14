@@ -178,6 +178,11 @@ export function Board({ view, sort }: BoardProps) {
           items={allItems}
           onOpen={openItem}
           onRetry={retryEnrich}
+          persist={
+            view.type === "collection"
+              ? { type: "collection", collectionId: view.collectionId }
+              : { type: "inbox" }
+          }
         />
       </>
     );
