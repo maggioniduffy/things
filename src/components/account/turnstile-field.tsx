@@ -12,13 +12,15 @@ type TurnstileFieldProps = {
   /** Called with a fresh token, or null when it expires or the widget errors. */
   onToken: (token: string | null) => void;
   ref?: Ref<TurnstileInstance>;
+  /** Widget container classes, e.g. to give it its own row in a flex layout. */
+  className?: string;
 };
 
 /**
  * Cloudflare Turnstile widget. Renders nothing unless NEXT_PUBLIC_TURNSTILE_SITE_KEY is set
  * (it is unset locally and in e2e; captcha is enforced by the production dashboard).
  */
-export function TurnstileField({ onToken, ref }: TurnstileFieldProps) {
+export function TurnstileField({ onToken, ref, className }: TurnstileFieldProps) {
   const siteKey = getSiteKey();
   if (!siteKey) return null;
 
@@ -26,6 +28,7 @@ export function TurnstileField({ onToken, ref }: TurnstileFieldProps) {
     <Turnstile
       ref={ref}
       siteKey={siteKey}
+      className={className}
       options={{ size: "flexible", appearance: "interaction-only" }}
       onSuccess={(token) => onToken(token)}
       onExpire={() => onToken(null)}

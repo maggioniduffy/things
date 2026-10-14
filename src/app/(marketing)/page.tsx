@@ -19,7 +19,7 @@ export default function LandingPage() {
       <div className="relative">
         <HeroBackdrop />
         <SiteHeader />
-        <main>
+        <main className="overflow-x-clip">
           <Hero />
           <HowItWorks />
           <Features />

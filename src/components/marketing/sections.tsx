@@ -9,12 +9,13 @@ import {
   UploadIcon,
   type LucideIcon,
 } from "lucide-react";
+import { Aurora, AuroraGlow } from "@/components/brand";
 import { KindIcon } from "@/components/kind-icon";
 import type { ItemKind } from "@/types/supabase";
 import { HeroActions } from "./app-entry";
 
 const sectionClass = "border-line relative z-10 w-full scroll-mt-4 border-t";
-const innerClass = "mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24";
+const innerClass = "relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24";
 const eyebrowClass = "text-meta text-ink-subtle font-medium tracking-wide uppercase";
 const titleClass =
   "font-heading tracking-heading text-ink text-page mt-2 font-semibold text-balance sm:text-[length:2.25rem] sm:leading-[1.15]";
@@ -89,6 +90,8 @@ const FEATURES: { icon: LucideIcon; title: string; body: string }[] = [
 export function Features() {
   return (
     <section id="features" aria-labelledby="features-title" className={sectionClass}>
+      <AuroraGlow tone="violet" className="top-10 -right-40 h-[26rem] w-[36rem]" />
+      <AuroraGlow tone="pink" className="bottom-0 -left-48 h-[22rem] w-[30rem] opacity-25" />
       <div className={innerClass}>
         <header>
           <p className={eyebrowClass}>Features</p>
@@ -148,6 +151,7 @@ const GUEST_FACTS: { term: string; detail: string }[] = [
 export function GuestMode() {
   return (
     <section id="guest" aria-labelledby="guest-title" className={sectionClass}>
+      <AuroraGlow tone="coral" className="top-16 -left-48 h-[22rem] w-[36rem]" />
       <div className={`${innerClass} grid gap-10 md:grid-cols-[1fr_1.2fr] md:gap-16`}>
         <header>
           <p className={eyebrowClass}>Guest mode</p>
@@ -206,6 +210,7 @@ const FAQS: { question: string; answer: string }[] = [
 export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className={sectionClass}>
+      <AuroraGlow tone="blue" className="top-24 -right-48 h-[24rem] w-[32rem] opacity-25" />
       <div className={`${innerClass} grid gap-10 md:grid-cols-[1fr_1.6fr] md:gap-16`}>
         <header>
           <p className={eyebrowClass}>FAQ</p>
@@ -229,8 +234,9 @@ export function Faq() {
 /** Last call to action before the footer. */
 export function ClosingCta() {
   return (
-    <section aria-labelledby="cta-title" className={sectionClass}>
-      <div className={`${innerClass} flex flex-col items-center text-center`}>
+    <section aria-labelledby="cta-title" className={`${sectionClass} overflow-hidden`}>
+      <Aurora variant="subtle" className="h-[min(36vh,320px)]" />
+      <div className={`${innerClass} flex flex-col items-center pb-28 text-center md:pb-40`}>
         <h2 id="cta-title" className={titleClass}>
           Your next save is one paste away
         </h2>

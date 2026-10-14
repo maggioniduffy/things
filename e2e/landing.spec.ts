@@ -70,7 +70,7 @@ test.describe("landing page", () => {
         return { name: style.animationName, duration: style.animationDuration };
       }),
     );
-    expect(animations.length).toBeGreaterThan(5);
+    expect(animations.length).toBeGreaterThan(10);
     for (const animation of animations) {
       expect(animation.name).toBe("none");
     }
@@ -80,7 +80,7 @@ test.describe("landing page", () => {
   test("drifts when motion is allowed", async ({ page }) => {
     await page.goto("/");
     const names = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("[data-aurora-blob]")).map(
+      Array.from(document.querySelectorAll('[data-variant="hero"] [data-aurora-blob]')).map(
         (el) => getComputedStyle(el).animationName,
       ),
     );

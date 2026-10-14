@@ -47,7 +47,7 @@ export function HeroBackdrop() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 h-dvh overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 top-0 h-dvh overflow-hidden [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
     >
       <Aurora variant="hero" className="h-[min(62vh,620px)]" />
     </div>
