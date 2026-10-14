@@ -210,7 +210,7 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 3 Capture | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
 | 5 Organize & DnD | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | | |
+| 6 Canvas | WP 6.1 done; 6.2 in progress | maggioniduffy/things#14 |
 | 7 Search & palette | | |
 | 8 Polish & release | | |
 

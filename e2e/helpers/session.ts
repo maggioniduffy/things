@@ -292,3 +292,34 @@ export async function seedCanvasItems(
   });
   return seedItems(session, items);
 }
+
+/** Canvas columns, `position` and ids of the signed-in user's items in a collection (or the Inbox), read through REST. */
+export async function fetchCanvasRows(session: AppSession, collectionId: string | null) {
+  const filter = collectionId ? `collection_id=eq.${collectionId}` : "collection_id=is.null";
+  const response = await fetch(
+    `${SUPABASE_URL()}/rest/v1/items?select=id,title,position,canvas_x,canvas_y,canvas_w,canvas_h,canvas_z&${filter}&order=title`,
+    { headers: restHeaders(session) },
+  );
+  expect(response.status).toBe(200);
+  return (await response.json()) as {
+    id: string;
+    title: string;
+    position: string;
+    canvas_x: number | null;
+    canvas_y: number | null;
+    canvas_w: number | null;
+    canvas_h: number | null;
+    canvas_z: number;
+  }[];
+}
+
+/** The stored `collections.canvas_viewport` of a collection, read through REST. */
+export async function fetchCollectionViewport(session: AppSession, collectionId: string) {
+  const response = await fetch(
+    `${SUPABASE_URL()}/rest/v1/collections?select=canvas_viewport&id=eq.${collectionId}`,
+    { headers: restHeaders(session) },
+  );
+  expect(response.status).toBe(200);
+  const rows = (await response.json()) as { canvas_viewport: unknown }[];
+  return rows[0]?.canvas_viewport ?? null;
+}

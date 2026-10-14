@@ -5,6 +5,7 @@ import {
   defaultNodeSize,
   itemsToNodes,
   reconcileNodes,
+  unplacedNodes,
   type ItemFlowNode,
 } from "./layout";
 
@@ -184,5 +185,14 @@ describe("reconcileNodes", () => {
     const fresh = makeItem({ id: "c", canvas_x: 5, canvas_y: 6 });
     const next = reconcileNodes(itemsToNodes([a]), [a, fresh]);
     expect(next[1]?.position).toEqual({ x: 5, y: 6 });
+  });
+});
+
+describe("unplacedNodes", () => {
+  it("lists the nodes whose item has no stored position", () => {
+    const placed = makeItem({ id: "a", canvas_x: 0, canvas_y: 0 });
+    const loose = makeItem({ id: "b" });
+    const nodes = itemsToNodes([placed, loose]);
+    expect(unplacedNodes(nodes).map((node) => node.id)).toEqual(["b"]);
   });
 });
