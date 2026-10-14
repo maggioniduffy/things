@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { XIcon } from "lucide-react";
+import { ExternalLinkIcon, XIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
@@ -20,6 +20,7 @@ import { CollectionField, TagsField, TitleField } from "./fields";
 import { ITEM_PARAM, useCloseItem } from "./item-param";
 import { ItemMetadata } from "./metadata";
 import { ItemPreview } from "./previews";
+import { safeHttpUrl } from "./urls";
 
 function DrawerLoading() {
   return (
@@ -66,10 +67,20 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
     return <Unavailable onClose={onClose} />;
   }
 
+  const sourceHref = safeHttpUrl(item.url);
+
   return (
     <>
-      <div className="border-line flex items-center justify-between gap-2 border-b py-3 pr-3 pl-4">
+      <div className="border-line flex items-center gap-2 border-b py-3 pr-3 pl-4">
         <Badge>{kindSingularLabel(item.kind)}</Badge>
+        <span className="flex-1" />
+        {sourceHref ? (
+          <IconButton asChild variant="ghost" size="sm" label="Open in new tab">
+            <a href={sourceHref} target="_blank" rel="noopener noreferrer">
+              <ExternalLinkIcon />
+            </a>
+          </IconButton>
+        ) : null}
         <DrawerClose asChild>
           <IconButton variant="ghost" size="sm" label="Close" tooltip={false}>
             <XIcon />
