@@ -2,6 +2,12 @@
 
 ### Landing
 
+#### Added
+
+- The landing page now explains the app end to end, in labelled sections: numbered "how it works" steps, a features section (the automatic formats, plus capture, previews, collections and tags, smart views, drag to organize, grid/list/canvas, the detail drawer and undo), guest mode, an FAQ and a closing call to action.
+- Header links to the page sections (from 768 px up), and more footer links.
+- e2e: the landing spec checks the section landmarks, the format list and the footer's FAQ link.
+
 #### Changed
 
 - Signed-in accounts that open the landing page (`/`) are redirected to `/app`, as on `/login`. Guests stay on the landing page.

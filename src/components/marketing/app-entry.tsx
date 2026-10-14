@@ -28,10 +28,15 @@ export function HeaderAppLink() {
 }
 
 /** Hero buttons. A returning guest gets "Open app" in place of the guest start. */
-export function HeroActions() {
+export function HeroActions({ className }: { className?: string }) {
   const hasSession = useHasSession();
   return (
-    <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        "mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center",
+        className,
+      )}
+    >
       {hasSession ? (
         <Button asChild size="lg">
           <Link href="/app">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/marketing/footer";
 import { Hero, HeroBackdrop, HowItWorks, SiteHeader } from "@/components/marketing/hero";
+import { ClosingCta, Faq, Features, GuestMode } from "@/components/marketing/sections";
 
 const title = "Things — save anything for later";
 const description =
@@ -21,6 +22,10 @@ export default function LandingPage() {
         <main>
           <Hero />
           <HowItWorks />
+          <Features />
+          <GuestMode />
+          <Faq />
+          <ClosingCta />
         </main>
       </div>
       <Footer />

@@ -11,9 +11,9 @@ test.describe("landing page", () => {
       "Save anything. Find it again.",
     );
 
-    const main = page.getByRole("main");
-    const guest = main.getByRole("button", { name: "Try without an account" });
-    const signIn = main.getByRole("link", { name: "Sign in" });
+    const hero = page.getByRole("region", { name: "Save anything. Find it again." });
+    const guest = hero.getByRole("button", { name: "Try without an account" });
+    const signIn = hero.getByRole("link", { name: "Sign in" });
     await expect(guest).toBeVisible();
     await expect(signIn).toBeVisible();
     await expect(signIn).toHaveAttribute("href", /^\/login/);
@@ -24,6 +24,30 @@ test.describe("landing page", () => {
       "https://github.com/maggioniduffy/things",
     );
     consoleErrors.assertNone();
+  });
+
+  test("explains the app in landmarked sections", async ({ page }) => {
+    await page.goto("/");
+
+    const main = page.getByRole("main");
+    for (const name of [
+      "How it works",
+      "Organized before you think about it",
+      "Try it without an account",
+      "Questions, answered",
+      "Your next save is one paste away",
+    ]) {
+      await expect(main.getByRole("region", { name })).toBeVisible();
+    }
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(5);
+    await expect(main.getByRole("list", { name: "Formats" }).getByRole("listitem")).toHaveCount(8);
+
+    await page
+      .getByRole("navigation", { name: "Footer" })
+      .getByRole("link", { name: "FAQ" })
+      .click();
+    await expect(page).toHaveURL(/#faq$/);
+    await expect(main.getByRole("region", { name: "Questions, answered" })).toBeInViewport();
   });
 
   test("does not scroll horizontally on a phone", async ({ page }) => {
