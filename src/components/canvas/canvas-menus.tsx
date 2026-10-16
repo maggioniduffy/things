@@ -174,7 +174,10 @@ export function CanvasMoveMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         onCloseAutoFocus={(event) => event.preventDefault()}
-        align="start" aria-label="Move to" className="max-h-72 w-52">
+        align="start"
+        aria-label="Move to"
+        className="max-h-72 w-52"
+      >
         <DropdownMenuLabel>
           {count === 1 ? "Move 1 item to" : `Move ${count} items to`}
         </DropdownMenuLabel>
