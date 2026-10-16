@@ -14,7 +14,7 @@ Things is a personal "save for later" web app: drop in any link, file or note, a
 | 3 Capture | [phase-3.md](phase-3.md) | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | [phase-4.md](phase-4.md) | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
 | 5 Organize & DnD | [phase-5.md](phase-5.md) | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | [phase-6.md](phase-6.md) | WP 6.1–6.2 done (6.2 reviewed, fixes in); 6.3 WIP merged from `claude/sleepy-allen-enblua`: unit tests green, unreviewed, `e2e/canvas-tools.spec.ts` not yet run | #14 |
+| 6 Canvas | [phase-6.md](phase-6.md) | WP 6.1–6.3 done (6.3 reviewed, fixes in, `canvas-tools` e2e green); 6.4 next | #14 |
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 
@@ -28,7 +28,7 @@ Update this table when a WP or gate lands.
 | --- | --- | --- | --- |
 | Orchestrator (**O**) | Opus, main session | Splits phases into WPs, writes briefs, decides trade-offs, reviews diffs, runs gates, commits, opens PRs | Writes large feature code (small post-review fixes are fine) |
 | Scout (**S**) | Haiku | Large-but-simple reading: package docs/`.d.ts`, codebase sweeps, log digests (tests, CI, axe, Lighthouse), "find every X" audits, CHANGELOG drafts | Edits the repo; makes decisions |
-| Builder (**B**) | Sonnet | Implements one WP per brief, writes its tests, runs typecheck/lint/test | Commits, pushes, widens scope |
+| Builder (**B**) | Sonnet | Implements one WP per brief, writes its tests, runs typecheck/lint and its own tests | Commits, pushes, widens scope |
 | Reviewer (**R**) | Opus | Independent check of a WP diff or a phase gate | Fixes what it finds |
 
 Rule of thumb: a summary → scout; code → builder; a decision or verdict → Opus. In WP tables, ∥ = may run in parallel with the previous WP.
@@ -37,10 +37,10 @@ Rule of thumb: a summary → scout; code → builder; a decision or verdict → 
 
 1. Opus reads the files above; scouts verify anything research-notes doesn't cover.
 2. Opus writes WP briefs (template below), orders them, marks ∥.
-3. Builder per WP → code + tests + green checks → report. Parallel builders only for ∥ WPs with disjoint files, each in its own worktree.
+3. Builder per WP → code + tests + green WP checks (typecheck, lint, the WP's own unit tests; e2e specs are written but run at the gate) → report. Parallel builders only for ∥ WPs with disjoint files, each in its own worktree.
 4. Opus reads report + diff; small fixes inline, otherwise re-brief. Reviewer on risky WPs (auth, RLS, SSRF, storage, ordering, canvas save). A "deviated" or "blocked" report goes back through Opus before anything else runs.
 5. Commit per WP: `phaseN(wpX): …`.
-6. After the last WP: gate → reviewer → scout drafts CHANGELOG → PR. Every phase ends with `pnpm typecheck && pnpm lint && pnpm test` green plus its gate.
+6. After the last WP: gate → reviewer → scout drafts CHANGELOG → PR. The main suites run only here: every phase ends with `pnpm typecheck && pnpm lint && pnpm test && pnpm e2e` green plus its gate; failures found then are fixed before the PR.
 
 Scout findings that contradict the spec go into `docs/research-notes.md` (spec stays as-is). Non-blocking review findings go into the "Open findings" table of the phase that will fix them; once fixed, move them to [archive.md](archive.md).
 

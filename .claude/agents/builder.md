@@ -16,7 +16,7 @@ While coding
 - Add or update tests the brief's acceptance checks require.
 
 Before reporting
-- Run `pnpm typecheck`, `pnpm lint`, `pnpm test` (and any extra command in the brief). Fix failures you caused.
+- Run `pnpm typecheck`, `pnpm lint` and only the unit tests you added or changed (`pnpm test <paths>`), plus any extra command in the brief. Fix failures you caused. Don't run the full `pnpm test` or `pnpm e2e`; e2e specs you write run at the phase gate.
 - Do not commit, push, or edit `CHANGELOG.md` — the orchestrator does that after review.
 
 Report (under 300 words)

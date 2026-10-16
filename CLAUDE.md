@@ -37,5 +37,6 @@ pnpm dev · pnpm typecheck · pnpm lint · pnpm test · pnpm e2e
 pnpm supabase start · pnpm supabase db reset · pnpm supabase test db
 pnpm supabase gen types typescript --local > src/types/database.types.ts
 
-## Definition of done (every work package / phase)
-typecheck + lint + tests green · no console errors · styleguide still renders · CHANGELOG.md entry (phase level)
+## Definition of done
+- Work package: typecheck + lint green · the WP's own new/changed unit tests green (`pnpm test <paths>`). No full suite, no e2e.
+- Phase gate: full `pnpm test` + `pnpm e2e` green (including the specs the phase's WPs wrote) · no console errors · styleguide still renders · CHANGELOG.md entry.
