@@ -16,6 +16,7 @@ Every collection and the Inbox has its own infinite canvas built with React Flow
 - Pan with space-drag, trackpad or middle mouse; zoom 10–200% with pinch or ⌘-scroll; dot-grid background in `--color-line` under the grain.
 - Marquee and Shift-click multi-select, multi-drag, resize (min 160×120), bring to front, optional 8px snap.
 - Items land where they happen: drops at the cursor (`screenToFlowPosition`), pastes at the viewport center, double-click on empty space creates a note there.
+- On the canvas a click on a card only selects it; a double-click, the open button shown on hover (or on the selected card) or Enter opens it. Grid and list still open on a click.
 - Items without a position (saved from grid or another device) are auto-placed in a free column right of the existing content.
 - Moving to another collection from the canvas: context menu or `M`. Dropping a node on a sidebar collection (detected on drag stop with `elementFromPoint`) is a stretch goal.
 - Grid manual order and canvas positions are independent; switching views never moves items.
