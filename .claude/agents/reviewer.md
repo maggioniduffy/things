@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Independent checker. Use after a builder finishes a work package, or at a phase gate, to review the uncommitted diff against the brief, docs/plan.md and CLAUDE.md, and to run the phase's "done when" checks. Reports findings; does not fix them.
+description: Independent checker. Use after a builder finishes a work package, or at a phase gate, to review the uncommitted diff against the brief, docs/plan/phase-N.md and CLAUDE.md, and to run the phase's "done when" checks. Reports findings; does not fix them.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

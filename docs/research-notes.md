@@ -1,6 +1,6 @@
 # Research notes
 
-Verified facts that **override `docs/plan.md` and model memory** where they differ. The Haiku scouts read package sources from npm (`npm pack`, read-only), and Opus reviewed and spot-checked what they found. Checked 2026-10-12. Items marked UNVERIFIED must be confirmed by the WP that first uses them.
+Verified facts that **override the spec in `docs/plan/` and model memory** where they differ. The Haiku scouts read package sources from npm (`npm pack`, read-only), and Opus reviewed and spot-checked what they found. Checked 2026-10-12. Items marked UNVERIFIED must be confirmed by the WP that first uses them.
 
 ## Pinned versions (Phase 0 installs these majors)
 
