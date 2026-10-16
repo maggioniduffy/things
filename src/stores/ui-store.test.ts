@@ -139,7 +139,7 @@ describe("persistence", () => {
     s.setPaletteOpen(true);
     s.setQuickAddOpen(true);
     const stored = JSON.parse(localStorage.getItem(UI_STORE_KEY) ?? "null");
-    expect(stored.state).toEqual({ viewMode: "list", canvasMinimap: false, canvasSnap: false });
+    expect(stored.state).toEqual({ viewMode: "list", canvasMinimap: false });
   });
 
   it("rehydrate reads viewMode back", async () => {

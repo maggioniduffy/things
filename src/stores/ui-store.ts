@@ -11,9 +11,6 @@ type UiState = {
   /** Canvas minimap shown or hidden. */
   canvasMinimap: boolean;
   toggleCanvasMinimap: () => void;
-  /** Canvas snaps dragged and resized cards to an 8 px grid. */
-  canvasSnap: boolean;
-  toggleCanvasSnap: () => void;
 
   selectedIds: string[];
   /** The last card clicked without Shift: where a Shift-click range starts. */
@@ -83,8 +80,6 @@ export const useUiStore = create<UiState>()(
 
       canvasMinimap: false,
       toggleCanvasMinimap: () => set((state) => ({ canvasMinimap: !state.canvasMinimap })),
-      canvasSnap: false,
-      toggleCanvasSnap: () => set((state) => ({ canvasSnap: !state.canvasSnap })),
 
       selectedIds: [],
       anchorId: null,
@@ -137,11 +132,7 @@ export const useUiStore = create<UiState>()(
     {
       name: UI_STORE_KEY,
       storage: createJSONStorage(() => safeLocalStorage),
-      partialize: (state) => ({
-        viewMode: state.viewMode,
-        canvasMinimap: state.canvasMinimap,
-        canvasSnap: state.canvasSnap,
-      }),
+      partialize: (state) => ({ viewMode: state.viewMode, canvasMinimap: state.canvasMinimap }),
       // Keep the server and first client render identical; rehydrate in an effect instead.
       skipHydration: true,
     },

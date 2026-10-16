@@ -47,16 +47,7 @@ export function batchPatch(
 ): Partial<BoardItem> | null {
   switch (action.type) {
     case "collection":
-      // The old canvas coordinates mean nothing on another canvas: clear them so the item is
-      // auto-placed there instead of landing on top of whatever sits at the same spot.
-      return {
-        collection_id: action.id,
-        canvas_x: null,
-        canvas_y: null,
-        canvas_w: null,
-        canvas_h: null,
-        canvas_z: 0,
-      };
+      return { collection_id: action.id };
     case "favorite":
       return { is_favorite: true };
     case "archive":

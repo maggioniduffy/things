@@ -165,21 +165,7 @@ describe("copy and patches", () => {
   });
 
   it("maps actions to one row patch", () => {
-    const clearedCanvas = {
-      canvas_x: null,
-      canvas_y: null,
-      canvas_w: null,
-      canvas_h: null,
-      canvas_z: 0,
-    };
-    expect(batchPatch({ type: "collection", id: null })).toEqual({
-      collection_id: null,
-      ...clearedCanvas,
-    });
-    expect(batchPatch({ type: "collection", id: COLLECTION })).toEqual({
-      collection_id: COLLECTION,
-      ...clearedCanvas,
-    });
+    expect(batchPatch({ type: "collection", id: null })).toEqual({ collection_id: null });
     expect(batchPatch({ type: "favorite" })).toEqual({ is_favorite: true });
     expect(batchPatch({ type: "restore" })).toEqual({ deleted_at: null });
     expect(batchPatch({ type: "tag", id: TAG })).toBeNull();
@@ -209,19 +195,7 @@ describe("useBatchMove: collection", () => {
       collections: { [COLLECTION]: 5 },
     });
     expect(state.requests).toEqual([
-      {
-        table: "items",
-        op: "update",
-        patch: {
-          collection_id: COLLECTION,
-          canvas_x: null,
-          canvas_y: null,
-          canvas_w: null,
-          canvas_h: null,
-          canvas_z: 0,
-        },
-        ids: SELECTED,
-      },
+      { table: "items", op: "update", patch: { collection_id: COLLECTION }, ids: SELECTED },
     ]);
     expect(mocks.toast).toHaveBeenCalledWith("Moved 5 items to Reading");
 

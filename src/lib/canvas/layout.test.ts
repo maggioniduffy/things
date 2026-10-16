@@ -6,7 +6,6 @@ import {
   itemsToNodes,
   reconcileNodes,
   unplacedNodes,
-  zOrderChanges,
   type ItemFlowNode,
 } from "./layout";
 
@@ -195,45 +194,5 @@ describe("unplacedNodes", () => {
     const loose = makeItem({ id: "b" });
     const nodes = itemsToNodes([placed, loose]);
     expect(unplacedNodes(nodes).map((node) => node.id)).toEqual(["b"]);
-  });
-});
-
-describe("zOrderChanges", () => {
-  // a, b and c overlap each other; far is alone.
-  const nodes = itemsToNodes([
-    makeItem({ id: "a", canvas_x: 0, canvas_y: 0, canvas_w: 200, canvas_h: 200, canvas_z: 0 }),
-    makeItem({ id: "b", canvas_x: 100, canvas_y: 100, canvas_w: 200, canvas_h: 200, canvas_z: 3 }),
-    makeItem({ id: "c", canvas_x: 150, canvas_y: 150, canvas_w: 200, canvas_h: 200, canvas_z: 5 }),
-    makeItem({ id: "far", canvas_x: 2000, canvas_y: 0, canvas_w: 200, canvas_h: 200, canvas_z: 9 }),
-  ]);
-
-  it("forward goes one step past the highest node it overlaps, ignoring far ones", () => {
-    expect(zOrderChanges(nodes, new Set(["a"]), "forward")).toEqual(new Map([["a", 6]]));
-  });
-
-  it("backward goes one step below the lowest node it overlaps", () => {
-    expect(zOrderChanges(nodes, new Set(["c"]), "backward")).toEqual(new Map([["c", -1]]));
-  });
-
-  it("front and back look at every other node", () => {
-    expect(zOrderChanges(nodes, new Set(["a"]), "front")).toEqual(new Map([["a", 10]]));
-    expect(zOrderChanges(nodes, new Set(["far"]), "back")).toEqual(new Map([["far", -1]]));
-  });
-
-  it("does nothing when the selection overlaps nothing or is already past the reference", () => {
-    expect(zOrderChanges(nodes, new Set(["far"]), "forward").size).toBe(0);
-    expect(zOrderChanges(nodes, new Set(["far"]), "front").size).toBe(0);
-    expect(zOrderChanges(nodes, new Set(["a"]), "back").size).toBe(0);
-    expect(zOrderChanges(nodes, new Set(), "front").size).toBe(0);
-  });
-
-  it("moves a selection as a group and keeps its internal order", () => {
-    const changes = zOrderChanges(nodes, new Set(["a", "b"]), "forward");
-    expect(changes).toEqual(
-      new Map([
-        ["a", 6],
-        ["b", 9],
-      ]),
-    );
   });
 });

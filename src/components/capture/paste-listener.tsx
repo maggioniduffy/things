@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { cascade, useCanvasPlacer } from "@/lib/canvas/placement";
 import { useCapture } from "@/lib/items/mutations";
 import type { ViewSpec } from "@/lib/views";
 import { readDataTransfer, saveRequests } from "./clipboard";
@@ -30,12 +29,6 @@ export function PasteListener({ view }: { view: ViewSpec }) {
     captureRef.current = capture;
   }, [capture]);
 
-  const placer = useCanvasPlacer((state) => state.placer);
-  const placerRef = useRef(placer);
-  useEffect(() => {
-    placerRef.current = placer;
-  }, [placer]);
-
   useEffect(() => {
     function onPaste(event: ClipboardEvent) {
       if (event.defaultPrevented || !event.clipboardData) return;
@@ -47,13 +40,7 @@ export function PasteListener({ view }: { view: ViewSpec }) {
       if (found.requests.length === 0) return;
 
       event.preventDefault();
-      const place = placerRef.current;
-      if (place) {
-        const at = place();
-        saveRequests(captureRef.current, found, (index) => cascade(at, index));
-      } else {
-        saveRequests(captureRef.current, found);
-      }
+      saveRequests(captureRef.current, found);
     }
 
     document.addEventListener("paste", onPaste);
