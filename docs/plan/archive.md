@@ -40,6 +40,7 @@ Changes Opus made to the original spec before building. Phase files cite them as
 | Orphaned storage objects (lost upload response, thumbnail before a failed patch); sweep `{user}/{item}/` folders without a row in `/api/cron/daily` | WP 4.4 |
 | Pending file rows left by a closed tab couldn't be removed | WP 4.3 |
 | "Dropping on a sidebar collection files it there directly" wasn't built | WP 5.3 |
+| A canvas save fired on `pagehide` had no `keepalive`, so a reload right after a drag could lose it | WP 6.2 review fixes |
 
 ## Costs and limits
 

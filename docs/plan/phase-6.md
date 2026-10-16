@@ -76,6 +76,5 @@ $$;
 | Finding | Fix in |
 | --- | --- |
 | An auto-placed node whose first save fails is never retried (`hasSeen` filter); reload auto-places it again | 6.G |
-| A save fired on `pagehide` has no `keepalive`, so a reload within ~400 ms of a drag can lose it | 6.G |
 | `onMoveEnd` also fires for the initial `fitView`, so the first open writes a viewport the user never chose | 6.G |
 | `onNodesChange` applies to `nodesRef.current`, which a rollback/reconcile updater doesn't refresh until commit; a change in that window can overwrite a rollback | 6.G |
