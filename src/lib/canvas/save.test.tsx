@@ -215,6 +215,26 @@ describe("useCanvasLayoutSaver", () => {
     expect(cached()?.position).toBe(item.position);
   });
 
+  it("patches again after the save when a read during it brought the old layout back", async () => {
+    const save = deferred();
+    mocks.rpc.mockReturnValue(save.promise.then(() => ({ error: null })));
+    const { result, cached, client, item } = setup();
+    act(() => result.current.enqueue([{ id: ITEM_ID, x: 100, y: 200, w: 300, h: 250, z: 1 }]));
+    await act(() => vi.advanceTimersByTimeAsync(400));
+
+    // A refetch that read the row before the save committed lands while it is in flight.
+    act(() =>
+      client.setQueryData<InfiniteData<ItemsPage>>(KEY, {
+        pages: [{ items: [item], nextCursor: null }],
+        pageParams: [null],
+      }),
+    );
+    expect(cached()).toMatchObject({ canvas_x: 5 });
+
+    await act(async () => save.resolve());
+    expect(cached()).toMatchObject({ canvas_x: 100, canvas_y: 200, canvas_w: 300, canvas_h: 250 });
+  });
+
   it("restores the cache, rolls the node back and toasts when the save fails", async () => {
     mocks.rpc.mockResolvedValue({ error: { message: "nope" } });
     const { result, cached, item, onRollback } = setup();

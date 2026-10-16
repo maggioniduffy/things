@@ -46,11 +46,10 @@ type SaverOptions = {
   save: (layout: CanvasRect[]) => Promise<void>;
   /** The stored layout of an item before this saver touched it; null when it has none. */
   baseline: (id: string) => CanvasRect | null;
-  /**
-   * Called as a batch goes out (optimistic cache patch). The request starts once a returned
-   * promise settles, so the patch always lands before it.
-   */
-  onFlush?: (layout: CanvasRect[]) => void | Promise<void>;
+  /** Called as a batch goes out, before the request resolves (optimistic cache patch). */
+  onFlush?: (layout: CanvasRect[]) => void;
+  /** Called when a batch was saved, with what the server now holds. */
+  onSaved?: (layout: CanvasRect[]) => void;
   /** Called when a batch failed. `rollback` lists the nodes to move back, `restore` every node of the batch. */
   onFailure?: (result: { restore: CanvasRestore[]; rollback: CanvasRect[] }) => void;
   debounceMs?: number;
@@ -113,6 +112,7 @@ export class CanvasLayoutSaver {
     })().then(
       () => {
         for (const rect of batch) this.lastSaved.set(rect.id, rect);
+        this.options.onSaved?.(batch);
       },
       () => this.fail(batch),
     );
@@ -259,10 +259,16 @@ export function useCanvasLayoutSaver(
         if (error) throw error;
       },
       baseline: baselineIn(items),
-      // Cancel in-flight refetches first so they can't overwrite the patch with old canvas_*
-      // values. Only microtasks pass before the request starts, which is fine on pagehide.
-      onFlush: async (layout) => {
-        await queryClient.cancelQueries({ queryKey: ["items"] });
+      onFlush: (layout) => {
+        // A read that started before this save would bring the old layout back into the cache.
+        void queryClient.cancelQueries({ queryKey: ["items"] });
+        patchItemCaches(
+          queryClient,
+          layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
+        );
+      },
+      // A read that finished while the save was in flight may hold the old layout: patch again.
+      onSaved: (layout) =>
         patchItemCaches(
           queryClient,
           layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
