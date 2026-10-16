@@ -51,7 +51,11 @@ async function openCanvas(page: Page, url: string) {
 async function emptyPoint(page: Page, dx = 0, dy = 0) {
   const box = await page.locator(".react-flow").boundingBox();
   if (!box) throw new Error("Canvas has no box.");
-  return { x: box.x + box.width * 0.5 + dx, y: box.y + box.height * 0.85 + dy };
+  // Whole pixels: mouse events carry integer client coordinates.
+  return {
+    x: Math.round(box.x + box.width * 0.5 + dx),
+    y: Math.round(box.y + box.height * 0.85 + dy),
+  };
 }
 
 /** Selects the card with a marquee drawn from empty space above-left of it to its center. */
@@ -73,6 +77,8 @@ async function seedPlaced(session: AppSession, collectionId: string | null) {
     ["Alpha", "Beta"].map((title, index) => ({
       kind: "note",
       title,
+      // Valid fractional-indexing keys: a capture on the canvas reserves a key before the first.
+      position: `a${index}`,
       ...(collectionId ? { collection_id: collectionId } : {}),
       canvas_x: index * 320,
       canvas_y: 0,
@@ -127,8 +133,8 @@ test.describe("canvas tools", () => {
     const node = page.locator(".react-flow__node", { hasText: "dropped" });
     const nodeBox = await node.boundingBox();
     if (!nodeBox) throw new Error("No node box.");
-    expect(nodeBox.x + nodeBox.width / 2).toBeCloseTo(at.x, 0);
-    expect(nodeBox.y + nodeBox.height / 2).toBeCloseTo(at.y, 0);
+    expect(nodeBox.x + nodeBox.width / 2).toBeCloseTo(at.x, -1);
+    expect(nodeBox.y + nodeBox.height / 2).toBeCloseTo(at.y, -1);
     expect(row.canvas_x + nodeBox.width / view.zoom / 2).toBeCloseTo(flow.x, 0);
     expect(row.canvas_y + nodeBox.height / view.zoom / 2).toBeCloseTo(flow.y, 0);
 

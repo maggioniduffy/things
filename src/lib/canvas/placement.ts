@@ -1,12 +1,12 @@
-import type { Point } from "./layout";
+import type { CanvasTarget, Point } from "./layout";
 
 /**
  * What a persisted canvas offers the capture code while it is mounted: turning a pointer
  * position (or the middle of the visible canvas) into flow coordinates.
  */
 export type CanvasPlacer = {
-  /** `null` means the center of the viewport. */
-  flowPointAt(client: Point | null): Point;
+  /** `null` means the center of the viewport. Includes the z that stacks a new card on top. */
+  flowPointAt(client: Point | null): CanvasTarget;
 };
 
 let current: CanvasPlacer | null = null;

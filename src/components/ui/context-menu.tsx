@@ -184,15 +184,18 @@ function ContextMenuSubContent({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.SubContent>) {
   return (
-    <ContextMenuPrimitive.SubContent
-      data-slot="context-menu-sub-content"
-      className={cn(
-        menuSurface,
-        "origin-(--radix-context-menu-content-transform-origin) overflow-hidden",
-        className,
-      )}
-      {...props}
-    />
+    // Portaled, so the parent menu's scroll box does not clip it.
+    <ContextMenuPrimitive.Portal>
+      <ContextMenuPrimitive.SubContent
+        data-slot="context-menu-sub-content"
+        className={cn(
+          menuSurface,
+          "origin-(--radix-context-menu-content-transform-origin) overflow-hidden",
+          className,
+        )}
+        {...props}
+      />
+    </ContextMenuPrimitive.Portal>
   );
 }
 

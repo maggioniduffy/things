@@ -188,15 +188,18 @@ function DropdownMenuSubContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
   return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(
-        menuSurface,
-        "origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden",
-        className,
-      )}
-      {...props}
-    />
+    // Portaled, so the parent menu's scroll box does not clip it.
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.SubContent
+        data-slot="dropdown-menu-sub-content"
+        className={cn(
+          menuSurface,
+          "origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden",
+          className,
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
   );
 }
 

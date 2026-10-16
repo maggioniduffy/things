@@ -19,11 +19,11 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import type { Point } from "@/lib/canvas/layout";
+import type { CanvasTarget } from "@/lib/canvas/layout";
 import { useCollectionList } from "./move-dialog";
 
 /** What a right-click landed on. `null` = something with its own behavior (controls, minimap). */
-export type MenuTarget = { type: "node"; id: string } | { type: "pane"; point: Point };
+export type MenuTarget = { type: "node"; id: string } | { type: "pane"; point: CanvasTarget };
 
 type CanvasMenuProps = {
   children: ReactNode;
@@ -42,7 +42,7 @@ type CanvasMenuProps = {
   onBringToFront: () => void;
   onSendToBack: () => void;
   /** Present when notes can be created (persisted canvases). */
-  onNewNote?: (point: Point) => void;
+  onNewNote?: (point: CanvasTarget) => void;
 };
 
 /** The node and pane context menus of the canvas. Wraps the flow; React Flow keeps its own events. */

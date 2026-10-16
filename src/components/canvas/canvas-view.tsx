@@ -6,6 +6,7 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   applyNodeChanges,
   useReactFlow,
   useStoreApi,
@@ -23,6 +24,7 @@ import {
   reconcileNodes,
   snapPoint,
   unplacedNodes,
+  type CanvasTarget,
   type ItemFlowNode,
   type Point,
 } from "@/lib/canvas/layout";
@@ -180,9 +182,12 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   const viewport = useCanvasViewportActions();
   const [moveOpen, setMoveOpen] = useState(false);
 
-  /** Flow coordinates under a pointer position; outside the canvas or `null` = viewport center. */
+  /**
+   * Flow coordinates under a pointer position; outside the canvas or `null` = viewport center.
+   * The z stacks a new card above every existing one.
+   */
   const flowPointAt = useCallback(
-    (client: Point | null): Point => {
+    (client: Point | null): CanvasTarget => {
       const bounds = store.getState().domNode?.getBoundingClientRect();
       const inside =
         client !== null &&
@@ -196,7 +201,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           ? (client ?? { x: 0, y: 0 })
           : { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
       const point = screenToFlowPosition(at);
-      return snapRef.current ? snapPoint(point) : point;
+      const z = nodesRef.current.reduce((top, node) => Math.max(top, node.zIndex ?? 0), 0) + 1;
+      return { ...(snapRef.current ? snapPoint(point) : point), z };
     },
     [screenToFlowPosition, store],
   );
@@ -221,12 +227,17 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
         zIndex: node.zIndex ?? node.data.item.canvas_z,
       }));
       const zs = direction === "front" ? bringToFront(zNodes, ids) : sendToBack(zNodes, ids);
-      const next = nodesRef.current.map((node) =>
-        zs.has(node.id) ? { ...node, zIndex: zs.get(node.id) } : node,
+      const restack = (node: ItemFlowNode) =>
+        zs.has(node.id) ? { ...node, zIndex: zs.get(node.id) } : node;
+      // An updater, so a node added by a reconcile not yet committed to the ref survives.
+      setNodes((current) => current.map(restack));
+      // A z change has no NodeChange of its own, so it is queued here rather than in onNodesChange.
+      layout?.enqueue(
+        nodesRef.current
+          .filter((node) => zs.has(node.id))
+          .map(restack)
+          .map(nodeToCanvasRect),
       );
-      nodesRef.current = next;
-      setNodes(next);
-      layout?.enqueue(next.filter((node) => zs.has(node.id)).map(nodeToCanvasRect));
     },
     [selectedIds, layout],
   );
@@ -268,6 +279,12 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
       if (isDialogOpen() || document.querySelector('[role="menu"]')) return;
       const action = canvasShortcut(event);
       if (!action) return;
+      // ⌘/Ctrl +/− zoom the canvas only while it (or nothing) has focus; elsewhere they stay the
+      // browser's page zoom.
+      const focused = document.activeElement;
+      const canvasFocused =
+        !focused || focused === document.body || focused.closest('[data-view-mode="canvas"]');
+      if ((action === "zoomIn" || action === "zoomOut") && !canvasFocused) return;
       // Zoom keys must not also zoom the browser page.
       event.preventDefault();
       run(action);
@@ -289,13 +306,16 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
     (event: MouseEvent): MenuTarget | null => {
       const element = event.target as Element;
       if (element.closest(".react-flow__panel, .react-flow__minimap")) return null;
+      // After a marquee, the selection's box covers the selected cards: treat it as one of them.
+      if (element.closest(".react-flow__nodesselection")) {
+        const selected = nodesRef.current.find((node) => node.selected);
+        if (selected) return { type: "node", id: selected.id };
+      }
       const nodeId = element.closest<HTMLElement>(".react-flow__node")?.dataset.id;
       if (nodeId) {
         // Right-clicking a card outside the selection selects just that card first.
         if (!nodesRef.current.find((node) => node.id === nodeId)?.selected) {
-          const next = nodesRef.current.map((node) => ({ ...node, selected: node.id === nodeId }));
-          nodesRef.current = next;
-          setNodes(next);
+          setNodes((current) => current.map((node) => ({ ...node, selected: node.id === nodeId })));
         }
         return { type: "node", id: nodeId };
       }
@@ -347,6 +367,10 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           // Left-drag on empty space draws a marquee; space-drag, middle mouse, trackpad scroll and
           // touch pan. Pinch or ⌘/Ctrl-scroll zooms.
           selectionOnDrag
+          // A marquee picks every card it touches, not only the ones it fully covers.
+          selectionMode={SelectionMode.Partial}
+          // Selecting must not lift a card; the stack order is what ] and [ set.
+          elevateNodesOnSelect={false}
           panOnDrag={[1]}
           panOnScroll
           panActivationKeyCode="Space"

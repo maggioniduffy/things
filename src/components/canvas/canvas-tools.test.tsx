@@ -95,7 +95,7 @@ describe("canvas tools", () => {
     const { container } = renderCanvas();
     const pane = container.querySelector(".react-flow__pane")!;
     fireEvent.doubleClick(pane, { clientX: 120, clientY: 80 });
-    expect(mocks.createNote).toHaveBeenCalledWith({ x: 120, y: 80 });
+    expect(mocks.createNote).toHaveBeenCalledWith({ x: 120, y: 80, z: 3 });
   });
 
   it("does not create a note when the double-click lands on a card", () => {
@@ -107,15 +107,43 @@ describe("canvas tools", () => {
   it("N makes a note at the center of the viewport", () => {
     renderCanvas();
     press({ key: "n" });
-    expect(mocks.createNote).toHaveBeenCalledWith({ x: 500, y: 400 });
+    expect(mocks.createNote).toHaveBeenCalledWith({ x: 500, y: 400, z: 3 });
+  });
+
+  it("leaves the zoom keys to the browser while focus is outside the canvas", () => {
+    renderCanvas();
+    const outside = document.createElement("button");
+    document.body.append(outside);
+    outside.focus();
+    const zoom = new KeyboardEvent("keydown", {
+      key: "=",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    outside.dispatchEvent(zoom);
+    expect(zoom.defaultPrevented).toBe(false);
+    outside.remove();
+    const onCanvas = new KeyboardEvent("keydown", {
+      key: "=",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    document.body.dispatchEvent(onCanvas);
+    expect(onCanvas.defaultPrevented).toBe(true);
   });
 
   it("registers a placer while mounted and drops it on unmount", () => {
     const { unmount } = renderCanvas();
-    expect(activeCanvasPlacer()?.flowPointAt(null)).toEqual({ x: 500, y: 400 });
+    expect(activeCanvasPlacer()?.flowPointAt(null)).toEqual({ x: 500, y: 400, z: 3 });
     // A pointer outside the canvas falls back to the center.
-    expect(activeCanvasPlacer()?.flowPointAt({ x: 5000, y: 5000 })).toEqual({ x: 500, y: 400 });
-    expect(activeCanvasPlacer()?.flowPointAt({ x: 100, y: 50 })).toEqual({ x: 100, y: 50 });
+    expect(activeCanvasPlacer()?.flowPointAt({ x: 5000, y: 5000 })).toEqual({
+      x: 500,
+      y: 400,
+      z: 3,
+    });
+    expect(activeCanvasPlacer()?.flowPointAt({ x: 100, y: 50 })).toEqual({ x: 100, y: 50, z: 3 });
     unmount();
     expect(activeCanvasPlacer()).toBeNull();
   });
@@ -200,7 +228,7 @@ describe("canvas tools", () => {
       clientY: 150,
     });
     fireEvent.click(await screen.findByRole("menuitem", { name: "New note here" }));
-    expect(mocks.createNote).toHaveBeenCalledWith({ x: 200, y: 150 });
+    expect(mocks.createNote).toHaveBeenCalledWith({ x: 200, y: 150, z: 3 });
   });
 
   it("ignores a double-click on the pane of a canvas that is not persisted", () => {

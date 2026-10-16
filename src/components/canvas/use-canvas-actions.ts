@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useOpenItem } from "@/components/drawer/item-param";
-import type { Point } from "@/lib/canvas/layout";
+import type { CanvasTarget } from "@/lib/canvas/layout";
 import { useBatchMove } from "@/lib/items/batch-mutations";
 import { useCapture } from "@/lib/items/mutations";
 import type { BoardItem } from "@/lib/items/queries";
@@ -13,7 +13,7 @@ export type CanvasActions = {
   /** The collection this canvas shows; null for the Inbox. */
   collectionId: string | null;
   /** Creates an empty note centered on `point`, then opens it in the drawer, ready to type. */
-  createNote: (point: Point) => void;
+  createNote: (point: CanvasTarget) => void;
   /** Moves items to a collection (null = Inbox) in one optimistic batch. `label` is for the toast. */
   moveItems: (ids: readonly string[], collectionId: string | null, label: string) => void;
 };
@@ -45,7 +45,7 @@ export function useCanvasActions(collectionId: string | null): CanvasActions {
 
   const { captureNote } = capture;
   const createNote = useCallback(
-    (point: Point) => {
+    (point: CanvasTarget) => {
       void captureNote("", { allowEmpty: true, canvasAt: point }).then((item) => {
         if (!item) return;
         openRef.current(item);

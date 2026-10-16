@@ -78,3 +78,8 @@ $$;
 | An auto-placed node whose first save fails is never retried (`hasSeen` filter); reload auto-places it again | 6.G |
 | `onMoveEnd` also fires for the initial `fitView`, so the first open writes a viewport the user never chose | 6.G |
 | `onNodesChange` applies to `nodesRef.current`, which a rollback/reconcile updater doesn't refresh until commit; a change in that window can overwrite a rollback | 6.G |
+| Z-order (`]`/`[`) is queued from `reorder`, not `onNodesChange` (it has no NodeChange); a second save path to keep in mind for the single-save-path check | 6.G |
+| `]`/`[` move to front/back, the shortcut table says forward/backward one step; align code or table | 6.G |
+| Snap rounds a placed card's center, not its corner, so a 280-wide card sits 4 px off the grid | 6.G |
+| `canvasShortcut` rejects Alt, so `[`/`]` don't work on layouts that need Alt for them (e.g. German Mac) | 6.G |
+| An image drop is centered with the default size before its aspect ratio is known, so its center drifts after enrichment | 6.G |
