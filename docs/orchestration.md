@@ -2,6 +2,10 @@
 
 How we build `docs/plan.md` (the product spec) with three models. This file is the source of truth for **who does what, in what order, and how we know it's done**. The spec says *what* to build; this says *how*.
 
+## 0, Rule
+
+- Start tasks in plan mode
+
 ## 1. Roles and model routing
 
 | Role | Model | Where | Does | Never does |

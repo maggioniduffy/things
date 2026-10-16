@@ -4,6 +4,8 @@ Oct 12, 2026 · @Faustino
 
 ## Overview
 
+URGENT FIX (DELETE AFTER) => Divide this file and './orchestration.md' to archive done tasks and save tokens
+
 Things is a personal "save for later" web app: drop in any link, file or note, and it is auto-classified by format, filed by topic, and easy to find again. Usable without an account (guest mode), one user per account, Next.js + Supabase, no separate backend.
 
 **Principles**

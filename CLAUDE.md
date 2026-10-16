@@ -18,6 +18,7 @@ Supabase (@supabase/ssr, Postgres + RLS, Storage; auth = email OTP, Google, anon
 See docs/orchestration.md for the loop and the brief template.
 
 ## Rules
+- Start tasks in PLAN MODE
 - No separate backend. Browser -> Supabase with RLS for CRUD.
   Route Handlers only for /api/unfurl, auth callback and /api/cron/*.
 - Service-role / secret key only in /api/cron/* (server-only, CRON_SECRET-protected); never anywhere else. Env vars in .env.local, read via process.env, never logged.
