@@ -28,7 +28,6 @@ Also available: `pnpm build`, `pnpm start`, `pnpm format`, `pnpm format:check`, 
 
 ## Docs
 
-- `docs/plan/`: product spec and architecture (README + one file per phase)
-- `docs/orchestration/`: execution plan (README + work packages per phase)
+- `docs/plan/`: plan and progress (README) + spec and work packages per phase
 - `docs/research-notes.md`: verified API facts and pinned versions
 - `CLAUDE.md`: project rules for contributors and agents

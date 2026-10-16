@@ -1,11 +1,11 @@
 # Phase 7 — Search and command palette
 
-Product spec for one phase. Shared context: [README.md](README.md) (always), [data-model.md](data-model.md) (schema work), [design.md](design.md) (UI work). How it is built: [../orchestration/phase-7.md](../orchestration/phase-7.md).
+Shared rules, loop and status: [README.md](README.md). Schema: [data-model.md](data-model.md).
 
 ## Build
 
 - `search_items` RPC, debounced search field, filter chips, ⌘K palette (search results + actions + navigation), all shortcuts.
-- **Done when:** searching "cancion" finds "Canción"; a one-character typo still matches titles; every shortcut in both tables works.
+- **Done when:** searching "cancion" finds "Canción"; a one-character typo still matches titles; every shortcut in both tables (this file and the canvas table in [phase-6.md](phase-6.md)) works.
 
 ## Spec
 
@@ -28,3 +28,22 @@ Product spec for one phase. Shared context: [README.md](README.md) (always), [da
 ## Data model
 
 **Search** — one RPC `search_items(q text, rules jsonb, lim int)` (security invoker, so RLS applies) that ORs `search @@ websearch_to_tsquery('simple', f_unaccent(q))` with `title % q` (trigram), ranks by `ts_rank` + `similarity`, and applies the same rules. The `simple` config + unaccent handles mixed Spanish/English content without stemming surprises.
+
+## Work packages
+
+| WP | Who | Task | Key acceptance |
+| --- | --- | --- | --- |
+| 7.1 | B | `search_items(q, rules, lim)` migration (FTS ∪ trigram, ranked, rules applied, security invoker) + pgTAP | "cancion" → "Canción"; one-char typo matches |
+| 7.2 | B | Debounced search field (`/`), filter chips (kind, tag, domain, status) synced to URL, `CommandPalette` (results, actions, navigation) | Playwright |
+| 7.3 | B | `hooks/use-shortcuts.ts` with chord support (`G` then `I/A/F`), all global shortcuts | One test per shortcut |
+| 7.4 | S | Sweep: matrix of every shortcut in both tables vs. implementation + tests; report gaps | Zero gaps |
+| 7.G | R + O | Gate | Green |
+
+## Open findings
+
+| Finding | Fix in |
+| --- | --- |
+| Menu/command highlighted row is 1.13:1 against the menu surface; strengthen the highlight | WP 7.2 (palette) |
+| Styleguide lacks derived `rounded-sm…xl`, `CommandDialog`, bottom drawer, sub-menus, radio items | WP 7.2 / 8.3 |
+| Upgrade dialog lives inside `GuestBanner`, so the guest-quota toast can't offer "Add email" | WP 7.2 (palette/actions) |
+| Smart-view and tag lists don't update membership optimistically after an item change or tag drop | WP 7.2 (filters) |

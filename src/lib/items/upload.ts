@@ -134,7 +134,7 @@ function isAbortError(error: unknown): boolean {
  * - 413 or a "too large" message -> `too_large`
  * - `guest_quota_exceeded` in the message -> `guest_quota`
  * - a 500 on a guest upload -> `guest_quota`: the storage trigger's exception surfaces as a
- *   generic 500 `DatabaseError` (orchestration section 9; "database error, code: P0001" via TUS)
+ *   generic 500 `DatabaseError` (docs/plan/archive.md, resolved findings; "database error, code: P0001" via TUS)
  * - no HTTP response at all (fetch/XHR failure) -> `network`
  */
 export function toUploadError(error: unknown, opts: { isGuest: boolean }): UploadError {

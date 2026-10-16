@@ -1,6 +1,6 @@
 # Phase 5 — Organize and drag-and-drop
 
-Product spec for one phase. Shared context: [README.md](README.md) (always), [data-model.md](data-model.md) (schema work), [design.md](design.md) (UI work). How it is built: [../orchestration/phase-5.md](../orchestration/phase-5.md).
+Shared rules, loop and status: [README.md](README.md). Spec-review items (#N) are in [archive.md](archive.md).
 
 ## Build
 
@@ -41,3 +41,14 @@ const Rules = z.object({
 - New items get a key before the current first item (newest on top in manual sort).
 - On drop, compute `generateKeyBetween(prev.position, next.position)` and update only the moved row; multi-select moves use `generateNKeysBetween`.
 - Sort modes other than manual are pure queries and don't touch `position`; dragging is disabled outside manual sort.
+
+## Work packages
+
+| WP | Who | Task | Key acceptance |
+| --- | --- | --- | --- |
+| 5.0 | B | **Spike** (#8): 200 sortable cards with Motion `layout` disabled during drag; measure; Opus decides pattern | Pattern recorded in research-notes |
+| 5.1 | B | Collections CRUD (emoji, aurora color) + tags CRUD; inline `#tag` parsing in title/note inputs | Optimistic CRUD tests |
+| 5.2 | B | `lib/order.ts` (fractional-indexing wrappers) + sortable grid/list (manual sort only), `DragOverlay`, keyboard sensor | Reorder = one-row update (assert request count); persists after reload |
+| 5.3 | B | Multi-select (⌘/Shift-click) + drag one/many to sidebar targets (collection, tag, Favorites, Archive, Trash); one optimistic batch mutation | 5 cards → collection in one mutation |
+| 5.4 | B | Sidebar reorder (collections, smart views); smart-view builder: zod `Rules` → `lib/filters.ts` → query (unit-tested) | Rules round-trip tests |
+| 5.G | R + O | Gate incl. keyboard DnD | Green |

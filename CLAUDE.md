@@ -1,9 +1,8 @@
 # Things
 
 Save-for-later app: links, files, notes. Single user per account.
-Product spec: docs/plan/README.md (shared) + docs/plan/phase-N.md (one per phase); data-model.md and design.md only when the work needs them.
-Execution plan: docs/orchestration/README.md (roles, loop, briefs, status) + docs/orchestration/phase-N.md (WPs, gate, open findings).
-Read only the current phase's files; archive.md files are history.
+Plan: docs/plan/README.md (progress, roles, loop, brief template, owner actions, architecture) + docs/plan/phase-N.md (spec, WPs, gate, open findings for one phase).
+Read only the current phase's file; data-model.md and design.md only when the work needs them; archive.md is history.
 Verified API facts (supersede memory and the spec where they differ): docs/research-notes.md.
 
 ## Stack
@@ -17,7 +16,7 @@ Supabase (@supabase/ssr, Postgres + RLS, Storage; auth = email OTP, Google, anon
 - `scout` agent (Haiku): large-but-simple reading — docs, package types, codebase sweeps, logs — returns summaries.
 - `builder` agent (Sonnet): implements one work package per brief; never commits.
 - `reviewer` agent (Opus): independent check of a WP diff or a phase gate.
-See docs/orchestration/README.md for the loop and the brief template.
+See docs/plan/README.md for the loop and the brief template.
 
 ## Rules
 - Start tasks in PLAN MODE

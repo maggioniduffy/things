@@ -1,6 +1,6 @@
 # Phase 2 — App shell and data layer
 
-Product spec for one phase. Shared context: [README.md](README.md) (always), [data-model.md](data-model.md) (schema work), [design.md](design.md) (UI work). How it is built: [../orchestration/phase-2.md](../orchestration/phase-2.md).
+Shared rules, loop and status: [README.md](README.md). UI: [design.md](design.md).
 
 ## Build
 
@@ -16,7 +16,7 @@ The app is one screen: a sidebar of categories, a toolbar, and a grid of cards t
 
 - **Sidebar (260px, collapsible):** wordmark · Inbox (no collection) · All · Unread · Favorites · *Formats* (only kinds that have items, with counts: Links, Articles, Videos, Images, PDFs, Documents, Notes, Code) · *Collections* (user topics, emoji + color, drop targets) · *Tags* · *Smart views* · Archive · Trash.
 - **Toolbar:** search field (/), filter chips (kind, tag, domain, status), sort (manual, newest, oldest, title), view toggle (grid / list / canvas), "+ Add" primary button.
-- **Main:** responsive card grid (auto-fill, min 240px). List view = dense rows with hairline dividers. Canvas view = an infinite board per collection (see Canvas).
+- **Main:** responsive card grid (auto-fill, min 240px). List view = dense rows with hairline dividers. Canvas view = an infinite board per collection (Phase 6).
 - **Detail drawer** (right side, `?item=<id>` in the URL so it is linkable): large preview, editable title and note, collection, tags, source link, metadata, actions.
 
 **Dynamic categories**
@@ -32,3 +32,12 @@ The app is one screen: a sidebar of categories, a toolbar, and a grid of cards t
 ## Key flows
 
 **Optimistic mutations (TanStack Query)** — every mutation runs `onMutate` (snapshot + patch cache) → `onError` (rollback + toast) → `onSettled` (invalidate the affected list and counts). Undo toasts call the inverse mutation.
+
+## Work packages
+
+| WP | Who | Task | Key acceptance |
+| --- | --- | --- | --- |
+| 2.1 | B | `QueryProvider` (+ hydration), `stores/ui-store.ts` (selection, view mode, filters, palette, drag), `lib/views.ts`: `[[...view]]` params → `ViewSpec` (pure, unit-tested) | Unit tests for every route in the routes table |
+| 2.2 | B | `lib/items/queries.ts`: list by `ViewSpec` (keyset pagination, 50/page, sort modes), counts from `item_counts`; server prefetch of page 1 + `HydrationBoundary` | Unit tests on query builder; no client waterfall on first load |
+| 2.3 | B | `app/app/layout.tsx` shell; Sidebar (system views, formats with counts only when > 0, collections, tags, smart views), Toolbar (search placeholder, sort, grid/list/canvas toggle with canvas disabled), empty states with aurora | Playwright: switching views keeps the same document (no full reload); counts match seeded DB |
+| 2.G | R + O | Gate | Green |
