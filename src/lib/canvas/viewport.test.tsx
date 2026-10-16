@@ -79,6 +79,19 @@ describe("ViewportSaver", () => {
     expect(save).toHaveBeenCalledWith({ x: 2, y: 2, zoom: 1 });
   });
 
+  it("writes the local target at once and debounces only the slow save", () => {
+    const save = vi.fn();
+    const local = vi.fn();
+    const saver = new ViewportSaver(save, 1000, local);
+    saver.schedule({ x: 1, y: 1, zoom: 1 });
+    saver.schedule({ x: 2, y: 2, zoom: 1 });
+    expect(local).toHaveBeenCalledTimes(2);
+    expect(local).toHaveBeenLastCalledWith({ x: 2, y: 2, zoom: 1 });
+    expect(save).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1000);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
   it("flush saves at once, and only once", () => {
     const save = vi.fn();
     const saver = new ViewportSaver(save);

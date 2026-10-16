@@ -74,6 +74,8 @@ export function collectionViewportQueryOptions(client: Client, collectionId: str
       return parseViewport(data?.canvas_viewport);
     },
     staleTime: Infinity,
+    // A failure falls back to fitView; don't leave the canvas blank through the default retries.
+    retry: 1,
   });
 }
 
@@ -81,7 +83,11 @@ export function collectionViewportQueryOptions(client: Client, collectionId: str
 // Debounced saving
 // ---------------------------------------------------------------------------
 
-/** Keeps the latest viewport and saves it once moves have stopped for `delay`. */
+/**
+ * Keeps the latest viewport and saves it once moves have stopped for `delay`. `local` runs at once
+ * on every change (localStorage / query cache) so a canvas remounted before the debounce ends
+ * still reads the newest viewport; only the slow `save` (the DB write) is debounced.
+ */
 export class ViewportSaver {
   private latest: CanvasViewport | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -89,10 +95,16 @@ export class ViewportSaver {
   constructor(
     private readonly save: (viewport: CanvasViewport) => void | Promise<void>,
     private readonly delay = VIEWPORT_DEBOUNCE_MS,
+    private readonly local?: (viewport: CanvasViewport) => void,
   ) {}
 
   schedule(viewport: CanvasViewport): void {
     this.latest = viewport;
+    try {
+      this.local?.(viewport);
+    } catch {
+      // Local state is best effort.
+    }
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       this.timer = null;
@@ -139,18 +151,25 @@ export function useViewportSaver(target: CanvasViewportTarget): (viewport: Canva
 
   const saver = useMemo(
     () =>
-      new ViewportSaver(async (viewport) => {
-        if (collectionId !== null) {
-          queryClient.setQueryData(collectionViewportKey(collectionId), viewport);
+      new ViewportSaver(
+        async (viewport) => {
           // Low stakes: if the write fails the local state stays and nobody is told.
-          await createClient()
-            .from("collections")
-            .update({ canvas_viewport: viewport })
-            .eq("id", collectionId);
-        } else if (userId !== null) {
-          writeInboxViewport(userId, viewport);
-        }
-      }),
+          if (collectionId !== null) {
+            await createClient()
+              .from("collections")
+              .update({ canvas_viewport: viewport })
+              .eq("id", collectionId);
+          }
+        },
+        VIEWPORT_DEBOUNCE_MS,
+        (viewport) => {
+          if (collectionId !== null) {
+            queryClient.setQueryData(collectionViewportKey(collectionId), viewport);
+          } else if (userId !== null) {
+            writeInboxViewport(userId, viewport);
+          }
+        },
+      ),
     [queryClient, collectionId, userId],
   );
 

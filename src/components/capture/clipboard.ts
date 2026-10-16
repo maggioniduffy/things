@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { parseUrlInput } from "@/lib/items/detect-kind";
+import type { CanvasPoint } from "@/lib/canvas/placement";
 import type { NoteOptions } from "@/lib/items/mutations";
 
 /** One thing to save, as read from a paste, a drop or the quick add field. */
@@ -14,9 +15,9 @@ export const CAPPED_COPY = `Saved the first ${MAX_CAPTURES} items.`;
 
 /** The part of `useCapture` that saving requests needs. */
 export type Capture = {
-  captureLink(url: string): Promise<void>;
-  captureNote(text: string, options?: NoteOptions): Promise<void>;
-  captureFile(file: File): Promise<void>;
+  captureLink(url: string, at?: CanvasPoint): Promise<void>;
+  captureNote(text: string, options?: NoteOptions, at?: CanvasPoint): Promise<void>;
+  captureFile(file: File, at?: CanvasPoint): Promise<void>;
 };
 
 /** The slice of `DataTransfer` we read, so tests can pass a plain object. */
@@ -118,28 +119,36 @@ export function readDataTransfer(dataTransfer: DataTransferLike) {
  * Starts saving every request. Each new card goes before the previous one, so requests are
  * started last to first: the first file you dropped ends up first on the board.
  * Captures report their own failures; this never rejects.
+ * `placeAt(i)` (i = index in the original list) gives the canvas point of request i; without it
+ * the captures get no extra argument and the item is placed by the canvas later.
  */
 export function saveRequests(
   capture: Capture,
   { requests, capped }: { requests: CaptureRequest[]; capped: boolean },
+  placeAt?: (index: number) => CanvasPoint,
 ): void {
   if (capped) toast(CAPPED_COPY);
-  for (const request of [...requests].reverse()) {
+  for (let index = requests.length - 1; index >= 0; index -= 1) {
+    const request = requests[index];
+    if (!request) continue;
+    const at = placeAt?.(index);
     switch (request.type) {
       case "file":
-        void capture.captureFile(request.file);
+        if (at) void capture.captureFile(request.file, at);
+        else void capture.captureFile(request.file);
         break;
       case "url":
-        void capture.captureLink(request.url);
+        if (at) void capture.captureLink(request.url, at);
+        else void capture.captureLink(request.url);
         break;
       case "note":
         if (request.title === undefined && request.tagNames === undefined) {
-          void capture.captureNote(request.text);
+          if (at) void capture.captureNote(request.text, undefined, at);
+          else void capture.captureNote(request.text);
         } else {
-          void capture.captureNote(request.text, {
-            title: request.title,
-            tagNames: request.tagNames,
-          });
+          const options = { title: request.title, tagNames: request.tagNames };
+          if (at) void capture.captureNote(request.text, options, at);
+          else void capture.captureNote(request.text, options);
         }
         break;
     }

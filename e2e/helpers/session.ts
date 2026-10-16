@@ -123,6 +123,9 @@ export type SeedItem = {
   /** Canvas placement; leave out to have the item auto-placed. */
   canvas_x?: number;
   canvas_y?: number;
+  canvas_w?: number;
+  canvas_h?: number;
+  canvas_z?: number;
 };
 
 let seedCounter = 0;
@@ -216,7 +219,12 @@ export async function fetchAuthUser(session: AppSession) {
 /** Landing page -> "Try without an account" -> /app, with the guest banner showing. */
 export async function startGuest(page: Page) {
   await page.goto("/");
-  await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+  // The landing offers it in the hero and again further down; the hero's comes first.
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Try without an account" })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(guestBanner(page)).toBeVisible();
 }

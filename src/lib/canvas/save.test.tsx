@@ -7,6 +7,7 @@ import { itemsQueryKey } from "@/lib/items/queries";
 import { makeItem, makeTestQueryClient } from "@/test/fixtures";
 import {
   CanvasLayoutSaver,
+  keepaliveFetch,
   LAYOUT_SAVE_ERROR,
   nodeToCanvasRect,
   normalizeRect,
@@ -20,7 +21,10 @@ const mocks = vi.hoisted(() => ({
   toast: Object.assign(vi.fn(), { error: vi.fn() }),
 }));
 vi.mock("sonner", () => ({ toast: mocks.toast }));
-vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@supabase/ssr", () => ({ createBrowserClient: () => ({ rpc: mocks.rpc }) }));
+vi.mock("@/lib/supabase/env", () => ({
+  getSupabaseEnv: () => ({ url: "http://localhost", publishableKey: "key" }),
+}));
 
 type SaveFn = (layout: CanvasRect[]) => Promise<void>;
 const rect = (id: string, x: number, y = 0): CanvasRect => ({ id, x, y, w: 280, h: 240, z: 0 });
@@ -224,26 +228,28 @@ describe("useCanvasLayoutSaver", () => {
     expect(mocks.toast.error).toHaveBeenCalledWith(LAYOUT_SAVE_ERROR);
   });
 
-  it("flushes on unmount", () => {
+  it("flushes on unmount", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     const { result, unmount } = setup();
     act(() => result.current.enqueue([{ id: ITEM_ID, x: 1, y: 2, w: 280, h: 240, z: 0 }]));
     expect(mocks.rpc).not.toHaveBeenCalled();
     unmount();
+    await act(() => vi.advanceTimersByTimeAsync(0));
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
   });
 
-  it("flushes on pagehide", () => {
+  it("flushes on pagehide", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     const { result } = setup();
     act(() => result.current.enqueue([{ id: ITEM_ID, x: 1, y: 2, w: 280, h: 240, z: 0 }]));
     act(() => {
       window.dispatchEvent(new Event("pagehide"));
     });
+    await act(() => vi.advanceTimersByTimeAsync(0));
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
   });
 
-  it("flushes when the page becomes hidden", () => {
+  it("flushes when the page becomes hidden", async () => {
     mocks.rpc.mockResolvedValue({ error: null });
     const { result } = setup();
     act(() => result.current.enqueue([{ id: ITEM_ID, x: 1, y: 2, w: 280, h: 240, z: 0 }]));
@@ -252,6 +258,43 @@ describe("useCanvasLayoutSaver", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     hidden.mockRestore();
+    await act(() => vi.advanceTimersByTimeAsync(0));
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels in-flight item refetches before patching the cache and sending", async () => {
+    mocks.rpc.mockResolvedValue({ error: null });
+    const { result, client, cached } = setup();
+    const order: string[] = [];
+    vi.spyOn(client, "cancelQueries").mockImplementation(async () => {
+      order.push(`cancel:${cached()?.canvas_x}`);
+    });
+    mocks.rpc.mockImplementation(async () => {
+      order.push(`rpc:${cached()?.canvas_x}`);
+      return { error: null };
+    });
+    act(() => result.current.enqueue([{ id: ITEM_ID, x: 100, y: 200, w: 300, h: 250, z: 1 }]));
+    await act(() => vi.advanceTimersByTimeAsync(400));
+    expect(client.cancelQueries).toHaveBeenCalledWith({ queryKey: ["items"] });
+    expect(order).toEqual(["cancel:5", "rpc:100"]);
+  });
+});
+
+describe("keepaliveFetch", () => {
+  it("adds keepalive to a small request", async () => {
+    const base = vi.fn(async () => new Response("{}"));
+    await keepaliveFetch(base)("http://x/rpc", { method: "POST", body: "{}" });
+    expect(base).toHaveBeenCalledWith("http://x/rpc", {
+      method: "POST",
+      body: "{}",
+      keepalive: true,
+    });
+  });
+
+  it("falls back to a normal request above 64 KiB", async () => {
+    const base = vi.fn(async () => new Response("{}"));
+    const init = { method: "POST", body: "x".repeat(70 * 1024) };
+    await keepaliveFetch(base)("http://x/rpc", init);
+    expect(base).toHaveBeenCalledWith("http://x/rpc", init);
   });
 });

@@ -12,7 +12,7 @@ Rules
 - Cite the source of every fact: `path:line` for repo files, `package@version/path` for package files, URL for web pages.
 - Mark anything you could not confirm as **UNVERIFIED**. Do not guess API names or option names.
 - Keep the answer under the word budget the brief gives (default 400 words). Prefer tables and bullets over prose.
-- End with a "Gotchas" list: anything that contradicts `docs/plan.md` or would break the build.
+- End with a "Gotchas" list: anything that contradicts the spec in `docs/plan/` or would break the build.
 
 Output shape
 1. Answer (bullets/table, with citations)

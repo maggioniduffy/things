@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { defaultNodeSize } from "@/lib/canvas/layout";
+import type { CanvasPoint } from "@/lib/canvas/placement";
 import { createClient } from "@/lib/supabase/client";
 import { keyBefore } from "@/lib/order";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
@@ -152,6 +154,16 @@ export function buildNoteRow(base: RowBase, text: string, title?: string): Board
     note: text.trim(),
     enrich_status: "done",
   };
+}
+
+/**
+ * The row placed on the canvas at `at` (flow coordinates, top-left) with its default size and the
+ * bottom layer, so the insert itself stores the layout. Without `at` the row is returned as is.
+ */
+export function placeRowAt(row: BoardItem, at?: CanvasPoint): BoardItem {
+  if (!at) return row;
+  const { w, h } = defaultNodeSize(row);
+  return { ...row, canvas_x: at.x, canvas_y: at.y, canvas_w: w, canvas_h: h, canvas_z: 0 };
 }
 
 /** Extras of a note typed in quick add: a title and the `#tags` found in its text. */
@@ -555,10 +567,10 @@ export function useRetryEnrich(): (item: BoardItem) => Promise<void> {
 }
 
 export function useCapture(view: ViewSpec): {
-  captureLink(url: string): Promise<void>;
-  captureNote(text: string, options?: NoteOptions): Promise<void>;
-  captureFile(file: File): Promise<void>;
-  captureText(text: string): Promise<void>;
+  captureLink(url: string, at?: CanvasPoint): Promise<void>;
+  captureNote(text: string, options?: NoteOptions, at?: CanvasPoint): Promise<void>;
+  captureFile(file: File, at?: CanvasPoint): Promise<void>;
+  captureText(text: string, at?: CanvasPoint): Promise<void>;
   retryEnrich(item: BoardItem): Promise<void>;
 } {
   const queryClient = useQueryClient();
@@ -632,37 +644,41 @@ export function useCapture(view: ViewSpec): {
       await refreshLists(queryClient);
     }
 
-    async function captureLink(url: string): Promise<void> {
+    async function captureLink(url: string, at?: CanvasPoint): Promise<void> {
       const deps = makeDeps();
-      const row = buildLinkRow(baseFor(), url);
+      const row = placeRowAt(buildLinkRow(baseFor(), url), at);
       await run(deps, row, () => enrichLink(deps, { id: row.id, url, kind: row.kind }));
     }
 
-    async function captureNote(text: string, options?: NoteOptions): Promise<void> {
+    async function captureNote(
+      text: string,
+      options?: NoteOptions,
+      at?: CanvasPoint,
+    ): Promise<void> {
       if (text.trim() === "") return;
       await run(
         makeDeps(),
-        buildNoteRow(baseFor(), text, options?.title),
+        placeRowAt(buildNoteRow(baseFor(), text, options?.title), at),
         null,
         options?.tagNames ?? [],
       );
     }
 
-    async function captureFile(file: File): Promise<void> {
+    async function captureFile(file: File, at?: CanvasPoint): Promise<void> {
       const tooBig = checkFileSize(file.size, { isGuest });
       if (tooBig) {
         toast.error(uploadErrorMessage(tooBig.code, file.name));
         return;
       }
       const deps = makeDeps();
-      const row = buildFileRow(baseFor(), file);
-      await run(deps, row, () => enrichFile(deps, row, file, () => void captureFile(file)));
+      const row = placeRowAt(buildFileRow(baseFor(), file), at);
+      await run(deps, row, () => enrichFile(deps, row, file, () => void captureFile(file, at)));
     }
 
-    async function captureText(text: string): Promise<void> {
+    async function captureText(text: string, at?: CanvasPoint): Promise<void> {
       const url = parseUrlInput(text);
-      if (url) await captureLink(url);
-      else await captureNote(text);
+      if (url) await captureLink(url, at);
+      else await captureNote(text, undefined, at);
     }
 
     return { captureLink, captureNote, captureFile, captureText, retryEnrich };

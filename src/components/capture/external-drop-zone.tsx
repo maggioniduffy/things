@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cascade, useCanvasPlacer } from "@/lib/canvas/placement";
 import { useCapture } from "@/lib/items/mutations";
 import type { ViewSpec } from "@/lib/views";
 import { isExternalDrag, readDataTransfer, saveRequests } from "./clipboard";
@@ -18,6 +19,13 @@ export function ExternalDropZone({ view }: { view: ViewSpec }) {
   useEffect(() => {
     captureRef.current = capture;
   }, [capture]);
+
+  // The mounted canvas, if any, turns the drop point into a flow point.
+  const placer = useCanvasPlacer((state) => state.placer);
+  const placerRef = useRef(placer);
+  useEffect(() => {
+    placerRef.current = placer;
+  }, [placer]);
 
   const [active, setActive] = useState(false);
 
@@ -79,7 +87,14 @@ export function ExternalDropZone({ view }: { view: ViewSpec }) {
       event.preventDefault();
       if (mode !== "save" || !event.dataTransfer) return;
       const found = readDataTransfer(event.dataTransfer);
-      if (found.requests.length > 0) saveRequests(captureRef.current, found);
+      if (found.requests.length === 0) return;
+      const place = placerRef.current;
+      if (place) {
+        const at = place({ x: event.clientX, y: event.clientY });
+        saveRequests(captureRef.current, found, (index) => cascade(at, index));
+      } else {
+        saveRequests(captureRef.current, found);
+      }
     }
 
     function onKeyDown(event: KeyboardEvent) {

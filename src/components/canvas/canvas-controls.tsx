@@ -1,12 +1,13 @@
 "use client";
 
 import { Panel, useReactFlow } from "@xyflow/react";
-import { MapIcon, MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { MagnetIcon, MapIcon, MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { IconButton } from "@/components/ui/icon-button";
 import { useUiStore } from "@/stores/ui-store";
 
-const ANIMATION_MS = 200;
+/** Length of a viewport move; 0 under reduced motion. */
+export const VIEWPORT_ANIMATION_MS = 200;
 
 /** Zoom in/out, fit all and the minimap toggle. Viewport moves skip their animation when reduced. */
 export function CanvasControls() {
@@ -14,7 +15,9 @@ export function CanvasControls() {
   const reduced = useReducedMotion() ?? false;
   const minimap = useUiStore((state) => state.canvasMinimap);
   const toggleMinimap = useUiStore((state) => state.toggleCanvasMinimap);
-  const duration = reduced ? 0 : ANIMATION_MS;
+  const snap = useUiStore((state) => state.canvasSnap);
+  const toggleSnap = useUiStore((state) => state.toggleCanvasSnap);
+  const duration = reduced ? 0 : VIEWPORT_ANIMATION_MS;
 
   return (
     <Panel position="bottom-left" className="flex flex-col gap-1">
@@ -39,6 +42,15 @@ export function CanvasControls() {
         onClick={toggleMinimap}
       >
         <MapIcon />
+      </IconButton>
+      <IconButton
+        size="sm"
+        variant={snap ? "outline" : "ghost"}
+        label={snap ? "Turn off snap to grid" : "Snap to grid"}
+        aria-pressed={snap}
+        onClick={toggleSnap}
+      >
+        <MagnetIcon />
       </IconButton>
     </Panel>
   );
