@@ -1,10 +1,10 @@
 "use client";
 
-import type { NodeProps } from "@xyflow/react";
+import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { memo, useCallback, useContext, useRef, type PointerEvent, type MouseEvent } from "react";
 import { ItemCard } from "@/components/cards/item-card";
 import { cn } from "@/lib/utils";
-import type { ItemFlowNode } from "@/lib/canvas/layout";
+import { MIN_NODE_HEIGHT, MIN_NODE_WIDTH, type ItemFlowNode } from "@/lib/canvas/layout";
 import { CanvasContext } from "./canvas-context";
 
 /** A click that moved further than this since the pointer went down was a drag, not a click. */
@@ -42,6 +42,14 @@ export const ItemNode = memo(function ItemNode({ data, selected }: NodeProps<Ite
         "data-[selected=true]:outline-focus data-[selected=true]:outline-2 data-[selected=true]:outline-offset-1",
       )}
     >
+      {/* Handles show only on a selected card; the size is saved by the canvas's onNodesChange. */}
+      <NodeResizer
+        isVisible={selected}
+        minWidth={MIN_NODE_WIDTH}
+        minHeight={MIN_NODE_HEIGHT}
+        handleClassName="border-focus! bg-paper!"
+        lineClassName="border-focus!"
+      />
       <ul role="list" className="m-0 h-full list-none p-0 [&>li]:h-full">
         <ItemCard
           item={item}

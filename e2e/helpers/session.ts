@@ -123,6 +123,9 @@ export type SeedItem = {
   /** Canvas placement; leave out to have the item auto-placed. */
   canvas_x?: number;
   canvas_y?: number;
+  canvas_w?: number;
+  canvas_h?: number;
+  canvas_z?: number;
 };
 
 let seedCounter = 0;

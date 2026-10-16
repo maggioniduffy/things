@@ -7,6 +7,13 @@ export type Size = Pick<Rect, "w" | "h">;
 /** Gap between auto-placed nodes, and between them and the existing content. */
 export const AUTO_PLACE_GAP = 24;
 
+/** Smallest size a card can be resized to. */
+export const MIN_NODE_WIDTH = 160;
+export const MIN_NODE_HEIGHT = 120;
+
+/** Default size of a note card; the new-note composer is drawn at the same size. */
+export const NOTE_SIZE: Size = { w: 240, h: 160 };
+
 const IMAGE_WIDTH = 320;
 const IMAGE_MIN_HEIGHT = 120;
 
@@ -34,7 +41,7 @@ function kindSize(item: BoardItem): Size {
     case "article":
       return { w: 280, h: 240 };
     case "note":
-      return { w: 240, h: 160 };
+      return NOTE_SIZE;
     case "image": {
       const natural = imageDimensions(item);
       if (!natural) return { w: IMAGE_WIDTH, h: 240 };
@@ -160,4 +167,58 @@ export function unplacedNodes(nodes: readonly ItemFlowNode[]): ItemFlowNode[] {
 /** Nodes for a list of items: stored positions and sizes, defaults by kind, the rest auto-placed. */
 export function itemsToNodes(items: readonly BoardItem[]): ItemFlowNode[] {
   return reconcileNodes([], items);
+}
+
+// ---------------------------------------------------------------------------
+// Z-order
+// ---------------------------------------------------------------------------
+
+/**
+ * "forward"/"backward" (the `]` and `[` keys) go one step past the nodes the selection overlaps;
+ * "front"/"back" (the context menu) go past every other node.
+ */
+export type ZOrderMode = "forward" | "backward" | "front" | "back";
+
+function overlaps(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+function zOf(node: ItemFlowNode): number {
+  return node.zIndex ?? node.data.item.canvas_z;
+}
+
+/**
+ * The new `canvas_z` of every node that has to change so the selection moves in `mode`. The
+ * selection moves as a group and keeps its internal order. Forward/backward only look at the nodes
+ * the selection overlaps (nothing overlapped = nothing to do); front/back look at all other nodes.
+ * Nodes already past the reference stay as they are, so the result may be empty.
+ */
+export function zOrderChanges(
+  nodes: readonly ItemFlowNode[],
+  selectedIds: ReadonlySet<string>,
+  mode: ZOrderMode,
+): Map<string, number> {
+  const result = new Map<string, number>();
+  const selected = nodes.filter((node) => selectedIds.has(node.id));
+  const others = nodes.filter((node) => !selectedIds.has(node.id));
+  if (selected.length === 0 || others.length === 0) return result;
+
+  const local = mode === "forward" || mode === "backward";
+  const selectedRects = selected.map(nodeRect);
+  const reference = local
+    ? others.filter((node) => {
+        const rect = nodeRect(node);
+        return selectedRects.some((candidate) => overlaps(candidate, rect));
+      })
+    : others;
+  if (reference.length === 0) return result;
+
+  const up = mode === "forward" || mode === "front";
+  const zs = selected.map(zOf);
+  const shift = up
+    ? Math.max(...reference.map(zOf)) + 1 - Math.min(...zs)
+    : Math.min(...reference.map(zOf)) - 1 - Math.max(...zs);
+  if (up ? shift <= 0 : shift >= 0) return result;
+  for (const node of selected) result.set(node.id, zOf(node) + shift);
+  return result;
 }
