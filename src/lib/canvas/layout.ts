@@ -161,3 +161,35 @@ export function unplacedNodes(nodes: readonly ItemFlowNode[]): ItemFlowNode[] {
 export function itemsToNodes(items: readonly BoardItem[]): ItemFlowNode[] {
   return reconcileNodes([], items);
 }
+
+// ---------------------------------------------------------------------------
+// Placing things where they happen
+// ---------------------------------------------------------------------------
+
+export type Point = { x: number; y: number };
+
+/** Grid of the optional snap, in flow pixels. */
+export const SNAP_GRID = 8;
+/** Offset between the cards of one multi-item drop or paste. */
+export const CASCADE_STEP = 24;
+
+/** The top-left corner a node of `size` needs for its center to sit at `point`. */
+export function placeCentered(point: Point, size: Size): Point {
+  return { x: point.x - size.w / 2, y: point.y - size.h / 2 };
+}
+
+/** Where request `index` of a multi-item gesture goes: `origin` plus `index` steps of 24 px. */
+export function cascadePoint(origin: Point, index: number): Point {
+  return { x: origin.x + index * CASCADE_STEP, y: origin.y + index * CASCADE_STEP };
+}
+
+/** Rounds a point to the snap grid. */
+export function snapPoint(point: Point, grid: number = SNAP_GRID): Point {
+  return { x: Math.round(point.x / grid) * grid, y: Math.round(point.y / grid) * grid };
+}
+
+/** `row` with canvas coordinates that put its node's center at `point` (size stays null). */
+export function placeRowAt(row: BoardItem, point: Point): BoardItem {
+  const corner = placeCentered(point, defaultNodeSize(row));
+  return { ...row, canvas_x: corner.x, canvas_y: corner.y };
+}

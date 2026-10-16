@@ -1,35 +1,76 @@
 "use client";
 
 import { Panel, useReactFlow } from "@xyflow/react";
-import { MapIcon, MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import { GridIcon, MapIcon, MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
 import { useReducedMotion } from "motion/react";
+import { useMemo } from "react";
 import { IconButton } from "@/components/ui/icon-button";
 import { useUiStore } from "@/stores/ui-store";
 
 const ANIMATION_MS = 200;
 
-/** Zoom in/out, fit all and the minimap toggle. Viewport moves skip their animation when reduced. */
-export function CanvasControls() {
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+/**
+ * The viewport moves behind the buttons and the keyboard shortcuts. They skip their animation
+ * under reduced motion.
+ */
+export function useCanvasViewportActions() {
+  const { zoomIn, zoomOut, zoomTo, fitView } = useReactFlow();
   const reduced = useReducedMotion() ?? false;
+  const duration = reduced ? 0 : ANIMATION_MS;
+  return useMemo(
+    () => ({
+      zoomIn: () => void zoomIn({ duration }),
+      zoomOut: () => void zoomOut({ duration }),
+      fitAll: () => void fitView({ duration, padding: 0.2, maxZoom: 1 }),
+      /** 100%, around the center of the viewport. */
+      zoomTo100: () => void zoomTo(1, { duration }),
+    }),
+    [zoomIn, zoomOut, zoomTo, fitView, duration],
+  );
+}
+
+/** Zoom in/out, fit all, snap and the minimap toggle. */
+export function CanvasControls() {
+  const viewport = useCanvasViewportActions();
   const minimap = useUiStore((state) => state.canvasMinimap);
   const toggleMinimap = useUiStore((state) => state.toggleCanvasMinimap);
-  const duration = reduced ? 0 : ANIMATION_MS;
+  const snap = useUiStore((state) => state.canvasSnap);
+  const toggleSnap = useUiStore((state) => state.toggleCanvasSnap);
 
   return (
     <Panel position="bottom-left" className="flex flex-col gap-1">
-      <IconButton size="sm" label="Zoom in" onClick={() => void zoomIn({ duration })}>
+      <IconButton
+        size="sm"
+        label="Zoom in"
+        aria-keyshortcuts="Control+= Meta+="
+        onClick={viewport.zoomIn}
+      >
         <ZoomInIcon />
       </IconButton>
-      <IconButton size="sm" label="Zoom out" onClick={() => void zoomOut({ duration })}>
+      <IconButton
+        size="sm"
+        label="Zoom out"
+        aria-keyshortcuts="Control+- Meta+-"
+        onClick={viewport.zoomOut}
+      >
         <ZoomOutIcon />
       </IconButton>
       <IconButton
         size="sm"
         label="Fit all items"
-        onClick={() => void fitView({ duration, padding: 0.2, maxZoom: 1 })}
+        aria-keyshortcuts="Shift+1"
+        onClick={viewport.fitAll}
       >
         <MaximizeIcon />
+      </IconButton>
+      <IconButton
+        size="sm"
+        variant={snap ? "outline" : "ghost"}
+        label="Snap to grid"
+        aria-pressed={snap}
+        onClick={toggleSnap}
+      >
+        <GridIcon />
       </IconButton>
       <IconButton
         size="sm"

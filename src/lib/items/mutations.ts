@@ -12,6 +12,7 @@ import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { createClient } from "@/lib/supabase/client";
+import { placeRowAt, type Point } from "@/lib/canvas/layout";
 import { keyBefore } from "@/lib/order";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
@@ -155,7 +156,22 @@ export function buildNoteRow(base: RowBase, text: string, title?: string): Board
 }
 
 /** Extras of a note typed in quick add: a title and the `#tags` found in its text. */
-export type NoteOptions = { title?: string; tagNames?: string[] };
+export type NoteOptions = {
+  title?: string;
+  tagNames?: string[];
+  /** Flow point on a canvas where the card's center goes; leave out to place it nowhere. */
+  canvasAt?: Point;
+  /** Save a note with no text (a blank canvas note to type into). Plain captures refuse it. */
+  allowEmpty?: boolean;
+};
+
+/** Where a link or file lands on a canvas. */
+export type CanvasCaptureOptions = { canvasAt?: Point };
+
+/** `row` positioned at `canvasAt` when given, otherwise as is. */
+function atCanvasPoint(row: BoardItem, canvasAt: Point | undefined): BoardItem {
+  return canvasAt ? placeRowAt(row, canvasAt) : row;
+}
 
 /** File name without its last extension ("report.final.pdf" -> "report.final"). */
 function titleFromFileName(name: string): string {
@@ -555,9 +571,10 @@ export function useRetryEnrich(): (item: BoardItem) => Promise<void> {
 }
 
 export function useCapture(view: ViewSpec): {
-  captureLink(url: string): Promise<void>;
-  captureNote(text: string, options?: NoteOptions): Promise<void>;
-  captureFile(file: File): Promise<void>;
+  captureLink(url: string, options?: CanvasCaptureOptions): Promise<void>;
+  /** Resolves with the saved item, or null when nothing was saved. */
+  captureNote(text: string, options?: NoteOptions): Promise<BoardItem | null>;
+  captureFile(file: File, options?: CanvasCaptureOptions): Promise<void>;
   captureText(text: string): Promise<void>;
   retryEnrich(item: BoardItem): Promise<void>;
 } {
@@ -596,13 +613,13 @@ export function useCapture(view: ViewSpec): {
       row: BoardItem,
       enrich: (() => Promise<void>) | null,
       tagNames: readonly string[] = [],
-    ): Promise<void> {
+    ): Promise<boolean> {
       const position = reservePosition(deps.client);
       position.catch(() => undefined);
 
       inFlight += 1;
+      let saved = false;
       try {
-        let saved = false;
         try {
           await insert({ row, position });
           saved = true;
@@ -630,33 +647,33 @@ export function useCapture(view: ViewSpec): {
       }
       // Only the last capture to finish refetches (see `inFlight`).
       await refreshLists(queryClient);
+      return saved;
     }
 
-    async function captureLink(url: string): Promise<void> {
+    async function captureLink(url: string, options?: CanvasCaptureOptions): Promise<void> {
       const deps = makeDeps();
-      const row = buildLinkRow(baseFor(), url);
+      const row = atCanvasPoint(buildLinkRow(baseFor(), url), options?.canvasAt);
       await run(deps, row, () => enrichLink(deps, { id: row.id, url, kind: row.kind }));
     }
 
-    async function captureNote(text: string, options?: NoteOptions): Promise<void> {
-      if (text.trim() === "") return;
-      await run(
-        makeDeps(),
-        buildNoteRow(baseFor(), text, options?.title),
-        null,
-        options?.tagNames ?? [],
-      );
+    async function captureNote(text: string, options?: NoteOptions): Promise<BoardItem | null> {
+      if (text.trim() === "" && !options?.allowEmpty) return null;
+      const row = atCanvasPoint(buildNoteRow(baseFor(), text, options?.title), options?.canvasAt);
+      const saved = await run(makeDeps(), row, null, options?.tagNames ?? []);
+      return saved ? row : null;
     }
 
-    async function captureFile(file: File): Promise<void> {
+    async function captureFile(file: File, options?: CanvasCaptureOptions): Promise<void> {
       const tooBig = checkFileSize(file.size, { isGuest });
       if (tooBig) {
         toast.error(uploadErrorMessage(tooBig.code, file.name));
         return;
       }
       const deps = makeDeps();
-      const row = buildFileRow(baseFor(), file);
-      await run(deps, row, () => enrichFile(deps, row, file, () => void captureFile(file)));
+      const row = atCanvasPoint(buildFileRow(baseFor(), file), options?.canvasAt);
+      await run(deps, row, () =>
+        enrichFile(deps, row, file, () => void captureFile(file, options)),
+      );
     }
 
     async function captureText(text: string): Promise<void> {

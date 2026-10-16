@@ -2,6 +2,7 @@ import { fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ViewSpec } from "@/lib/views";
 import type { DataTransferLike } from "./clipboard";
+import { registerCanvasPlacer } from "@/lib/canvas/placement";
 import { PasteListener } from "./paste-listener";
 
 const capture = vi.hoisted(() => ({
@@ -127,6 +128,18 @@ describe("PasteListener", () => {
     const event = paste(document.body, clipboard({ "text/plain": "  " }));
     expect(event.defaultPrevented).toBe(false);
     expect(capture.captureNote).not.toHaveBeenCalled();
+  });
+
+  it("pastes at the viewport center of an active canvas", () => {
+    const flowPointAt = vi.fn(() => ({ x: 40, y: 60 }));
+    const unregister = registerCanvasPlacer({ flowPointAt });
+    render(<PasteListener view={VIEW} />);
+    paste(document.body, clipboard({ "text/plain": "https://example.com/post" }));
+    expect(flowPointAt).toHaveBeenCalledWith(null);
+    expect(capture.captureLink).toHaveBeenCalledWith("https://example.com/post", {
+      canvasAt: { x: 40, y: 60 },
+    });
+    unregister();
   });
 
   it("stops listening once unmounted", () => {

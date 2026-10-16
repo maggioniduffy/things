@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { activeCanvasPlacer } from "@/lib/canvas/placement";
 import { useCapture } from "@/lib/items/mutations";
 import type { ViewSpec } from "@/lib/views";
 import { isExternalDrag, readDataTransfer, saveRequests } from "./clipboard";
@@ -79,7 +80,14 @@ export function ExternalDropZone({ view }: { view: ViewSpec }) {
       event.preventDefault();
       if (mode !== "save" || !event.dataTransfer) return;
       const found = readDataTransfer(event.dataTransfer);
-      if (found.requests.length > 0) saveRequests(captureRef.current, found);
+      if (found.requests.length === 0) return;
+      // On a canvas, things land under the cursor.
+      const placer = activeCanvasPlacer();
+      saveRequests(
+        captureRef.current,
+        found,
+        placer ? { canvasAt: placer.flowPointAt({ x: event.clientX, y: event.clientY }) } : {},
+      );
     }
 
     function onKeyDown(event: KeyboardEvent) {

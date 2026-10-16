@@ -272,8 +272,7 @@ export function useCanvasLayoutSaver(
         patchItemCaches(
           queryClient,
           layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
-        );
-      },
+        ),
       onFailure: failureHandler,
     });
   });

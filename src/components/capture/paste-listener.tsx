@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { activeCanvasPlacer } from "@/lib/canvas/placement";
 import { useCapture } from "@/lib/items/mutations";
 import type { ViewSpec } from "@/lib/views";
 import { readDataTransfer, saveRequests } from "./clipboard";
@@ -40,7 +41,9 @@ export function PasteListener({ view }: { view: ViewSpec }) {
       if (found.requests.length === 0) return;
 
       event.preventDefault();
-      saveRequests(captureRef.current, found);
+      // On a canvas, a paste lands in the middle of what is on screen.
+      const placer = activeCanvasPlacer();
+      saveRequests(captureRef.current, found, placer ? { canvasAt: placer.flowPointAt(null) } : {});
     }
 
     document.addEventListener("paste", onPaste);

@@ -11,7 +11,13 @@ export function itemDisplayTitle(item: BoardItem): string {
   const note = item.note?.trim() ?? "";
   const noteTitle =
     note.length > NOTE_TITLE_MAX ? `${note.slice(0, NOTE_TITLE_MAX).trimEnd()}…` : note;
-  return item.title || item.url || item.file_name || noteTitle || "Untitled";
+  return (
+    item.title ||
+    item.url ||
+    item.file_name ||
+    noteTitle ||
+    (item.kind === "note" ? "Empty note" : "Untitled")
+  );
 }
 
 /** An item still "pending" this long after its last update lost its enrichment (e.g. a reload). */

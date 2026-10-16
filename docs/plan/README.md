@@ -14,7 +14,7 @@ Things is a personal "save for later" web app: drop in any link, file or note, a
 | 3 Capture | [phase-3.md](phase-3.md) | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | [phase-4.md](phase-4.md) | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
 | 5 Organize & DnD | [phase-5.md](phase-5.md) | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | [phase-6.md](phase-6.md) | WP 6.1–6.2 done (6.2 reviewed, fixes in); 6.3 in progress | #14 |
+| 6 Canvas | [phase-6.md](phase-6.md) | WP 6.1–6.2 done (6.2 reviewed, fixes in); 6.3 WIP merged from `claude/sleepy-allen-enblua`: unit tests green, unreviewed, `e2e/canvas-tools.spec.ts` not yet run | #14 |
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 
