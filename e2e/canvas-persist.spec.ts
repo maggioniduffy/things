@@ -123,6 +123,41 @@ test.describe("canvas persistence", () => {
     for (const row of rows) expect(row.position).toBe(positionsBefore.get(row.id));
   });
 
+  test("arrow-key nudges are saved and survive a reload", async ({ page, context }) => {
+    await startGuest(page);
+    const session = await readSession(context);
+    const collectionId = await createCollection(session, "Keys", "⌨️");
+    const items = await seedPlaced(session, collectionId);
+    const target = items[2];
+    if (!target) throw new Error("No seeded item.");
+
+    await openCanvas(page, `/app/c/${collectionId}`);
+    const before = await nodeFlowPosition(page, target.id);
+    const node = page.locator(`.react-flow__node[data-id="${target.id}"]`);
+    await node.click();
+    await expect(node).toHaveClass(/selected/);
+
+    const saved = page.waitForRequest((request) => isLayoutRpc(request.url()));
+    for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Shift+ArrowRight");
+    await saved;
+    const moved = await nodeFlowPosition(page, target.id);
+    expect(moved.x).toBeGreaterThan(before.x + 10);
+
+    await expect
+      .poll(async () => {
+        const row = (await fetchCanvasRows(session, collectionId)).find((r) => r.id === target.id);
+        return row && { x: row.canvas_x, y: row.canvas_y };
+      })
+      .toEqual({ x: expect.closeTo(moved.x, 0), y: expect.closeTo(moved.y, 0) });
+
+    await page.reload();
+    await expect(page.locator(".react-flow__node").first()).toBeVisible();
+    const afterReload = await nodeFlowPosition(page, target.id);
+    expect(afterReload.x).toBeCloseTo(moved.x, 0);
+    expect(afterReload.y).toBeCloseTo(moved.y, 0);
+  });
+
   test("a collection's pan and zoom survive a reload", async ({ page, context }) => {
     await startGuest(page);
     const session = await readSession(context);

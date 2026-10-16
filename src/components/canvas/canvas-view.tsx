@@ -106,6 +106,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
   // Items without a stored position were auto-placed above; save them once, in one batch.
   useEffect(() => {
     if (!layout) return;
+    // If the save of a never-saved auto-placed node fails, it stays unplaced in the cache and is
+    // auto-placed (and queued) again on the next mount; acceptable, and `hasSeen` stops a retry loop.
     const fresh = unplacedNodes(nodes).filter((node) => !layout.hasSeen(node.id));
     if (fresh.length > 0) layout.enqueue(fresh.map(nodeToCanvasRect));
   }, [nodes, layout]);
@@ -130,16 +132,20 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
           change.type === "dimensions" && change.resizing === false ? [change.id] : [],
         ),
       );
-      if (layout && resized.size > 0) {
-        layout.enqueue(next.filter((node) => resized.has(node.id)).map(nodeToCanvasRect));
+      // A move that has ended: a drag drop and every arrow-key nudge both arrive as a position
+      // change with `dragging: false` (mid-drag changes say `true`). Keyboard moves never fire
+      // onNodeDragStop, so this is the single path for both.
+      const moved = new Set(
+        changes.flatMap((change) =>
+          change.type === "position" && change.dragging === false ? [change.id] : [],
+        ),
+      );
+      if (layout && (resized.size > 0 || moved.size > 0)) {
+        layout.enqueue(
+          next.filter((node) => resized.has(node.id) || moved.has(node.id)).map(nodeToCanvasRect),
+        );
       }
     },
-    [layout],
-  );
-
-  const onNodeDragStop = useCallback(
-    (_event: unknown, _node: ItemFlowNode, dragged: ItemFlowNode[]) =>
-      layout?.enqueue(dragged.map(nodeToCanvasRect)),
     [layout],
   );
 
@@ -159,7 +165,6 @@ function CanvasInner({ items, onOpen, onRetry, persistence }: CanvasInnerProps) 
       <ReactFlow<ItemFlowNode>
         nodes={nodes}
         onNodesChange={onNodesChange}
-        onNodeDragStop={onNodeDragStop}
         nodeTypes={NODE_TYPES}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}

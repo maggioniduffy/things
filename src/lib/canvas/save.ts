@@ -1,11 +1,13 @@
 "use client";
 
+import { createBrowserClient } from "@supabase/ssr";
 import { useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { toast } from "sonner";
 import { patchInPages } from "@/lib/items/cache";
 import type { BoardItem, ItemsPage } from "@/lib/items/queries";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseEnv } from "@/lib/supabase/env";
+import type { Database } from "@/types/supabase";
 import { defaultNodeSize, nodeRect, type ItemFlowNode } from "./layout";
 
 /** One node's layout as `save_canvas_layout` takes it. */
@@ -44,8 +46,11 @@ type SaverOptions = {
   save: (layout: CanvasRect[]) => Promise<void>;
   /** The stored layout of an item before this saver touched it; null when it has none. */
   baseline: (id: string) => CanvasRect | null;
-  /** Called as a batch goes out, before the request resolves (optimistic cache patch). */
-  onFlush?: (layout: CanvasRect[]) => void;
+  /**
+   * Called as a batch goes out (optimistic cache patch). The request starts once a returned
+   * promise settles, so the patch always lands before it.
+   */
+  onFlush?: (layout: CanvasRect[]) => void | Promise<void>;
   /** Called when a batch failed. `rollback` lists the nodes to move back, `restore` every node of the batch. */
   onFailure?: (result: { restore: CanvasRestore[]; rollback: CanvasRect[] }) => void;
   debounceMs?: number;
@@ -102,8 +107,10 @@ export class CanvasLayoutSaver {
 
     const batch = [...this.pending.values()];
     this.pending.clear();
-    this.options.onFlush?.(batch);
-    const run = (async () => this.options.save(batch))().then(
+    const run = (async () => {
+      await this.options.onFlush?.(batch);
+      await this.options.save(batch);
+    })().then(
       () => {
         for (const rect of batch) this.lastSaved.set(rect.id, rect);
       },
@@ -159,6 +166,44 @@ function patchItemCaches(
   });
 }
 
+/** Browsers cap the body of a keepalive request at 64 KiB. */
+const KEEPALIVE_LIMIT_BYTES = 64 * 1024;
+
+/**
+ * A fetch that adds `keepalive: true`, so a save started on pagehide still completes after the
+ * page is gone. Larger bodies go out as a normal request (keepalive would reject them).
+ */
+export function keepaliveFetch(base: typeof fetch = (...args) => fetch(...args)): typeof fetch {
+  return (input, init) => {
+    const body = init?.body;
+    const size =
+      typeof body === "string"
+        ? new Blob([body]).size
+        : body == null
+          ? 0
+          : Number.POSITIVE_INFINITY;
+    return base(input, size <= KEEPALIVE_LIMIT_BYTES ? { ...init, keepalive: true } : init);
+  };
+}
+
+let keepaliveClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
+
+/**
+ * Used only by the layout saver; a separate client so the global fetch of the rest stays plain.
+ * One per page (not per canvas mount): every client starts its own auth listeners.
+ */
+function createKeepaliveClient() {
+  if (keepaliveClient) return keepaliveClient;
+  const { url, publishableKey } = getSupabaseEnv();
+  keepaliveClient = createBrowserClient<Database>(url, publishableKey, {
+    isSingleton: false,
+    global: { fetch: keepaliveFetch() },
+    // The main client owns token refresh; this one only reads the shared session.
+    auth: { autoRefreshToken: false },
+  });
+  return keepaliveClient;
+}
+
 export type CanvasLayoutSaverApi = {
   enqueue: (rects: readonly CanvasRect[]) => void;
   hasSeen: (id: string) => boolean;
@@ -207,18 +252,22 @@ export function useCanvasLayoutSaver(
   }
 
   const [saver] = useState(() => {
-    const client = createClient();
+    const client = createKeepaliveClient();
     return new CanvasLayoutSaver({
       save: async (layout) => {
         const { error } = await client.rpc("save_canvas_layout", { layout });
         if (error) throw error;
       },
       baseline: baselineIn(items),
-      onFlush: (layout) =>
+      // Cancel in-flight refetches first so they can't overwrite the patch with old canvas_*
+      // values. Only microtasks pass before the request starts, which is fine on pagehide.
+      onFlush: async (layout) => {
+        await queryClient.cancelQueries({ queryKey: ["items"] });
         patchItemCaches(
           queryClient,
           layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
-        ),
+        );
+      },
       onFailure: failureHandler,
     });
   });
