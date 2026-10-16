@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { parseUrlInput } from "@/lib/items/detect-kind";
+import { cascadePoint, type Point } from "@/lib/canvas/layout";
 import type { NoteOptions } from "@/lib/items/mutations";
 
 /** One thing to save, as read from a paste, a drop or the quick add field. */
@@ -14,9 +15,9 @@ export const CAPPED_COPY = `Saved the first ${MAX_CAPTURES} items.`;
 
 /** The part of `useCapture` that saving requests needs. */
 export type Capture = {
-  captureLink(url: string): Promise<void>;
-  captureNote(text: string, options?: NoteOptions): Promise<void>;
-  captureFile(file: File): Promise<void>;
+  captureLink(url: string, options?: { canvasAt?: Point }): Promise<unknown>;
+  captureNote(text: string, options?: NoteOptions): Promise<unknown>;
+  captureFile(file: File, options?: { canvasAt?: Point }): Promise<unknown>;
 };
 
 /** The slice of `DataTransfer` we read, so tests can pass a plain object. */
@@ -117,28 +118,34 @@ export function readDataTransfer(dataTransfer: DataTransferLike) {
 /**
  * Starts saving every request. Each new card goes before the previous one, so requests are
  * started last to first: the first file you dropped ends up first on the board.
- * Captures report their own failures; this never rejects.
+ * With `canvasAt` (a canvas is showing) request i lands at that point plus i steps of a cascade,
+ * counted in the user's order. Captures report their own failures; this never rejects.
  */
 export function saveRequests(
   capture: Capture,
   { requests, capped }: { requests: CaptureRequest[]; capped: boolean },
+  { canvasAt }: { canvasAt?: Point } = {},
 ): void {
   if (capped) toast(CAPPED_COPY);
-  for (const request of [...requests].reverse()) {
+  for (let index = requests.length - 1; index >= 0; index -= 1) {
+    const request = requests[index];
+    if (!request) continue;
+    const at = canvasAt ? { canvasAt: cascadePoint(canvasAt, index) } : undefined;
     switch (request.type) {
       case "file":
-        void capture.captureFile(request.file);
+        void (at ? capture.captureFile(request.file, at) : capture.captureFile(request.file));
         break;
       case "url":
-        void capture.captureLink(request.url);
+        void (at ? capture.captureLink(request.url, at) : capture.captureLink(request.url));
         break;
       case "note":
         if (request.title === undefined && request.tagNames === undefined) {
-          void capture.captureNote(request.text);
+          void (at ? capture.captureNote(request.text, at) : capture.captureNote(request.text));
         } else {
           void capture.captureNote(request.text, {
             title: request.title,
             tagNames: request.tagNames,
+            ...at,
           });
         }
         break;

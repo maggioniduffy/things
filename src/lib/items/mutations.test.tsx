@@ -643,6 +643,52 @@ describe("capturing notes and text", () => {
     expect(fake.state.inserts).toHaveLength(0);
   });
 
+  it("saves an empty note only when asked to, and resolves with the item", async () => {
+    const { fake, capture } = setup();
+    let none: unknown = "unset";
+    await act(async () => {
+      none = await capture.current.captureNote("");
+    });
+    expect(none).toBeNull();
+    expect(fake.state.inserts).toHaveLength(0);
+
+    let saved: BoardItem | null = null;
+    await act(async () => {
+      saved = await capture.current.captureNote("", { allowEmpty: true });
+    });
+    expect(fake.state.inserts[0]).toMatchObject({ kind: "note", note: "" });
+    expect((saved as BoardItem | null)?.id).toBe(fake.state.inserts[0]?.id);
+  });
+
+  it("writes canvas_x/y only when given a point, centering the default-size card on it", async () => {
+    const { fake, capture } = setup();
+    await act(() => capture.current.captureNote("plain"));
+    expect(fake.state.inserts[0]).toMatchObject({ canvas_x: null, canvas_y: null });
+
+    // A note is 240 x 160 by default.
+    await act(() => capture.current.captureNote("here", { canvasAt: { x: 500, y: 300 } }));
+    expect(fake.state.inserts[1]).toMatchObject({
+      canvas_x: 380,
+      canvas_y: 220,
+      canvas_w: null,
+      canvas_h: null,
+    });
+
+    fetchMock.mockResolvedValue(jsonResponse(RESULT));
+    await act(() =>
+      capture.current.captureLink("https://example.com/post", { canvasAt: { x: 0, y: 0 } }),
+    );
+    // A link is 280 x 240.
+    expect(fake.state.inserts[2]).toMatchObject({ canvas_x: -140, canvas_y: -120 });
+
+    await act(() =>
+      capture.current.captureFile(file("a.pdf", "application/pdf"), {
+        canvasAt: { x: 100, y: 100 },
+      }),
+    );
+    expect(fake.state.inserts[3]?.canvas_x).not.toBeNull();
+  });
+
   it("routes text to a link or a note", async () => {
     const { fake, capture } = setup();
     fetchMock.mockResolvedValue(jsonResponse(RESULT));

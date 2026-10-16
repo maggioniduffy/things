@@ -216,7 +216,11 @@ export async function fetchAuthUser(session: AppSession) {
 /** Landing page -> "Try without an account" -> /app, with the guest banner showing. */
 export async function startGuest(page: Page) {
   await page.goto("/");
-  await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Try without an account" })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(guestBanner(page)).toBeVisible();
 }

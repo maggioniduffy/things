@@ -9,7 +9,10 @@ describe("itemDisplayTitle", () => {
       "https://a.example",
     );
     expect(itemDisplayTitle(makeItem({ title: null, file_name: "thesis.pdf" }))).toBe("thesis.pdf");
-    expect(itemDisplayTitle(makeItem({ title: "", url: null, file_name: null }))).toBe("Untitled");
+    expect(
+      itemDisplayTitle(makeItem({ kind: "link", title: "", url: null, file_name: null })),
+    ).toBe("Untitled");
+    expect(itemDisplayTitle(makeItem({ kind: "note", title: "", note: "  " }))).toBe("Empty note");
   });
 
   it("uses the trimmed note text when there is no title, cut at about 140 characters", () => {

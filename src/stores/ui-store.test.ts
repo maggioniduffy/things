@@ -139,7 +139,18 @@ describe("persistence", () => {
     s.setPaletteOpen(true);
     s.setQuickAddOpen(true);
     const stored = JSON.parse(localStorage.getItem(UI_STORE_KEY) ?? "null");
-    expect(stored.state).toEqual({ viewMode: "list", canvasMinimap: false });
+    expect(stored.state).toEqual({ viewMode: "list", canvasMinimap: false, canvasSnap: false });
+  });
+
+  it("persists the canvas snap toggle", async () => {
+    expect(useUiStore.getState().canvasSnap).toBe(false);
+    useUiStore.getState().toggleCanvasSnap();
+    expect(useUiStore.getState().canvasSnap).toBe(true);
+    const stored = JSON.parse(localStorage.getItem(UI_STORE_KEY) ?? "null");
+    expect(stored.state.canvasSnap).toBe(true);
+    useUiStore.setState({ canvasSnap: false });
+    await useUiStore.persist.rehydrate();
+    expect(useUiStore.getState().canvasSnap).toBe(false);
   });
 
   it("rehydrate reads viewMode back", async () => {

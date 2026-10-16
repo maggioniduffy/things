@@ -192,6 +192,43 @@ describe("saveRequests", () => {
     expect(toast).not.toHaveBeenCalled();
   });
 
+  it("gives request i the canvas point plus i cascade steps, in the user's order", () => {
+    const { capture } = fakeCapture();
+    const file = new File(["x"], "x.png");
+    saveRequests(
+      capture,
+      {
+        requests: [
+          { type: "url", url: "https://a.example/" },
+          { type: "note", text: "hello" },
+          { type: "note", text: "titled", title: "T" },
+          { type: "file", file },
+        ],
+        capped: false,
+      },
+      { canvasAt: { x: 100, y: 200 } },
+    );
+    expect(capture.captureLink).toHaveBeenCalledWith("https://a.example/", {
+      canvasAt: { x: 100, y: 200 },
+    });
+    expect(capture.captureNote).toHaveBeenCalledWith("hello", { canvasAt: { x: 124, y: 224 } });
+    expect(capture.captureNote).toHaveBeenCalledWith("titled", {
+      title: "T",
+      tagNames: undefined,
+      canvasAt: { x: 148, y: 248 },
+    });
+    expect(capture.captureFile).toHaveBeenCalledWith(file, { canvasAt: { x: 172, y: 272 } });
+  });
+
+  it("passes no extra argument without a canvas point", () => {
+    const { capture } = fakeCapture();
+    saveRequests(capture, {
+      requests: [{ type: "url", url: "https://a.example/" }],
+      capped: false,
+    });
+    expect(capture.captureLink).toHaveBeenCalledWith("https://a.example/");
+  });
+
   it("toasts when the cap cut something off", () => {
     const { capture } = fakeCapture();
     saveRequests(capture, { requests: [{ type: "note", text: "n" }], capped: true });

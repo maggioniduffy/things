@@ -3,8 +3,12 @@ import { makeItem } from "@/test/fixtures";
 import {
   autoPlace,
   defaultNodeSize,
+  cascadePoint,
   itemsToNodes,
+  placeCentered,
+  placeRowAt,
   reconcileNodes,
+  snapPoint,
   unplacedNodes,
   type ItemFlowNode,
 } from "./layout";
@@ -194,5 +198,28 @@ describe("unplacedNodes", () => {
     const loose = makeItem({ id: "b" });
     const nodes = itemsToNodes([placed, loose]);
     expect(unplacedNodes(nodes).map((node) => node.id)).toEqual(["b"]);
+  });
+});
+
+describe("placing at a point", () => {
+  it("centers a size on the point", () => {
+    expect(placeCentered({ x: 100, y: 50 }, { w: 40, h: 20 })).toEqual({ x: 80, y: 40 });
+  });
+
+  it("cascades 24 px per step", () => {
+    expect(cascadePoint({ x: 10, y: 20 }, 0)).toEqual({ x: 10, y: 20 });
+    expect(cascadePoint({ x: 10, y: 20 }, 3)).toEqual({ x: 82, y: 92 });
+  });
+
+  it("snaps to the 8 px grid", () => {
+    expect(snapPoint({ x: 11, y: 13 })).toEqual({ x: 8, y: 16 });
+    expect(snapPoint({ x: -3, y: 4 })).toEqual({ x: -0, y: 8 });
+    expect(snapPoint({ x: 30, y: 30 }, 10)).toEqual({ x: 30, y: 30 });
+  });
+
+  it("puts a row's center on the point and leaves its size alone", () => {
+    const note = makeItem({ kind: "note" });
+    const placed = placeRowAt(note, { x: 240, y: 160 });
+    expect(placed).toMatchObject({ canvas_x: 120, canvas_y: 80, canvas_w: null, canvas_h: null });
   });
 });

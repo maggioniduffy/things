@@ -1,6 +1,7 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ViewSpec } from "@/lib/views";
+import { registerCanvasPlacer } from "@/lib/canvas/placement";
 import { ExternalDropZone } from "./external-drop-zone";
 
 const capture = vi.hoisted(() => ({
@@ -112,6 +113,26 @@ describe("ExternalDropZone", () => {
     expect(drop.event.defaultPrevented).toBe(true);
     expect(overlay()).not.toBeInTheDocument();
     expect(capture.captureFile).toHaveBeenCalledWith(FILES.files?.[0]);
+  });
+
+  it("drops at the cursor of an active canvas", () => {
+    const flowPointAt = vi.fn(() => ({ x: 7, y: 9 }));
+    const unregister = registerCanvasPlacer({ flowPointAt });
+    render(<ExternalDropZone view={VIEW} />);
+    const event = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperties(event, {
+      clientX: { value: 120 },
+      clientY: { value: 80 },
+      dataTransfer: { value: { types: FILES.types, files: FILES.files, getData: () => "" } },
+    });
+    act(() => {
+      document.body.dispatchEvent(event);
+    });
+    expect(flowPointAt).toHaveBeenCalledWith({ x: 120, y: 80 });
+    expect(capture.captureFile).toHaveBeenCalledWith(FILES.files?.[0], {
+      canvasAt: { x: 7, y: 9 },
+    });
+    unregister();
   });
 
   it("saves a dropped link", () => {

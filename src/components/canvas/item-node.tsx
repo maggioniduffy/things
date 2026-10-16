@@ -1,6 +1,6 @@
 "use client";
 
-import type { NodeProps } from "@xyflow/react";
+import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { memo, useCallback, useContext, useRef, type PointerEvent, type MouseEvent } from "react";
 import { ItemCard } from "@/components/cards/item-card";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,10 @@ import { CanvasContext } from "./canvas-context";
 
 /** A click that moved further than this since the pointer went down was a drag, not a click. */
 const CLICK_SLOP_PX = 4;
+
+/** Smallest a card can be resized to (the plan's 160 x 120). */
+export const MIN_NODE_WIDTH = 160;
+export const MIN_NODE_HEIGHT = 120;
 
 /**
  * One item on the canvas: the grid's card filling the node. React Flow owns the node's position
@@ -42,6 +46,13 @@ export const ItemNode = memo(function ItemNode({ data, selected }: NodeProps<Ite
         "data-[selected=true]:outline-focus data-[selected=true]:outline-2 data-[selected=true]:outline-offset-1",
       )}
     >
+      <NodeResizer
+        isVisible={selected}
+        minWidth={MIN_NODE_WIDTH}
+        minHeight={MIN_NODE_HEIGHT}
+        handleClassName="bg-surface! border-focus! border-2! size-2.5! rounded-sm!"
+        lineClassName="border-focus!"
+      />
       <ul role="list" className="m-0 h-full list-none p-0 [&>li]:h-full">
         <ItemCard
           item={item}
