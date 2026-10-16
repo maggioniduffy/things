@@ -46,6 +46,8 @@ type SaverOptions = {
   baseline: (id: string) => CanvasRect | null;
   /** Called as a batch goes out, before the request resolves (optimistic cache patch). */
   onFlush?: (layout: CanvasRect[]) => void;
+  /** Called when a batch was saved, with what the server now holds. */
+  onSaved?: (layout: CanvasRect[]) => void;
   /** Called when a batch failed. `rollback` lists the nodes to move back, `restore` every node of the batch. */
   onFailure?: (result: { restore: CanvasRestore[]; rollback: CanvasRect[] }) => void;
   debounceMs?: number;
@@ -106,6 +108,7 @@ export class CanvasLayoutSaver {
     const run = (async () => this.options.save(batch))().then(
       () => {
         for (const rect of batch) this.lastSaved.set(rect.id, rect);
+        this.options.onSaved?.(batch);
       },
       () => this.fail(batch),
     );
@@ -214,7 +217,16 @@ export function useCanvasLayoutSaver(
         if (error) throw error;
       },
       baseline: baselineIn(items),
-      onFlush: (layout) =>
+      onFlush: (layout) => {
+        // A read that started before this save would bring the old layout back into the cache.
+        void queryClient.cancelQueries({ queryKey: ["items"] });
+        patchItemCaches(
+          queryClient,
+          layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),
+        );
+      },
+      // A read that finished while the save was in flight may hold the old layout: patch again.
+      onSaved: (layout) =>
         patchItemCaches(
           queryClient,
           layout.map((rect) => ({ id: rect.id, patch: layoutPatch(rect) })),

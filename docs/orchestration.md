@@ -210,7 +210,7 @@ Stop and ask me only for owner actions (§4) or a decision that changes the spec
 | 3 Capture | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
 | 5 Organize & DnD | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | WP 6.1 done; 6.2 in progress | maggioniduffy/things#14 |
+| 6 Canvas | WP 6.1–6.2 done (6.2 reviewed); 6.3 in progress | maggioniduffy/things#14 |
 | 7 Search & palette | | |
 | 8 Polish & release | | |
 
@@ -245,3 +245,8 @@ From the Phase 0 gate review (non-blocking). Each lands in the WP named.
 | Sidebar is mounted twice (desktop + mobile sheet) under one DndContext, so dnd ids are duplicated; render one sidebar per breakpoint | WP 8.2 (responsive) |
 | Smart-view and tag lists don't update membership optimistically after an item change or tag drop | WP 7.2 (filters) |
 | Plain `pnpm e2e` in cloud sessions needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` | Process note |
+| Canvas: an auto-placed node whose first save fails is never retried (`hasSeen` filter); reload auto-places it again | WP 6.G |
+| Canvas: offline, a collection canvas renders nothing while its viewport query is paused | WP 8.2 / 8.4 |
+| Canvas: a save fired on `pagehide` has no `keepalive`, so a reload within ~400 ms of a drag can lose it | WP 6.G |
+| Canvas: `onMoveEnd` also fires for the initial `fitView`, so the first open writes a viewport the user never chose | WP 6.G |
+| Canvas: `onNodesChange` applies to `nodesRef.current`, which a rollback/reconcile updater doesn't refresh until commit; a change in that window can overwrite a rollback | WP 6.G |
