@@ -168,6 +168,9 @@ export function itemsToNodes(items: readonly BoardItem[]): ItemFlowNode[] {
 
 export type Point = { x: number; y: number };
 
+/** Where a new card goes: its center, and the stack level that puts it above every card (if known). */
+export type CanvasTarget = Point & { z?: number };
+
 /** Grid of the optional snap, in flow pixels. */
 export const SNAP_GRID = 8;
 /** Offset between the cards of one multi-item drop or paste. */
@@ -179,8 +182,8 @@ export function placeCentered(point: Point, size: Size): Point {
 }
 
 /** Where request `index` of a multi-item gesture goes: `origin` plus `index` steps of 24 px. */
-export function cascadePoint(origin: Point, index: number): Point {
-  return { x: origin.x + index * CASCADE_STEP, y: origin.y + index * CASCADE_STEP };
+export function cascadePoint(origin: CanvasTarget, index: number): CanvasTarget {
+  return { ...origin, x: origin.x + index * CASCADE_STEP, y: origin.y + index * CASCADE_STEP };
 }
 
 /** Rounds a point to the snap grid. */
@@ -188,8 +191,11 @@ export function snapPoint(point: Point, grid: number = SNAP_GRID): Point {
   return { x: Math.round(point.x / grid) * grid, y: Math.round(point.y / grid) * grid };
 }
 
-/** `row` with canvas coordinates that put its node's center at `point` (size stays null). */
-export function placeRowAt(row: BoardItem, point: Point): BoardItem {
+/**
+ * `row` with canvas coordinates that put its node's center at `point` (size stays null), stacked
+ * at `point.z` when given so a new card never lands under existing ones.
+ */
+export function placeRowAt(row: BoardItem, point: CanvasTarget): BoardItem {
   const corner = placeCentered(point, defaultNodeSize(row));
-  return { ...row, canvas_x: corner.x, canvas_y: corner.y };
+  return { ...row, canvas_x: corner.x, canvas_y: corner.y, canvas_z: point.z ?? row.canvas_z };
 }

@@ -6,7 +6,9 @@ export type CanvasAction =
   | "newNote"
   | "bringToFront"
   | "sendToBack"
-  | "move";
+  | "move"
+  | "copy"
+  | "duplicate";
 
 /** The part of a `KeyboardEvent` the table reads, so tests can pass a plain object. */
 export type KeyLike = Pick<
@@ -16,7 +18,9 @@ export type KeyLike = Pick<
   Partial<Pick<KeyboardEvent, "repeat">>;
 
 /**
- * The canvas key table (⌘C/⌘V/⌘D are not here: they belong to copy and paste).
+ * The canvas key table. ⌘V is not here: a paste arrives as a `paste` event. ⌘C is, but its
+ * keydown must not be cancelled (the `copy` event does the work); ⌘D is, and is cancelled so the
+ * browser's bookmark dialog stays shut.
  * Letter and bracket keys act only on their own, and not while a key is held down.
  */
 export function canvasShortcut(event: KeyLike): CanvasAction | null {
@@ -26,6 +30,9 @@ export function canvasShortcut(event: KeyLike): CanvasAction | null {
   if (mod) {
     if (event.key === "=" || event.key === "+") return "zoomIn";
     if (event.key === "-") return "zoomOut";
+    if (event.shiftKey) return null;
+    if (event.key === "c" || event.key === "C") return "copy";
+    if (event.key === "d" || event.key === "D") return event.repeat ? null : "duplicate";
     return null;
   }
 

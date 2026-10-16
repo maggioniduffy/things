@@ -29,6 +29,11 @@ describe("canvasShortcut", () => {
     [{ key: "[" }, "sendToBack"],
     [{ key: "m" }, "move"],
     [{ key: "M" }, "move"],
+    [{ key: "c", metaKey: true }, "copy"],
+    [{ key: "c", ctrlKey: true }, "copy"],
+    [{ key: "d", metaKey: true }, "duplicate"],
+    [{ key: "d", ctrlKey: true }, "duplicate"],
+    [{ key: "D", ctrlKey: true }, "duplicate"],
   ] as const)("%j -> %s", (init, action) => {
     expect(canvasShortcut(key(init))).toBe(action);
   });
@@ -43,9 +48,11 @@ describe("canvasShortcut", () => {
     ["Cmd+N", { key: "n", metaKey: true }],
     ["Ctrl+M", { key: "m", ctrlKey: true }],
     ["Cmd+]", { key: "]", metaKey: true }],
-    ["Cmd+C (copy is WP 6.4)", { key: "c", metaKey: true }],
-    ["Cmd+V", { key: "v", metaKey: true }],
-    ["Cmd+D", { key: "d", metaKey: true }],
+    ["Cmd+V (a paste event)", { key: "v", metaKey: true }],
+    ["plain c", { key: "c" }],
+    ["plain d", { key: "d" }],
+    ["Cmd+Shift+C", { key: "c", metaKey: true, shiftKey: true }],
+    ["Cmd+Alt+D", { key: "d", metaKey: true, altKey: true }],
     ["space (pan)", { key: " " }],
     ["a letter that is not bound", { key: "x" }],
     ["Alt with zoom", { key: "=", metaKey: true, altKey: true }],
@@ -57,6 +64,7 @@ describe("canvasShortcut", () => {
     expect(canvasShortcut(key({ key: "n", repeat: true }))).toBeNull();
     expect(canvasShortcut(key({ key: "]", repeat: true }))).toBeNull();
     expect(canvasShortcut(key({ key: "m", repeat: true }))).toBeNull();
+    expect(canvasShortcut(key({ key: "d", metaKey: true, repeat: true }))).toBeNull();
     // Holding ⌘+ keeps zooming.
     expect(canvasShortcut(key({ key: "=", metaKey: true, repeat: true }))).toBe("zoomIn");
   });

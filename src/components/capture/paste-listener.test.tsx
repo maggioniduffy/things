@@ -1,8 +1,9 @@
 import { fireEvent, render } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ViewSpec } from "@/lib/views";
 import type { DataTransferLike } from "./clipboard";
 import { registerCanvasPlacer } from "@/lib/canvas/placement";
+import { useCanvasClipboard } from "@/stores/canvas-clipboard";
 import { PasteListener } from "./paste-listener";
 
 const capture = vi.hoisted(() => ({
@@ -140,6 +141,45 @@ describe("PasteListener", () => {
       canvasAt: { x: 40, y: 60 },
     });
     unregister();
+  });
+
+  describe("copied canvas cards", () => {
+    const clip = {
+      entries: [{ id: "a", dx: 0, dy: 0 }],
+      text: "https://a.test",
+      width: 1,
+      height: 1,
+    };
+
+    beforeEach(() => useCanvasClipboard.getState().setClipboard(clip));
+    afterEach(() => useCanvasClipboard.getState().setClipboard(null));
+
+    it("pastes the cards when the system clipboard still holds their text", () => {
+      const pasteCopies = vi.fn();
+      const unregister = registerCanvasPlacer({ flowPointAt: () => ({ x: 0, y: 0 }), pasteCopies });
+      render(<PasteListener view={VIEW} />);
+      const event = paste(document.body, clipboard({ "text/plain": "https://a.test" }));
+      expect(event.defaultPrevented).toBe(true);
+      expect(pasteCopies).toHaveBeenCalledWith(clip);
+      expect(capture.captureLink).not.toHaveBeenCalled();
+      unregister();
+    });
+
+    it("pastes normally when the clipboard text changed", () => {
+      const pasteCopies = vi.fn();
+      const unregister = registerCanvasPlacer({ flowPointAt: () => ({ x: 0, y: 0 }), pasteCopies });
+      render(<PasteListener view={VIEW} />);
+      paste(document.body, clipboard({ "text/plain": "https://other.test" }));
+      expect(pasteCopies).not.toHaveBeenCalled();
+      expect(capture.captureLink).toHaveBeenCalledWith("https://other.test/", expect.anything());
+      unregister();
+    });
+
+    it("pastes normally without an active canvas", () => {
+      render(<PasteListener view={VIEW} />);
+      paste(document.body, clipboard({ "text/plain": "https://a.test" }));
+      expect(capture.captureLink).toHaveBeenCalledWith("https://a.test/");
+    });
   });
 
   it("stops listening once unmounted", () => {

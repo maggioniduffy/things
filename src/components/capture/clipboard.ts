@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { parseUrlInput } from "@/lib/items/detect-kind";
-import { cascadePoint, type Point } from "@/lib/canvas/layout";
+import { cascadePoint, type CanvasTarget } from "@/lib/canvas/layout";
 import type { NoteOptions } from "@/lib/items/mutations";
 
 /** One thing to save, as read from a paste, a drop or the quick add field. */
@@ -15,9 +15,9 @@ export const CAPPED_COPY = `Saved the first ${MAX_CAPTURES} items.`;
 
 /** The part of `useCapture` that saving requests needs. */
 export type Capture = {
-  captureLink(url: string, options?: { canvasAt?: Point }): Promise<unknown>;
+  captureLink(url: string, options?: { canvasAt?: CanvasTarget }): Promise<unknown>;
   captureNote(text: string, options?: NoteOptions): Promise<unknown>;
-  captureFile(file: File, options?: { canvasAt?: Point }): Promise<unknown>;
+  captureFile(file: File, options?: { canvasAt?: CanvasTarget }): Promise<unknown>;
 };
 
 /** The slice of `DataTransfer` we read, so tests can pass a plain object. */
@@ -124,7 +124,7 @@ export function readDataTransfer(dataTransfer: DataTransferLike) {
 export function saveRequests(
   capture: Capture,
   { requests, capped }: { requests: CaptureRequest[]; capped: boolean },
-  { canvasAt }: { canvasAt?: Point } = {},
+  { canvasAt }: { canvasAt?: CanvasTarget } = {},
 ): void {
   if (capped) toast(CAPPED_COPY);
   for (let index = requests.length - 1; index >= 0; index -= 1) {

@@ -13,7 +13,7 @@ Check, in this order
 1. Correctness against the brief's acceptance checks — run them, don't trust the builder's report.
 2. Security: RLS on every new table, `with check` on policies, storage path scoping, SSRF guard on any server fetch, no secrets or service-role key outside `/api/cron/*`, no env values logged.
 3. `CLAUDE.md` rules: tokens only (no raw hex in components), reduced motion, dnd-kit vs React Flow split, optimistic mutations with rollback, guests on the same code path.
-4. Repo checks: `pnpm typecheck && pnpm lint && pnpm test` (and `pnpm e2e` at phase gates when the brief says so).
+4. Repo checks: for a WP, `pnpm typecheck && pnpm lint` plus the WP's own unit tests; at a phase gate, the full `pnpm typecheck && pnpm lint && pnpm test && pnpm e2e`.
 5. Scope creep: changes outside the brief's file list.
 
 Report (under 400 words)

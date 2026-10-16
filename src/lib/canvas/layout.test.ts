@@ -209,6 +209,7 @@ describe("placing at a point", () => {
   it("cascades 24 px per step", () => {
     expect(cascadePoint({ x: 10, y: 20 }, 0)).toEqual({ x: 10, y: 20 });
     expect(cascadePoint({ x: 10, y: 20 }, 3)).toEqual({ x: 82, y: 92 });
+    expect(cascadePoint({ x: 10, y: 20, z: 5 }, 1)).toEqual({ x: 34, y: 44, z: 5 });
   });
 
   it("snaps to the 8 px grid", () => {
@@ -221,5 +222,11 @@ describe("placing at a point", () => {
     const note = makeItem({ kind: "note" });
     const placed = placeRowAt(note, { x: 240, y: 160 });
     expect(placed).toMatchObject({ canvas_x: 120, canvas_y: 80, canvas_w: null, canvas_h: null });
+  });
+
+  it("stacks the row at the target's z when given, otherwise keeps its own", () => {
+    const note = makeItem({ kind: "note" });
+    expect(placeRowAt(note, { x: 240, y: 160, z: 7 }).canvas_z).toBe(7);
+    expect(placeRowAt(note, { x: 240, y: 160 }).canvas_z).toBe(note.canvas_z);
   });
 });

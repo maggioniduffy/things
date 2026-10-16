@@ -6,6 +6,7 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   applyNodeChanges,
   useReactFlow,
   useStoreApi,
@@ -13,16 +14,26 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { isDialogOpen, isEditableElement } from "@/components/capture/paste-listener";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import {
   SNAP_GRID,
   itemsToNodes,
+  nodeRect,
   reconcileNodes,
   snapPoint,
   unplacedNodes,
+  type CanvasTarget,
   type ItemFlowNode,
   type Point,
 } from "@/lib/canvas/layout";
@@ -42,7 +53,9 @@ import {
   type CanvasViewport,
 } from "@/lib/canvas/viewport";
 import { bringToFront, sendToBack } from "@/lib/canvas/z-order";
+import { buildClipboard, type CopiedCard } from "@/lib/items/copy";
 import type { BoardItem } from "@/lib/items/queries";
+import { useCanvasClipboard, type CanvasClipboard } from "@/stores/canvas-clipboard";
 import { useUiStore } from "@/stores/ui-store";
 import { CanvasContext, type CanvasContextValue } from "./canvas-context";
 import { CanvasControls, useCanvasViewportActions } from "./canvas-controls";
@@ -137,9 +150,22 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   // New, removed and patched items reach the nodes; local positions survive a refetch.
   // Adjusted during render rather than in an effect, so no frame shows stale nodes.
   const [syncedItems, setSyncedItems] = useState(items);
+  // Ids of fresh copies that become the selection as soon as their cards show up.
+  const [pendingSelect, setPendingSelect] = useState<readonly string[] | null>(null);
   if (syncedItems !== items) {
     setSyncedItems(items);
-    setNodes((current) => reconcileNodes(current, items));
+    const present = pendingSelect ? items.some((item) => pendingSelect.includes(item.id)) : false;
+    if (pendingSelect && present) {
+      setPendingSelect(null);
+      setNodes((current) =>
+        reconcileNodes(current, items).map((node) => {
+          const selected = pendingSelect.includes(node.id);
+          return node.selected === selected ? node : { ...node, selected };
+        }),
+      );
+    } else {
+      setNodes((current) => reconcileNodes(current, items));
+    }
   }
 
   const onNodesChange = useCallback(
@@ -180,9 +206,12 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   const viewport = useCanvasViewportActions();
   const [moveOpen, setMoveOpen] = useState(false);
 
-  /** Flow coordinates under a pointer position; outside the canvas or `null` = viewport center. */
+  /**
+   * Flow coordinates under a pointer position; outside the canvas or `null` = viewport center.
+   * The z stacks a new card above every existing one.
+   */
   const flowPointAt = useCallback(
-    (client: Point | null): Point => {
+    (client: Point | null): CanvasTarget => {
       const bounds = store.getState().domNode?.getBoundingClientRect();
       const inside =
         client !== null &&
@@ -196,20 +225,83 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           ? (client ?? { x: 0, y: 0 })
           : { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
       const point = screenToFlowPosition(at);
-      return snapRef.current ? snapPoint(point) : point;
+      const z = nodesRef.current.reduce((top, node) => Math.max(top, node.zIndex ?? 0), 0) + 1;
+      return { ...(snapRef.current ? snapPoint(point) : point), z };
     },
     [screenToFlowPosition, store],
   );
 
-  // Drops and pastes outside React land where this canvas says (only a persisted canvas places).
-  useEffect(
-    () => (actions ? registerCanvasPlacer({ flowPointAt }) : undefined),
-    [actions, flowPointAt],
-  );
+  // The last pointer position over the canvas (client coordinates); null once it has left.
+  const pointerRef = useRef<Point | null>(null);
+  const onPointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    pointerRef.current = { x: event.clientX, y: event.clientY };
+  }, []);
+  const onPointerLeave = useCallback(() => {
+    pointerRef.current = null;
+  }, []);
+
+  const setClipboard = useCanvasClipboard((state) => state.setClipboard);
+  const canPaste = useCanvasClipboard((state) => state.clipboard !== null);
 
   const selectedIds = useCallback(
     () => nodesRef.current.filter((node) => node.selected).map((node) => node.id),
     [],
+  );
+
+  const selectedCards = useCallback(
+    (): CopiedCard[] =>
+      nodesRef.current
+        .filter((node) => node.selected)
+        .map((node) => ({ item: node.data.item, ...nodeRect(node) })),
+    [],
+  );
+
+  /** Puts the selected cards on the in-app clipboard. Returns the text for the system one. */
+  const copySelection = useCallback((): string | null => {
+    if (!actions) return null;
+    const clipboard = buildClipboard(selectedCards());
+    if (!clipboard) return null;
+    setClipboard(clipboard);
+    return clipboard.text;
+  }, [actions, selectedCards, setClipboard]);
+
+  /** The menu's Copy: no `copy` event there, so the system clipboard is written directly. */
+  const copyFromMenu = useCallback(() => {
+    const text = copySelection();
+    if (text !== null) void navigator.clipboard?.writeText(text).catch(() => undefined);
+  }, [copySelection]);
+
+  const duplicateSelected = useCallback(() => {
+    const cards = selectedCards();
+    if (!actions || cards.length === 0) return;
+    actions.duplicateCards(cards, flowPointAt(null).z ?? 0, setPendingSelect);
+  }, [actions, selectedCards, flowPointAt]);
+
+  const pasteClipboard = useCallback(
+    (clipboard: CanvasClipboard, at: CanvasTarget) => {
+      actions?.pasteCopies(clipboard, at, setPendingSelect);
+    },
+    [actions],
+  );
+
+  const pasteFromMenu = useCallback(
+    (at?: CanvasTarget) => {
+      const clipboard = useCanvasClipboard.getState().clipboard;
+      if (clipboard) pasteClipboard(clipboard, at ?? flowPointAt(null));
+    },
+    [pasteClipboard, flowPointAt],
+  );
+
+  // Drops and pastes outside React land where this canvas says (only a persisted canvas places).
+  useEffect(
+    () =>
+      actions
+        ? registerCanvasPlacer({
+            flowPointAt,
+            pasteCopies: (clipboard) => pasteClipboard(clipboard, flowPointAt(pointerRef.current)),
+          })
+        : undefined,
+    [actions, flowPointAt, pasteClipboard],
   );
 
   const reorder = useCallback(
@@ -221,12 +313,17 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
         zIndex: node.zIndex ?? node.data.item.canvas_z,
       }));
       const zs = direction === "front" ? bringToFront(zNodes, ids) : sendToBack(zNodes, ids);
-      const next = nodesRef.current.map((node) =>
-        zs.has(node.id) ? { ...node, zIndex: zs.get(node.id) } : node,
+      const restack = (node: ItemFlowNode) =>
+        zs.has(node.id) ? { ...node, zIndex: zs.get(node.id) } : node;
+      // An updater, so a node added by a reconcile not yet committed to the ref survives.
+      setNodes((current) => current.map(restack));
+      // A z change has no NodeChange of its own, so it is queued here rather than in onNodesChange.
+      layout?.enqueue(
+        nodesRef.current
+          .filter((node) => zs.has(node.id))
+          .map(restack)
+          .map(nodeToCanvasRect),
       );
-      nodesRef.current = next;
-      setNodes(next);
-      layout?.enqueue(next.filter((node) => zs.has(node.id)).map(nodeToCanvasRect));
     },
     [selectedIds, layout],
   );
@@ -259,6 +356,10 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           return reorder("back");
         case "move":
           return actions && selectedIds().length > 0 ? setMoveOpen(true) : undefined;
+        case "duplicate":
+          return duplicateSelected();
+        case "copy":
+          return undefined;
       }
     }
     function onKeyDown(event: KeyboardEvent) {
@@ -268,13 +369,41 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
       if (isDialogOpen() || document.querySelector('[role="menu"]')) return;
       const action = canvasShortcut(event);
       if (!action) return;
+      // ⌘C is the browser's: its `copy` event (below) does the work, and cancelling the key
+      // would stop that event.
+      if (action === "copy") return;
+      // ⌘/Ctrl +/− zoom the canvas only while it (or nothing) has focus; elsewhere they stay the
+      // browser's page zoom.
+      const focused = document.activeElement;
+      const canvasFocused =
+        !focused || focused === document.body || focused.closest('[data-view-mode="canvas"]');
+      if ((action === "zoomIn" || action === "zoomOut") && !canvasFocused) return;
       // Zoom keys must not also zoom the browser page.
       event.preventDefault();
       run(action);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [viewport, actions, flowPointAt, reorder, selectedIds]);
+  }, [viewport, actions, flowPointAt, reorder, selectedIds, duplicateSelected]);
+
+  // ⌘C and the browser's Copy: the cards go to the in-app clipboard, their text to the system one.
+  useEffect(() => {
+    if (!actions) return;
+    function onCopy(event: ClipboardEvent) {
+      if (event.defaultPrevented || !event.clipboardData) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (isEditableElement(target) || isEditableElement(document.activeElement)) return;
+      if (isDialogOpen() || document.querySelector('[role="menu"]')) return;
+      // Text the user selected on the page is theirs to copy.
+      if ((window.getSelection()?.toString() ?? "") !== "") return;
+      const text = copySelection();
+      if (text === null) return;
+      event.clipboardData.setData("text/plain", text);
+      event.preventDefault();
+    }
+    document.addEventListener("copy", onCopy);
+    return () => document.removeEventListener("copy", onCopy);
+  }, [actions, copySelection]);
 
   // Double-click on empty space makes a note right there.
   const onDoubleClick = useCallback(
@@ -289,13 +418,16 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
     (event: MouseEvent): MenuTarget | null => {
       const element = event.target as Element;
       if (element.closest(".react-flow__panel, .react-flow__minimap")) return null;
+      // After a marquee, the selection's box covers the selected cards: treat it as one of them.
+      if (element.closest(".react-flow__nodesselection")) {
+        const selected = nodesRef.current.find((node) => node.selected);
+        if (selected) return { type: "node", id: selected.id };
+      }
       const nodeId = element.closest<HTMLElement>(".react-flow__node")?.dataset.id;
       if (nodeId) {
         // Right-clicking a card outside the selection selects just that card first.
         if (!nodesRef.current.find((node) => node.id === nodeId)?.selected) {
-          const next = nodesRef.current.map((node) => ({ ...node, selected: node.id === nodeId }));
-          nodesRef.current = next;
-          setNodes(next);
+          setNodes((current) => current.map((node) => ({ ...node, selected: node.id === nodeId })));
         }
         return { type: "node", id: nodeId };
       }
@@ -331,6 +463,10 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
         onBringToFront={() => reorder("front")}
         onSendToBack={() => reorder("back")}
         onNewNote={actions?.createNote}
+        onCopy={actions ? copyFromMenu : undefined}
+        onDuplicate={actions ? duplicateSelected : undefined}
+        onPaste={actions ? pasteFromMenu : undefined}
+        canPaste={canPaste}
       >
         <ReactFlow<ItemFlowNode>
           nodes={nodes}
@@ -347,11 +483,17 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           // Left-drag on empty space draws a marquee; space-drag, middle mouse, trackpad scroll and
           // touch pan. Pinch or ⌘/Ctrl-scroll zooms.
           selectionOnDrag
+          // A marquee picks every card it touches, not only the ones it fully covers.
+          selectionMode={SelectionMode.Partial}
+          // Selecting must not lift a card; the stack order is what ] and [ set.
+          elevateNodesOnSelect={false}
           panOnDrag={[1]}
           panOnScroll
           panActivationKeyCode="Space"
           zoomOnDoubleClick={false}
           onDoubleClick={onDoubleClick}
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
           snapToGrid={snap}
           snapGrid={[SNAP_GRID, SNAP_GRID]}
           nodesConnectable={false}
