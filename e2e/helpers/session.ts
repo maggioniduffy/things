@@ -112,6 +112,10 @@ export type SeedItem = {
   url?: string;
   domain?: string;
   file_name?: string;
+  /** Storage path of an uploaded file (see `uploadBytes`), mime type and size. */
+  file_path?: string;
+  mime_type?: string;
+  file_size?: number;
   collection_id?: string | null;
   is_favorite?: boolean;
   is_read?: boolean;

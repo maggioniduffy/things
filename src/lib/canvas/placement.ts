@@ -1,3 +1,4 @@
+import type { CanvasClipboard } from "@/stores/canvas-clipboard";
 import type { CanvasTarget, Point } from "./layout";
 
 /**
@@ -7,6 +8,11 @@ import type { CanvasTarget, Point } from "./layout";
 export type CanvasPlacer = {
   /** `null` means the center of the viewport. Includes the z that stacks a new card on top. */
   flowPointAt(client: Point | null): CanvasTarget;
+  /**
+   * Pastes the copied cards where the pointer last was over the canvas (the viewport center when
+   * it was not). Left out by canvases that cannot paste.
+   */
+  pasteCopies?(clipboard: CanvasClipboard): void;
 };
 
 let current: CanvasPlacer | null = null;

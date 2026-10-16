@@ -341,4 +341,30 @@ test.describe("canvas tools", () => {
     expect(position.x % 8).toBeCloseTo(0, 5);
     expect(position.y % 8).toBeCloseTo(0, 5);
   });
+
+  test("near the window's bottom edge, the card menu stays open and Move to opens", async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width: 1100, height: 420 });
+    await startGuest(page);
+    const session = await readSession(context);
+    const [alpha] = await seedPlaced(session, null);
+    if (!alpha) throw new Error("No seeded items.");
+    await createCollection(session, "Archive box", "🗃️");
+    await openCanvas(page, "/app");
+
+    // The menu shifts up to fit, under the pointer: releasing the right button must not pick an item.
+    const card = page.locator(`.react-flow__node[data-id="${alpha.id}"]`);
+    const box = await card.boundingBox();
+    if (!box) throw new Error("Card has no box.");
+    await card.click({ button: "right", position: { x: 20, y: box.height - 10 } });
+    const menu = page.getByRole("menu");
+    await expect(menu).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(menu).toBeVisible();
+
+    await page.getByRole("menuitem", { name: /Move to/ }).hover();
+    await expect(page.getByRole("menuitem", { name: "Archive box" })).toBeVisible();
+  });
 });

@@ -22,10 +22,35 @@ function ContextMenuPortal({ ...props }: React.ComponentProps<typeof ContextMenu
   return <ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />;
 }
 
+/**
+ * Where the menu opens on press (macOS, Linux), the release of that same press must not pick an
+ * item: near a window edge the menu shifts to fit and lands under the pointer.
+ */
+function swallowOpeningRelease(event: React.MouseEvent) {
+  if ((event.buttons & 2) === 0) return;
+  const onPointerUp = (up: PointerEvent) => {
+    window.removeEventListener("pointerup", onPointerUp, true);
+    if (up.target instanceof Element && up.target.closest('[role="menu"]')) {
+      up.stopPropagation();
+    }
+  };
+  window.addEventListener("pointerup", onPointerUp, true);
+}
+
 function ContextMenuTrigger({
+  onContextMenu,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Trigger>) {
-  return <ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />;
+  return (
+    <ContextMenuPrimitive.Trigger
+      data-slot="context-menu-trigger"
+      onContextMenu={(event) => {
+        onContextMenu?.(event);
+        if (!event.defaultPrevented) swallowOpeningRelease(event);
+      }}
+      {...props}
+    />
+  );
 }
 
 function ContextMenuContent({

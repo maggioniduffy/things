@@ -223,7 +223,7 @@ function minKey(a: string | null, b: string | null): string | null {
   return a < b ? a : b;
 }
 
-async function fetchFirstPosition(client: Client): Promise<string | null> {
+export async function fetchFirstPosition(client: Client): Promise<string | null> {
   const { data, error } = await client
     .from("items")
     .select("position")
@@ -282,7 +282,7 @@ function editLists(
   }
 }
 
-function insertIntoCaches(queryClient: QueryClient, row: BoardItem): void {
+export function insertIntoCaches(queryClient: QueryClient, row: BoardItem): void {
   editLists(queryClient, (data, view, sort) =>
     // Oldest/title lists would put it elsewhere: the refetch at the end of the capture does.
     view && (sort === "manual" || sort === "newest") && itemMatchesView(row, view)
@@ -294,7 +294,7 @@ function insertIntoCaches(queryClient: QueryClient, row: BoardItem): void {
   );
 }
 
-function removeFromCaches(queryClient: QueryClient, row: BoardItem): void {
+export function removeFromCaches(queryClient: QueryClient, row: BoardItem): void {
   editLists(queryClient, (data) => removeFromPages(data, row.id));
   queryClient.setQueryData<SidebarCounts>(["counts"], (counts) =>
     counts ? removeFromCounts(counts, row) : counts,
@@ -328,6 +328,23 @@ async function refreshLists(queryClient: QueryClient): Promise<void> {
     queryClient.invalidateQueries({ queryKey: ["items"] }),
     queryClient.invalidateQueries({ queryKey: ["counts"] }),
   ]);
+}
+
+/**
+ * Runs a write whose cards may exist only in the cache for a while (a paste), counted as an
+ * in-flight capture so no refetch wipes them; the last one to finish refreshes the lists.
+ */
+export async function withInFlightWrite<T>(
+  queryClient: QueryClient,
+  work: () => Promise<T>,
+): Promise<T> {
+  inFlight += 1;
+  try {
+    return await work();
+  } finally {
+    inFlight -= 1;
+    await refreshLists(queryClient);
+  }
 }
 
 // ---------------------------------------------------------------------------

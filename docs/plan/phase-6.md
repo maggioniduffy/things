@@ -84,3 +84,5 @@ $$;
 | `canvasShortcut` rejects Alt, so `[`/`]` don't work on layouts that need Alt for them (e.g. German Mac) | 6.G |
 | An image drop is centered with the default size before its aspect ratio is known, so its center drifts after enrichment | 6.G |
 | Full e2e (89/92): stale specs, not 6.3 code. `auth.spec.ts:94` and `account-switch.spec.ts` click "Try without an account" inside `main`, which now has two (hero + footer CTA); `board.spec.ts:243` expects the canvas toggle disabled where it is now enabled. Update the specs | 6.G |
+| Paste/duplicate takes `fetchFirstPosition` directly, outside the `reservePosition` queue, so two quick ⌘D (or a paste during a capture) can share a `position` key (ties are handled, but route it through the queue) | 6.G |
+| Manual check: Safari may not fire `copy` without a page selection, which would make ⌘C a silent no-op on the canvas | 6.G |

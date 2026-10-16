@@ -3,6 +3,9 @@
 import {
   ArrowDownToLineIcon,
   ArrowUpToLineIcon,
+  ClipboardPasteIcon,
+  CopyIcon,
+  CopyPlusIcon,
   FolderInputIcon,
   InboxIcon,
   PlusIcon,
@@ -43,6 +46,13 @@ type CanvasMenuProps = {
   onSendToBack: () => void;
   /** Present when notes can be created (persisted canvases). */
   onNewNote?: (point: CanvasTarget) => void;
+  /** Present when copying is possible (persisted canvases). */
+  onCopy?: () => void;
+  onDuplicate?: () => void;
+  /** Pastes the in-app clipboard at `point`, or at the viewport center without one. */
+  onPaste?: (point?: CanvasTarget) => void;
+  /** False while the in-app clipboard is empty. */
+  canPaste?: boolean;
 };
 
 /** The node and pane context menus of the canvas. Wraps the flow; React Flow keeps its own events. */
@@ -56,6 +66,10 @@ export function CanvasMenu({
   onBringToFront,
   onSendToBack,
   onNewNote,
+  onCopy,
+  onDuplicate,
+  onPaste,
+  canPaste = false,
 }: CanvasMenuProps) {
   const [target, setTarget] = useState<MenuTarget | null>(null);
   const collections = useCollectionList();
@@ -116,6 +130,27 @@ export function CanvasMenu({
                 </ContextMenuSubContent>
               </ContextMenuSub>
             ) : null}
+            {onCopy ? (
+              <ContextMenuItem onSelect={onCopy}>
+                <CopyIcon aria-hidden="true" />
+                Copy
+                <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+              </ContextMenuItem>
+            ) : null}
+            {onDuplicate ? (
+              <ContextMenuItem onSelect={onDuplicate}>
+                <CopyPlusIcon aria-hidden="true" />
+                Duplicate
+                <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+              </ContextMenuItem>
+            ) : null}
+            {onPaste ? (
+              <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste()}>
+                <ClipboardPasteIcon aria-hidden="true" />
+                Paste
+                <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+              </ContextMenuItem>
+            ) : null}
             <ContextMenuItem onSelect={onBringToFront}>
               <ArrowUpToLineIcon aria-hidden="true" />
               Bring to front
@@ -133,10 +168,19 @@ export function CanvasMenu({
             ) : null}
           </>
         ) : target?.type === "pane" && onNewNote ? (
-          <ContextMenuItem onSelect={() => onNewNote(target.point)}>
-            <PlusIcon aria-hidden="true" />
-            New note here
-          </ContextMenuItem>
+          <>
+            <ContextMenuItem onSelect={() => onNewNote(target.point)}>
+              <PlusIcon aria-hidden="true" />
+              New note here
+            </ContextMenuItem>
+            {onPaste ? (
+              <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste(target.point)}>
+                <ClipboardPasteIcon aria-hidden="true" />
+                Paste
+                <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+              </ContextMenuItem>
+            ) : null}
+          </>
         ) : null}
       </ContextMenuContent>
     </ContextMenu>

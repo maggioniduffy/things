@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { activeCanvasPlacer } from "@/lib/canvas/placement";
 import { useCapture } from "@/lib/items/mutations";
+import { useCanvasClipboard } from "@/stores/canvas-clipboard";
 import type { ViewSpec } from "@/lib/views";
 import { readDataTransfer, saveRequests } from "./clipboard";
 
@@ -37,12 +38,25 @@ export function PasteListener({ view }: { view: ViewSpec }) {
       if (isEditableElement(target) || isEditableElement(document.activeElement)) return;
       if (isDialogOpen()) return;
 
+      const placer = activeCanvasPlacer();
+      // The system clipboard still holds the text of the last canvas copy: paste the cards.
+      const copied = useCanvasClipboard.getState().clipboard;
+      if (
+        placer?.pasteCopies &&
+        copied &&
+        // Windows hands text back with CRLF line endings.
+        event.clipboardData.getData("text/plain").replace(/\r\n/g, "\n") === copied.text
+      ) {
+        event.preventDefault();
+        placer.pasteCopies(copied);
+        return;
+      }
+
       const found = readDataTransfer(event.clipboardData);
       if (found.requests.length === 0) return;
 
       event.preventDefault();
       // On a canvas, a paste lands in the middle of what is on screen.
-      const placer = activeCanvasPlacer();
       saveRequests(captureRef.current, found, placer ? { canvasAt: placer.flowPointAt(null) } : {});
     }
 
