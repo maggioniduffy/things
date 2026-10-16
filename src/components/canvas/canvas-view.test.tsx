@@ -42,12 +42,28 @@ describe("CanvasView", () => {
     expect(screen.getByRole("button", { name: "Open Sticky" })).toBeInTheDocument();
   });
 
-  it("opens an item when its card is clicked", () => {
+  it("selects on a click and opens on a double-click", () => {
     const onOpen = vi.fn();
-    renderWithQuery(<CanvasView items={items} onOpen={onOpen} />);
+    const { container } = renderWithQuery(<CanvasView items={items} onOpen={onOpen} />);
+    const card = screen.getByRole("button", { name: "Open A link" });
     // fireEvent: user-event's mousedown has no `view`, which React Flow's drag handler needs.
-    fireEvent.click(screen.getByRole("button", { name: "Open A link" }));
+    fireEvent.click(card, { detail: 1 });
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(container.querySelector(".react-flow__node.selected")).not.toBeNull();
+    fireEvent.doubleClick(card);
     expect(onOpen).toHaveBeenCalledWith(items[1]);
+  });
+
+  it("opens from the keyboard and from the card's open button", () => {
+    const onOpen = vi.fn();
+    const { container } = renderWithQuery(<CanvasView items={items} onOpen={onOpen} />);
+    // Enter or Space on a button fires a click with detail 0.
+    fireEvent.click(screen.getByRole("button", { name: "Open A link" }), { detail: 0 });
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    const node = container.querySelector('.react-flow__node[data-id="' + items[1]!.id + '"]')!;
+    fireEvent.click(node.querySelector('button[title="Open"]')!, { detail: 1 });
+    expect(onOpen).toHaveBeenCalledTimes(2);
+    expect(onOpen).toHaveBeenLastCalledWith(items[1]);
   });
 
   it("adds and drops nodes when the items change", () => {

@@ -58,10 +58,18 @@ test.describe("canvas", () => {
     await page.getByRole("button", { name: "Show minimap" }).click();
     await expect(page.locator(".react-flow__minimap")).toBeVisible();
 
-    // A click on a card opens the drawer.
+    // A click on a card selects it; a double-click or the open button on hover opens the drawer.
     await first.click();
+    await expect(node).toHaveClass(/selected/);
+    await expect(page).not.toHaveURL(/item=/);
+    await first.dblclick();
     await expect(page).toHaveURL(/\?item=[0-9a-f-]{36}$/);
     await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await node.hover();
+    await node.locator('button[title="Open"]').click();
+    await expect(page).toHaveURL(/\?item=[0-9a-f-]{36}$/);
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
 

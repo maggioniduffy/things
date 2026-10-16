@@ -211,6 +211,7 @@ export function CardShell({
         type="button"
         aria-label={openLabel}
         onClick={() => onOpen?.(item)}
+        data-slot="card-open"
         className="rounded-card absolute inset-0 z-10 cursor-pointer"
       />
     </Root>
