@@ -240,13 +240,16 @@ test.describe("app shell and board", () => {
     await expect(loadMore).toHaveCount(0);
   });
 
-  test("grid and list modes, and the canvas toggle is disabled", async ({ page, context }) => {
+  test("grid and list modes, and the canvas toggle is enabled only in the Inbox", async ({
+    page,
+    context,
+  }) => {
     await startGuest(page);
     await createNotes(await readSession(context), 2, "Mode");
     await page.reload();
 
     await expect(page.locator('[data-view-mode="grid"]')).toBeVisible();
-    await expect(page.getByRole("button", { name: "Canvas view" })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Canvas view" })).not.toHaveAttribute(
       "aria-disabled",
       "true",
     );
@@ -260,6 +263,13 @@ test.describe("app shell and board", () => {
     // The choice is remembered across a reload.
     await page.reload();
     await expect(page.locator('[data-view-mode="list"]')).toBeVisible();
+
+    // A filter view has no canvas.
+    await page.goto("/app/all");
+    await expect(page.getByRole("button", { name: "Canvas view" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   test("the sidebar collapses on desktop", async ({ page }) => {

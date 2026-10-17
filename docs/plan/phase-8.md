@@ -52,3 +52,8 @@ On the canvas, React Flow owns node position and drag; Motion animates only each
 | `createImageBitmap` decodes images at full size before the 480 px thumbnail; a 20k px image risks memory pressure — pass `resizeWidth` when the file is large | WP 8.5 |
 | The gate's "≤ 3 s" is asserted in e2e only for links (unfurl mocked); image/PDF cases use longer timeouts on the local stack | Re-check on the deployed app, 8.G |
 | Unfurl decodes every page as UTF-8; windows-1252 or Shift_JIS pages get garbled titles | v2 (or 8.x if seen in practice) |
+| Manual check: the ⌘C fallback (no `copy` event) writes the system clipboard from a timeout; Safari may refuse that, leaving only the in-app clipboard. Check in Safari | WP 8.1 (from 6.G) |
+| `onNodesChange` computes the rects it saves from `nodesRef`, which can be one commit behind when two changes land before a render (only the saved rect, never the state) | WP 8.1 (from 6.G) |
+| If the initial `fitView` never moves the viewport, the first zoom-button press (also event-less) is not saved | WP 8.1 (from 6.G) |
+| An image capture now waits for the browser to decode the image (for its size) before the card shows | WP 8.1 (from 6.G) |
+| Each loading skeleton loops its own shimmer animation: 300 pending cards on the canvas cost ~13 ms of style per frame and drop panning to ~30 fps (enriched cards: 60 fps). Use one shared animation, or static skeletons on the canvas. Measure with `CANVAS_PERF=1 CANVAS_PERF_PENDING=1` | WP 8.1 (from 6.G) |

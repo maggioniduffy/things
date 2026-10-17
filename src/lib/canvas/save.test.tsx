@@ -172,6 +172,57 @@ describe("CanvasLayoutSaver", () => {
       rollback: [],
     });
   });
+
+  describe("retry of never-saved nodes", () => {
+    async function failFirst() {
+      const save = vi
+        .fn<SaveFn>()
+        .mockRejectedValueOnce(new Error("down"))
+        .mockResolvedValue(undefined);
+      const ctx = setup(save);
+      ctx.saver.enqueue([rect("new", 1)]);
+      await vi.advanceTimersByTimeAsync(400);
+      expect(save).toHaveBeenCalledTimes(1);
+      return ctx;
+    }
+
+    it("does not resend right after a failure", async () => {
+      const { saver, save } = await failFirst();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(saver.hasSeen("new")).toBe(true);
+    });
+
+    it("carries the retry with the next enqueue of another node", async () => {
+      const { saver, save } = await failFirst();
+      saver.enqueue([rect("other", 2)]);
+      await vi.advanceTimersByTimeAsync(400);
+      expect(save).toHaveBeenLastCalledWith([rect("new", 1), rect("other", 2)]);
+    });
+
+    it("lets a newer rect for the same id win", async () => {
+      const { saver, save } = await failFirst();
+      saver.enqueue([rect("new", 99)]);
+      await vi.advanceTimersByTimeAsync(400);
+      expect(save).toHaveBeenLastCalledWith([rect("new", 99)]);
+    });
+
+    it("sends retries on an explicit flush", async () => {
+      const { saver, save } = await failFirst();
+      await saver.flush();
+      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenLastCalledWith([rect("new", 1)]);
+    });
+
+    it("does not retry a node that had a saved layout", async () => {
+      const save = vi.fn<SaveFn>().mockRejectedValueOnce(new Error("down"));
+      const { saver } = setup(save);
+      saver.enqueue([rect("stored", 9)]);
+      await vi.advanceTimersByTimeAsync(400);
+      await saver.flush();
+      expect(save).toHaveBeenCalledTimes(1);
+    });
+  });
 });
 
 describe("useCanvasLayoutSaver", () => {

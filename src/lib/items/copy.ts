@@ -2,18 +2,17 @@
 
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateNKeysBetween } from "fractional-indexing";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { undoToast } from "@/components/ui/sonner";
-import type { Point } from "@/lib/canvas/layout";
+import { snapPoint, type CanvasTarget } from "@/lib/canvas/layout";
 import { createClient } from "@/lib/supabase/client";
 import type { CanvasClipboard } from "@/stores/canvas-clipboard";
 import type { Database } from "@/types/supabase";
 import {
   GUEST_QUOTA_COPY,
-  fetchFirstPosition,
+  reservePositions,
   insertIntoCaches,
   isGuestQuotaError,
   removeFromCaches,
@@ -63,10 +62,13 @@ export function buildClipboard(cards: readonly CopiedCard[]): CanvasClipboard | 
 /** Where one copy goes: the top-left corner of its card. */
 export type Placement = { id: string; x: number; y: number };
 
-/** A paste: the copies' bounding box centered on `point`, each card at its stored offset. */
-export function pastePlacements(clipboard: CanvasClipboard, point: Point): Placement[] {
-  const left = point.x - clipboard.width / 2;
-  const top = point.y - clipboard.height / 2;
+/**
+ * A paste: the copies' bounding box centered on `point`, each card at its stored offset. With
+ * `point.snap` the box's top-left corner is on the grid, so the cards keep their offsets.
+ */
+export function pastePlacements(clipboard: CanvasClipboard, point: CanvasTarget): Placement[] {
+  const centered = { x: point.x - clipboard.width / 2, y: point.y - clipboard.height / 2 };
+  const { x: left, y: top } = point.snap ? snapPoint(centered) : centered;
   return clipboard.entries.map((entry) => ({
     id: entry.id,
     x: left + entry.dx,
@@ -91,8 +93,6 @@ export type CopyRowOptions = {
   collectionId: string | null;
   /** Stack level of the first copy; later copies stack one above each other. */
   z: number;
-  /** The grid position of the user's current first item, so the copies sort before it. */
-  firstPosition: string | null;
   now: string;
   newId?: () => string;
 };
@@ -105,10 +105,13 @@ export type CopyRows = {
 };
 
 /** The rows (and tag links, and storage copies) that duplicate `sources`, in the order given. */
-export function buildCopyRows(sources: readonly CopySource[], options: CopyRowOptions): CopyRows {
-  const { userId, collectionId, z, firstPosition, now } = options;
+export function buildCopyRows(
+  sources: readonly CopySource[],
+  positions: readonly string[],
+  options: CopyRowOptions,
+): CopyRows {
+  const { userId, collectionId, z, now } = options;
   const newId = options.newId ?? (() => crypto.randomUUID());
-  const positions = generateNKeysBetween(null, firstPosition, sources.length);
   const rows: BoardItem[] = [];
   const tags: CopyRows["tags"] = [];
   const files: CopyRows["files"] = [];
@@ -230,7 +233,7 @@ export function usePasteCopies(
         // Read the sources now, so a paste works from another canvas and skips deleted cards.
         let built: CopyRows;
         try {
-          const [items, tagLinks, first] = await Promise.all([
+          const [items, tagLinks] = await Promise.all([
             client
               .from("items")
               .select(ITEM_COLUMNS)
@@ -238,7 +241,6 @@ export function usePasteCopies(
               .is("deleted_at", null)
               .returns<BoardItem[]>(),
             client.from("item_tags").select("item_id,tag_id").in("item_id", ids),
-            fetchFirstPosition(client),
           ]);
           if (items.error) throw items.error;
           if (tagLinks.error) throw tagLinks.error;
@@ -260,11 +262,12 @@ export function usePasteCopies(
             toast("Nothing to paste.");
             return [];
           }
-          built = buildCopyRows(sources, {
+          // Reserved once the sources are known, so the count is exact and no key goes unused.
+          const positions = await reservePositions(client, sources.length);
+          built = buildCopyRows(sources, positions, {
             userId,
             collectionId,
             z: request.z,
-            firstPosition: first,
             now: new Date().toISOString(),
           });
         } catch {

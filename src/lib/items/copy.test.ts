@@ -70,17 +70,27 @@ describe("placements", () => {
     ]);
   });
 
+  it("snaps the bounding box corner when asked, keeping offsets", () => {
+    const clip = buildClipboard([card("a", 100, 200), card("b", 300, 260)]);
+    if (!clip) throw new Error("no clipboard");
+    // Unsnapped corner is (853, 447); on the 8 px grid that is (856, 448).
+    expect(pastePlacements(clip, { x: 1003, y: 502, snap: true })).toEqual([
+      { id: "a", x: 856, y: 448 },
+      { id: "b", x: 1056, y: 508 },
+    ]);
+  });
+
   it("duplicates 16 px down and right", () => {
     expect(duplicatePlacements([card("a", 10, 20)])).toEqual([{ id: "a", x: 26, y: 36 }]);
   });
 });
 
 describe("buildCopyRows", () => {
+  const POSITIONS = ["a2", "a3", "a4"];
   const options = {
     userId: USER,
     collectionId: "col-1",
     z: 7,
-    firstPosition: "a5",
     now: NOW,
   };
 
@@ -99,10 +109,14 @@ describe("buildCopyRows", () => {
       canvas_h: 200,
       created_at: "2020-01-01T00:00:00Z",
     });
-    const { rows, tags } = buildCopyRows([{ item: source, tagIds: ["t1", "t2"], x: 5, y: 6 }], {
-      ...options,
-      newId: ids(),
-    });
+    const { rows, tags } = buildCopyRows(
+      [{ item: source, tagIds: ["t1", "t2"], x: 5, y: 6 }],
+      POSITIONS,
+      {
+        ...options,
+        newId: ids(),
+      },
+    );
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       id: "new-1",
@@ -136,29 +150,20 @@ describe("buildCopyRows", () => {
         { item: makeItem({ id: "a" }), tagIds: [], x: 0, y: 0 },
         { item: makeItem({ id: "b" }), tagIds: [], x: 0, y: 0 },
       ],
+      POSITIONS,
       { ...options, collectionId: null, newId: ids() },
     );
     expect(rows.map((row) => row.collection_id)).toEqual([null, null]);
     expect(rows.map((row) => row.canvas_z)).toEqual([7, 8]);
   });
 
-  it("orders grid positions before the first key, in the copied order", () => {
+  it("gives each copy the reserved position at its index", () => {
     const { rows } = buildCopyRows(
       ["a", "b", "c"].map((id) => ({ item: makeItem({ id }), tagIds: [], x: 0, y: 0 })),
+      POSITIONS,
       { ...options, newId: ids() },
     );
-    const keys = rows.map((row) => row.position);
-    expect([...keys].sort()).toEqual(keys);
-    expect(new Set(keys).size).toBe(3);
-    expect(keys.every((key) => key < "a5")).toBe(true);
-  });
-
-  it("starts at a0 when the user has no items", () => {
-    const { rows } = buildCopyRows([{ item: makeItem(), tagIds: [], x: 0, y: 0 }], {
-      ...options,
-      firstPosition: null,
-    });
-    expect(rows[0]?.position).toBe("a0");
+    expect(rows.map((row) => row.position)).toEqual(POSITIONS);
   });
 
   it("rewrites file and thumbnail paths to the new item", () => {
@@ -170,7 +175,7 @@ describe("buildCopyRows", () => {
       file_path: "someone/orig/My_photo.png",
       thumbnail_path: "someone/orig/.thumb.webp",
     });
-    const { rows, files } = buildCopyRows([{ item: file, tagIds: [], x: 0, y: 0 }], {
+    const { rows, files } = buildCopyRows([{ item: file, tagIds: [], x: 0, y: 0 }], POSITIONS, {
       ...options,
       newId: ids(),
     });
@@ -189,7 +194,11 @@ describe("buildCopyRows", () => {
       file_path: "u/x/a.pdf",
       thumbnail_path: null,
     });
-    const { rows, files } = buildCopyRows([{ item: file, tagIds: [], x: 0, y: 0 }], options);
+    const { rows, files } = buildCopyRows(
+      [{ item: file, tagIds: [], x: 0, y: 0 }],
+      POSITIONS,
+      options,
+    );
     expect(rows[0]?.thumbnail_path).toBeNull();
     expect(files).toHaveLength(1);
   });

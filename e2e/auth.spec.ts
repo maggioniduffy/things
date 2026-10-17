@@ -94,7 +94,11 @@ test.describe("guest and redirects", () => {
   test("starts a guest session from the landing page", async ({ page }) => {
     const consoleErrors = trackConsoleErrors(page);
     await page.goto("/");
-    await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "Try without an account" })
+      .first()
+      .click();
 
     await expect(page).toHaveURL(/\/app$/);
     await expect(accountGroup(page)).toContainText("Guest");
@@ -113,7 +117,7 @@ test.describe("guest and redirects", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("banner").getByRole("link", { name: "Open app" })).toBeVisible();
-    await page.getByRole("main").getByRole("link", { name: "Open app" }).click();
+    await page.getByRole("main").getByRole("link", { name: "Open app" }).first().click();
     await expect(page).toHaveURL(/\/app$/);
     consoleErrors.assertNone();
   });

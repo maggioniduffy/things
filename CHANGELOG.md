@@ -27,6 +27,34 @@
 - App icons, favicon and Open Graph images from the Claude Design brand sheet: `src/app/icon.png`, `apple-icon.png`, `favicon.ico`, `opengraph-image.png`, `twitter-image.png`, plus `public/brand/*` (PWA icons, ink and aurora icons, `og-brand.png`) and a static web app manifest (`public/manifest.webmanifest`; it needs literal colors, which the no-raw-hex guard keeps out of `src`).
 - `scripts/render-brand-assets.mjs` regenerates all PNGs from the design (Playwright Chromium).
 
+### Phase 6 — Canvas
+
+#### Added
+
+- Canvas view for the Inbox and every collection (React Flow). Cards reuse the grid's tiles; notes render as sticky-style cards. Formats, tags and smart views stay grid/list. A dot grid sits under the grain, the minimap is a toggle, and above 300 cards only the visible ones render.
+- Pan with space-drag, middle mouse, trackpad or touch; zoom 10–200% with pinch or ⌘/Ctrl-scroll. Marquee and Shift-click multi-select, multi-drag, resize (min 160×120), optional 8 px snap.
+- On the canvas a click selects a card; a double-click, the open button on hover, or Enter opens it.
+- Layout persistence: moves, resizes and z-order go into one debounced (400 ms) `save_canvas_layout` call, optimistic with rollback and a toast. Saves started on page hide use `keepalive`. The viewport is saved 1 s after moves stop (collections in the database, the Inbox in localStorage). Items without a position are auto-placed in a column right of the content and saved in one batch. Moving cards never changes grid order.
+- Things land where they happen: drops at the cursor, pastes at the viewport center, double-click on empty space adds a note there. Images are sized by their aspect ratio.
+- Shortcuts: ⌘+/⌘− zoom, Shift+1 fit all, Shift+0 100%, N new note, ] / [ bring to front / send to back, M move to a collection. Node and pane context menus cover the same actions.
+- Copy, paste and duplicate cards: ⌘C/⌘V/⌘D and the context menus. Copies keep their relative layout, paste at the cursor (also into another collection), are one batch insert with Undo, and become the selection. The system clipboard gets the URLs or text, so a copy also pastes into other apps. File copies duplicate their Storage object and count toward the guest quota.
+- Seed script with 300 canvas items, and an opt-in perf spec (`CANVAS_PERF=1`) that records frame times while panning and zooming 300 cards.
+
+#### Fixed (gate review)
+
+- An auto-placed card whose first save failed is retried with the next layout save instead of being placed again on reload.
+- Opening a canvas no longer saves the initial fit as the user's viewport.
+- A card change can no longer overwrite a rollback after a failed save.
+- Snap aligns a placed card's corner to the grid, not its center.
+- ] and [ work on keyboard layouts that type them with Alt or AltGr.
+- A dropped image is centered with its real size; image capture keeps a multi-file drop in order.
+- Paste and duplicate take their grid positions through the capture queue, so quick repeats never share a key.
+- ⌘C on the canvas falls back to a direct copy when the browser fires no `copy` event.
+
+#### Notes
+
+- Safari still needs a manual check of the ⌘C fallback (tracked in Phase 8).
+
 ### Phase 5 — Organize and drag-and-drop
 
 #### Added

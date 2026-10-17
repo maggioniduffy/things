@@ -19,6 +19,7 @@ import {
   buildNoteRow,
   captureTargetFor,
   isGuestQuotaError,
+  reservePositions,
   resetCaptureStateForTests,
   unfurlPatch,
   uploadErrorMessage,
@@ -322,6 +323,18 @@ describe("row builders", () => {
     });
     expect(buildFileRow(base, file("notes.md", "", 1)).mime_type).toBe("application/octet-stream");
     expect(buildFileRow(base, file(".env", "", 1)).title).toBe(".env");
+  });
+});
+
+describe("reservePositions", () => {
+  it("hands out ordered keys before the first item and before earlier reservations", async () => {
+    const { fake } = setup();
+    const first = await reservePositions(fake.client as never, 3);
+    expect(first).toHaveLength(3);
+    expect([...first].sort()).toEqual(first);
+    expect(first.every((key) => key < "a5")).toBe(true);
+    const next = await reservePositions(fake.client as never, 2);
+    expect(next.every((key) => key < (first[0] ?? ""))).toBe(true);
   });
 });
 
@@ -689,6 +702,18 @@ describe("capturing notes and text", () => {
     expect(fake.state.inserts[3]?.canvas_x).not.toBeNull();
   });
 
+  it("snaps the corner, not the center, when the target says so", async () => {
+    const { fake, capture } = setup();
+    fetchMock.mockResolvedValue(jsonResponse(RESULT));
+    // A link is 280 x 240: centered on (503, 305) its corner is (363, 185), which snaps to (360, 184).
+    await act(() =>
+      capture.current.captureLink("https://example.com/post", {
+        canvasAt: { x: 503, y: 305, snap: true },
+      }),
+    );
+    expect(fake.state.inserts[0]).toMatchObject({ canvas_x: 360, canvas_y: 184 });
+  });
+
   it("routes text to a link or a note", async () => {
     const { fake, capture } = setup();
     fetchMock.mockResolvedValue(jsonResponse(RESULT));
@@ -792,6 +817,73 @@ describe("capturing a file", () => {
       .getQueryData<InfiniteData<ItemsPage>>(itemsQueryKey(INBOX, "manual"))
       ?.pages[0]?.items.find((i) => i.id === row.id);
     expect(cachedRow).toMatchObject({ enrich_status: "done" });
+  });
+
+  it("stores the natural size of a raster image and sizes the card from it", async () => {
+    const close = vi.fn();
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(async () => ({ width: 800, height: 400, close })),
+    );
+    try {
+      const { fake, capture } = setup();
+      await act(() =>
+        capture.current.captureFile(file("wide.png", "image/png"), {
+          canvasAt: { x: 500, y: 300 },
+        }),
+      );
+      const row = fake.state.inserts[0] as BoardItem;
+      expect(row.metadata).toMatchObject({ width: 800, height: 400 });
+      expect(close).toHaveBeenCalled();
+      // 320 wide, 160 high from the aspect ratio: centered on (500, 300) the corner is (340, 220).
+      expect(row).toMatchObject({ canvas_x: 340, canvas_y: 220 });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("reserves an image's position before reading its size, so call order wins", async () => {
+    let finishDecode: (size: {
+      width: number;
+      height: number;
+      close: () => void;
+    }) => void = () => {};
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(() => new Promise((resolve) => (finishDecode = resolve))),
+    );
+    try {
+      const { fake, capture } = setup();
+      await act(async () => {
+        const image = capture.current.captureFile(file("slow.png", "image/png"));
+        const note = capture.current.captureNote("after");
+        await note;
+        finishDecode({ width: 10, height: 10, close: () => {} });
+        await image;
+      });
+      const byKind = new Map(fake.state.inserts.map((row) => [row.kind, row.position ?? ""]));
+      // Called first, so its key is handed out first and the note's sorts before it.
+      expect((byKind.get("note") ?? "") < (byKind.get("image") ?? "")).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("skips SVGs and images the browser cannot decode", async () => {
+    const decode = vi.fn(async () => {
+      throw new Error("bad image");
+    });
+    vi.stubGlobal("createImageBitmap", decode);
+    try {
+      const { fake, capture } = setup();
+      await act(() => capture.current.captureFile(file("a.svg", "image/svg+xml")));
+      await act(() => capture.current.captureFile(file("broken.png", "image/png")));
+      expect(decode).toHaveBeenCalledTimes(1);
+      expect(fake.state.inserts[0]?.metadata).toEqual({});
+      expect(fake.state.inserts[1]?.metadata).toEqual({});
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("finishes without a thumbnail when there is none or its upload fails", async () => {

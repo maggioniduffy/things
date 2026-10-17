@@ -127,6 +127,8 @@ export type SeedItem = {
   /** Canvas placement; leave out to have the item auto-placed. */
   canvas_x?: number;
   canvas_y?: number;
+  /** Defaults to "pending" (the column default), which shows loading skeletons. */
+  enrich_status?: "pending" | "done" | "failed";
 };
 
 let seedCounter = 0;
@@ -270,6 +272,8 @@ export type SeedCanvasOptions = {
   collectionId?: string;
   /** Title prefix; items are titled `<prefix> 1` ... `<prefix> <count>`. */
   prefix?: string;
+  /** Enrichment state of every item; left out = the column default ("pending"). */
+  enrichStatus?: SeedItem["enrich_status"];
 };
 
 /**
@@ -280,7 +284,7 @@ export type SeedCanvasOptions = {
 export async function seedCanvasItems(
   session: AppSession,
   count: number,
-  { collectionId, prefix = "Canvas item" }: SeedCanvasOptions = {},
+  { collectionId, prefix = "Canvas item", enrichStatus }: SeedCanvasOptions = {},
 ) {
   const kinds = ["link", "note", "image"] as const;
   const items: SeedItem[] = Array.from({ length: count }, (_, index) => {
@@ -294,6 +298,7 @@ export async function seedCanvasItems(
         ? { url: `https://example.com/canvas/${index + 1}`, domain: "example.com" }
         : {}),
       ...(collectionId ? { collection_id: collectionId } : {}),
+      ...(enrichStatus ? { enrich_status: enrichStatus } : {}),
       ...(placed
         ? { canvas_x: (placedIndex % 4) * 340, canvas_y: Math.floor(placedIndex / 4) * 280 }
         : {}),

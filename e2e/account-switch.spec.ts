@@ -26,7 +26,11 @@ test("signing out and starting a new guest never shows the previous account's it
     (window as unknown as { __seen: string[] }).__seen.length = 0;
   });
 
-  await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Try without an account" })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByRole("heading", { level: 2, name: "Drop anything here." })).toBeVisible();
   expect((await readSession(context)).user.id).not.toBe(first.user.id);

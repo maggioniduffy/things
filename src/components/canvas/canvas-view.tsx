@@ -31,7 +31,6 @@ import {
   itemsToNodes,
   nodeRect,
   reconcileNodes,
-  snapPoint,
   unplacedNodes,
   type CanvasTarget,
   type ItemFlowNode,
@@ -104,6 +103,11 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   const [nodes, setNodes] = useState<ItemFlowNode[]>(() => itemsToNodes(items));
   const [initialViewport] = useState(() => persistence?.initialViewport ?? null);
   const nodesRef = useRef(nodes);
+  // fitView moves the viewport without a pointer event; that first move is not the user's and must
+  // not be saved as one. Only set when fitView runs (no saved viewport) over existing nodes.
+  const skipFitMoveRef = useRef(initialViewport === null && nodes.length > 0);
+  // A ⌘C keydown waiting to see whether the browser fires a `copy` event for it (Safari may not).
+  const copyPendingRef = useRef(false);
   useEffect(() => {
     nodesRef.current = nodes;
   });
@@ -135,8 +139,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   // Items without a stored position were auto-placed above; save them once, in one batch.
   useEffect(() => {
     if (!layout) return;
-    // If the save of a never-saved auto-placed node fails, it stays unplaced in the cache and is
-    // auto-placed (and queued) again on the next mount; acceptable, and `hasSeen` stops a retry loop.
+    // If the save of a never-saved auto-placed node fails, the saver retries it with its next batch;
+    // `hasSeen` keeps this effect from queueing it again in a loop.
     const fresh = unplacedNodes(nodes).filter((node) => !layout.hasSeen(node.id));
     if (fresh.length > 0) layout.enqueue(fresh.map(nodeToCanvasRect));
   }, [nodes, layout]);
@@ -170,9 +174,9 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
 
   const onNodesChange = useCallback(
     (changes: NodeChange<ItemFlowNode>[]) => {
+      // An updater, so a rollback or reconcile still waiting to be applied is not overwritten.
+      setNodes((current) => applyNodeChanges(changes, current));
       const next = applyNodeChanges(changes, nodesRef.current);
-      nodesRef.current = next;
-      setNodes(next);
       // Resize end (`resizing === false`; plain measuring leaves it undefined): save the new size.
       const resized = new Set(
         changes.flatMap((change) =>
@@ -196,8 +200,19 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
     [layout],
   );
 
+  // A real pointer or touch event means the user took over: stop expecting the fitView move.
+  const onMoveStart = useCallback((event: unknown) => {
+    if (event) skipFitMoveRef.current = false;
+  }, []);
   const onMoveEnd = useCallback(
-    (_event: unknown, viewport: CanvasViewport) => onViewportChange?.(viewport),
+    (event: unknown, viewport: CanvasViewport) => {
+      // Programmatic moves (fitView, zoom buttons) pass no event; only the first one is skipped.
+      if (!event && skipFitMoveRef.current) {
+        skipFitMoveRef.current = false;
+        return;
+      }
+      onViewportChange?.(viewport);
+    },
     [onViewportChange],
   );
 
@@ -226,7 +241,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           : { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
       const point = screenToFlowPosition(at);
       const z = nodesRef.current.reduce((top, node) => Math.max(top, node.zIndex ?? 0), 0) + 1;
-      return { ...(snapRef.current ? snapPoint(point) : point), z };
+      // The corner snaps, not the center, so it is placed with the card's size known.
+      return { ...point, snap: snapRef.current, z };
     },
     [screenToFlowPosition, store],
   );
@@ -370,8 +386,19 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
       const action = canvasShortcut(event);
       if (!action) return;
       // ⌘C is the browser's: its `copy` event (below) does the work, and cancelling the key
-      // would stop that event.
-      if (action === "copy") return;
+      // would stop that event. Safari may fire none for a canvas selection, so if no `copy` event
+      // handled it by the next task, copy from here.
+      if (action === "copy") {
+        if (!actions || selectedIds().length === 0) return;
+        if ((window.getSelection()?.toString() ?? "") !== "") return;
+        copyPendingRef.current = true;
+        setTimeout(() => {
+          if (!copyPendingRef.current) return;
+          copyPendingRef.current = false;
+          copyFromMenu();
+        }, 0);
+        return;
+      }
       // ⌘/Ctrl +/− zoom the canvas only while it (or nothing) has focus; elsewhere they stay the
       // browser's page zoom.
       const focused = document.activeElement;
@@ -384,12 +411,13 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [viewport, actions, flowPointAt, reorder, selectedIds, duplicateSelected]);
+  }, [viewport, actions, flowPointAt, reorder, selectedIds, duplicateSelected, copyFromMenu]);
 
   // ⌘C and the browser's Copy: the cards go to the in-app clipboard, their text to the system one.
   useEffect(() => {
     if (!actions) return;
     function onCopy(event: ClipboardEvent) {
+      copyPendingRef.current = false;
       if (event.defaultPrevented || !event.clipboardData) return;
       const target = event.target instanceof Element ? event.target : null;
       if (isEditableElement(target) || isEditableElement(document.activeElement)) return;
@@ -474,6 +502,7 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           nodeTypes={NODE_TYPES}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
+          onMoveStart={onMoveStart}
           onMoveEnd={onMoveEnd}
           // A saved viewport wins; otherwise start fitted to the content.
           defaultViewport={initialViewport ?? undefined}

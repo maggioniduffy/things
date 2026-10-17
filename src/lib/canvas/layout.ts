@@ -168,8 +168,11 @@ export function itemsToNodes(items: readonly BoardItem[]): ItemFlowNode[] {
 
 export type Point = { x: number; y: number };
 
-/** Where a new card goes: its center, and the stack level that puts it above every card (if known). */
-export type CanvasTarget = Point & { z?: number };
+/**
+ * Where a new card goes: its center, and the stack level that puts it above every card (if
+ * known). With `snap`, the card's top-left corner (not the center) is put on the grid.
+ */
+export type CanvasTarget = Point & { z?: number; snap?: boolean };
 
 /** Grid of the optional snap, in flow pixels. */
 export const SNAP_GRID = 8;
@@ -193,9 +196,11 @@ export function snapPoint(point: Point, grid: number = SNAP_GRID): Point {
 
 /**
  * `row` with canvas coordinates that put its node's center at `point` (size stays null), stacked
- * at `point.z` when given so a new card never lands under existing ones.
+ * at `point.z` when given so a new card never lands under existing ones. With `point.snap` the
+ * corner is rounded to the grid.
  */
 export function placeRowAt(row: BoardItem, point: CanvasTarget): BoardItem {
-  const corner = placeCentered(point, defaultNodeSize(row));
+  const centered = placeCentered(point, defaultNodeSize(row));
+  const corner = point.snap ? snapPoint(centered) : centered;
   return { ...row, canvas_x: corner.x, canvas_y: corner.y, canvas_z: point.z ?? row.canvas_z };
 }
