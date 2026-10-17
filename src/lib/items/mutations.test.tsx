@@ -842,6 +842,33 @@ describe("capturing a file", () => {
     }
   });
 
+  it("reserves an image's position before reading its size, so call order wins", async () => {
+    let finishDecode: (size: {
+      width: number;
+      height: number;
+      close: () => void;
+    }) => void = () => {};
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(() => new Promise((resolve) => (finishDecode = resolve))),
+    );
+    try {
+      const { fake, capture } = setup();
+      await act(async () => {
+        const image = capture.current.captureFile(file("slow.png", "image/png"));
+        const note = capture.current.captureNote("after");
+        await note;
+        finishDecode({ width: 10, height: 10, close: () => {} });
+        await image;
+      });
+      const byKind = new Map(fake.state.inserts.map((row) => [row.kind, row.position ?? ""]));
+      // Called first, so its key is handed out first and the note's sorts before it.
+      expect((byKind.get("note") ?? "") < (byKind.get("image") ?? "")).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("skips SVGs and images the browser cannot decode", async () => {
     const decode = vi.fn(async () => {
       throw new Error("bad image");

@@ -117,7 +117,7 @@ test.describe("guest and redirects", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole("banner").getByRole("link", { name: "Open app" })).toBeVisible();
-    await page.getByRole("main").getByRole("link", { name: "Open app" }).click();
+    await page.getByRole("main").getByRole("link", { name: "Open app" }).first().click();
     await expect(page).toHaveURL(/\/app$/);
     consoleErrors.assertNone();
   });

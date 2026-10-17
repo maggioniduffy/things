@@ -665,8 +665,9 @@ export function useCapture(view: ViewSpec): {
       row: BoardItem,
       enrich: (() => Promise<void>) | null,
       tagNames: readonly string[] = [],
+      // Reserved by a caller that awaits something first, so keys still follow call order.
+      position: Promise<string> = reservePosition(deps.client),
     ): Promise<boolean> {
-      const position = reservePosition(deps.client);
       position.catch(() => undefined);
 
       inFlight += 1;
@@ -723,12 +724,18 @@ export function useCapture(view: ViewSpec): {
       }
       const deps = makeDeps();
       const built = buildFileRow(baseFor(), file);
+      // Taken before the size read below, so a multi-file drop keeps its order.
+      const position = reservePosition(deps.client);
       // Raster images carry their natural size, so the card gets an aspect-based size.
       const size = built.kind === "image" ? await readImageSize(file) : null;
       const sized = size ? { ...built, metadata: { ...asRecord(built.metadata), ...size } } : built;
       const row = atCanvasPoint(sized, options?.canvasAt);
-      await run(deps, row, () =>
-        enrichFile(deps, row, file, () => void captureFile(file, options)),
+      await run(
+        deps,
+        row,
+        () => enrichFile(deps, row, file, () => void captureFile(file, options)),
+        [],
+        position,
       );
     }
 

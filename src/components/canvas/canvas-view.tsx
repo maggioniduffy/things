@@ -139,8 +139,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   // Items without a stored position were auto-placed above; save them once, in one batch.
   useEffect(() => {
     if (!layout) return;
-    // If the save of a never-saved auto-placed node fails, it stays unplaced in the cache and is
-    // auto-placed (and queued) again on the next mount; acceptable, and `hasSeen` stops a retry loop.
+    // If the save of a never-saved auto-placed node fails, the saver retries it with its next batch;
+    // `hasSeen` keeps this effect from queueing it again in a loop.
     const fresh = unplacedNodes(nodes).filter((node) => !layout.hasSeen(node.id));
     if (fresh.length > 0) layout.enqueue(fresh.map(nodeToCanvasRect));
   }, [nodes, layout]);
