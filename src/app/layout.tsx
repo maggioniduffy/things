@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Grain } from "@/components/brand";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         <Grain />
+        <Analytics />
       </body>
     </html>
   );
