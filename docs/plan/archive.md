@@ -41,6 +41,17 @@ Changes Opus made to the original spec before building. Phase files cite them as
 | Pending file rows left by a closed tab couldn't be removed | WP 4.3 |
 | "Dropping on a sidebar collection files it there directly" wasn't built | WP 5.3 |
 | A canvas save fired on `pagehide` had no `keepalive`, so a reload right after a drag could lose it | WP 6.2 review fixes |
+| An auto-placed node whose first save failed was never retried; now it rides along with the next layout batch | WP 6.G |
+| `onMoveEnd` saved the initial `fitView` as the user's viewport; the first event-less move after a fit is skipped | WP 6.G |
+| A node change could overwrite a pending rollback; `onNodesChange` uses the updater form | WP 6.G |
+| Z-order queues from `reorder`, not `onNodesChange`: checked, both paths only call `layout.enqueue` and the RPC writes only `canvas_*` | WP 6.G (no change) |
+| `]`/`[` move to front/back while the table said forward/backward; the table now matches the code | WP 6.G |
+| Snap rounded a placed card's center, not its corner | WP 6.G |
+| `[`/`]` didn't work on layouts that type them with Alt/AltGr | WP 6.G |
+| A dropped image was centered at the default size; its natural size is now read before placement (and drives the aspect-based node size) | WP 6.G |
+| Stale e2e specs (two "Try without an account"/"Open app" in `main`, canvas toggle now enabled in the Inbox) | WP 6.G |
+| Paste/duplicate took `fetchFirstPosition` outside the position queue; `reservePositions` now runs in it | WP 6.G |
+| ⌘C was a silent no-op where the browser fires no `copy` event; a keydown fallback copies (Safari manual check carried to Phase 8) | WP 6.G |
 
 ## Costs and limits
 

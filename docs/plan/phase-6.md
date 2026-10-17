@@ -32,7 +32,7 @@ Every collection and the Inbox has its own infinite canvas built with React Flow
 | Shift + 1 | Fit all items |
 | Shift + 0 | Zoom to 100% |
 | N | New note at viewport center |
-| \] / \[ | Bring forward / send backward |
+| \] / \[ | Bring to front / send to back (with Alt or AltGr too) |
 | ⌘C / ⌘V | Copy selected cards / paste copies at the cursor |
 | ⌘D | Duplicate selected cards |
 
@@ -74,16 +74,4 @@ $$;
 
 ## Open findings
 
-| Finding | Fix in |
-| --- | --- |
-| An auto-placed node whose first save fails is never retried (`hasSeen` filter); reload auto-places it again | 6.G |
-| `onMoveEnd` also fires for the initial `fitView`, so the first open writes a viewport the user never chose | 6.G |
-| `onNodesChange` applies to `nodesRef.current`, which a rollback/reconcile updater doesn't refresh until commit; a change in that window can overwrite a rollback | 6.G |
-| Z-order (`]`/`[`) is queued from `reorder`, not `onNodesChange` (it has no NodeChange); a second save path to keep in mind for the single-save-path check | 6.G |
-| `]`/`[` move to front/back, the shortcut table says forward/backward one step; align code or table | 6.G |
-| Snap rounds a placed card's center, not its corner, so a 280-wide card sits 4 px off the grid | 6.G |
-| `canvasShortcut` rejects Alt, so `[`/`]` don't work on layouts that need Alt for them (e.g. German Mac) | 6.G |
-| An image drop is centered with the default size before its aspect ratio is known, so its center drifts after enrichment | 6.G |
-| Full e2e (89/92): stale specs, not 6.3 code. `auth.spec.ts:94` and `account-switch.spec.ts` click "Try without an account" inside `main`, which now has two (hero + footer CTA); `board.spec.ts:243` expects the canvas toggle disabled where it is now enabled. Update the specs | 6.G |
-| Paste/duplicate takes `fetchFirstPosition` directly, outside the `reservePosition` queue, so two quick ⌘D (or a paste during a capture) can share a `position` key (ties are handled, but route it through the queue) | 6.G |
-| Manual check: Safari may not fire `copy` without a page selection, which would make ⌘C a silent no-op on the canvas | 6.G |
+None. The gate's leftovers moved to [phase-8.md](phase-8.md); fixed findings are in [archive.md](archive.md).

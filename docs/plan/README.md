@@ -14,7 +14,7 @@ Things is a personal "save for later" web app: drop in any link, file or note, a
 | 3 Capture | [phase-3.md](phase-3.md) | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
 | 4 Browse | [phase-4.md](phase-4.md) | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
 | 5 Organize & DnD | [phase-5.md](phase-5.md) | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | [phase-6.md](phase-6.md) | WP 6.1–6.4 done (6.4 reviewed, nits in, `canvas-copy` e2e green); 6.G next | #14 |
+| 6 Canvas | [phase-6.md](phase-6.md) | done (gate passed: unit 1388/1388, e2e 96/96, 300 cards at 59.6 fps; leftovers in phase-8) | #14 + `claude/cool-archimedes-gikegv` |
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 
@@ -76,6 +76,7 @@ Stop and ask me only for owner actions or a decision that changes the spec.
 **Process notes**
 
 - Playwright `reuseExistingServer` can pick up a stale server without `STYLEGUIDE=1`; stop stray servers before e2e.
+- Canvas perf gate: `CANVAS_PERF=1 pnpm exec playwright test e2e/canvas-perf.spec.ts` logs frame times for 300 enriched cards (`CANVAS_PERF_COUNT`, `CANVAS_PERF_PENDING` vary it).
 - Plain `pnpm e2e` in cloud sessions needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
 ## Owner actions (need your accounts or secrets)

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createCollection, readSession, seedCanvasItems, startGuest } from "./helpers/session";
 
-const COUNT = 300;
+const COUNT = Number(process.env.CANVAS_PERF_COUNT ?? 300);
 
 // Gate check (Phase 6): pan and zoom a 300-card canvas and record frame intervals in the page.
 test.skip(!process.env.CANVAS_PERF, "Run with CANVAS_PERF=1 at the phase gate.");
@@ -11,7 +11,9 @@ test("300 cards pan and zoom smoothly", async ({ page, context }) => {
   await startGuest(page);
   const session = await readSession(context);
   const collectionId = await createCollection(session, "Perf", "⚡");
-  await seedCanvasItems(session, COUNT, { collectionId });
+  // Enriched cards, as on a settled board: pending ones each loop a skeleton shimmer.
+  const enrichStatus = process.env.CANVAS_PERF_PENDING ? undefined : "done";
+  await seedCanvasItems(session, COUNT, { collectionId, enrichStatus });
   await page.goto(`/app/c/${collectionId}`);
   const toggle = page.getByRole("button", { name: "Canvas view" });
   if ((await toggle.getAttribute("aria-pressed")) !== "true") await toggle.click();
@@ -22,6 +24,13 @@ test("300 cards pan and zoom smoothly", async ({ page, context }) => {
   if (!box) throw new Error("Canvas has no box.");
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Performance.enable");
+  const metric = async () =>
+    Object.fromEntries(
+      (await cdp.send("Performance.getMetrics")).metrics.map((m) => [m.name, m.value]),
+    );
+  const before = await metric();
   await page.evaluate(() => {
     const w = window as unknown as { __frames: number[]; __stop: boolean };
     w.__frames = [];
@@ -49,8 +58,22 @@ test("300 cards pan and zoom smoothly", async ({ page, context }) => {
     w.__stop = true;
     return w.__frames.slice(2);
   });
+  const after = await metric();
+  const delta = (name: string) => Math.round(((after[name] ?? 0) - (before[name] ?? 0)) * 1000);
+  console.log(
+    "CANVAS_CPU_MS",
+    JSON.stringify({
+      script: delta("ScriptDuration"),
+      layout: delta("LayoutDuration"),
+      style: delta("RecalcStyleDuration"),
+      task: delta("TaskDuration"),
+      layouts: (after.LayoutCount ?? 0) - (before.LayoutCount ?? 0),
+      styles: (after.RecalcStyleCount ?? 0) - (before.RecalcStyleCount ?? 0),
+    }),
+  );
   const sorted = [...frames].sort((a, b) => a - b);
-  const pct = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0;
+  const pct = (p: number) =>
+    sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0;
   const stats = {
     frames: frames.length,
     median: pct(0.5),
