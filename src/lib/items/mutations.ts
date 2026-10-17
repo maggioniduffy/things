@@ -12,7 +12,8 @@ import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { createClient } from "@/lib/supabase/client";
-import { placeRowAt, type Point } from "@/lib/canvas/layout";
+import { placeRowAt, type CanvasTarget } from "@/lib/canvas/layout";
+import { generateNKeysBetween } from "fractional-indexing";
 import { keyBefore } from "@/lib/order";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
@@ -160,17 +161,36 @@ export type NoteOptions = {
   title?: string;
   tagNames?: string[];
   /** Flow point on a canvas where the card's center goes; leave out to place it nowhere. */
-  canvasAt?: Point;
+  canvasAt?: CanvasTarget;
   /** Save a note with no text (a blank canvas note to type into). Plain captures refuse it. */
   allowEmpty?: boolean;
 };
 
 /** Where a link or file lands on a canvas. */
-export type CanvasCaptureOptions = { canvasAt?: Point };
+export type CanvasCaptureOptions = { canvasAt?: CanvasTarget };
 
 /** `row` positioned at `canvasAt` when given, otherwise as is. */
-function atCanvasPoint(row: BoardItem, canvasAt: Point | undefined): BoardItem {
+function atCanvasPoint(row: BoardItem, canvasAt: CanvasTarget | undefined): BoardItem {
   return canvasAt ? placeRowAt(row, canvasAt) : row;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/** Natural size of a raster image file; null for SVG, or when the browser cannot decode it. */
+async function readImageSize(file: File): Promise<{ width: number; height: number } | null> {
+  if (file.type === "image/svg+xml" || typeof createImageBitmap !== "function") return null;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const { width, height } = bitmap;
+    bitmap.close?.();
+    return width > 0 && height > 0 ? { width, height } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** File name without its last extension ("report.final.pdf" -> "report.final"). */
@@ -244,6 +264,21 @@ function reservePosition(client: Client): Promise<string> {
     const key = keyBefore(minKey(first, lastKey));
     lastKey = key;
     return key;
+  });
+  positionQueue = run.catch(() => undefined);
+  return run;
+}
+
+/**
+ * `count` keys before the user's current first item and before every key this tab handed out
+ * earlier, in order (the first one sorts first). Serialized with `reservePosition`.
+ */
+export function reservePositions(client: Client, count: number): Promise<string[]> {
+  const run = positionQueue.then(async () => {
+    const first = await fetchFirstPosition(client);
+    const keys = generateNKeysBetween(null, minKey(first, lastKey), count);
+    lastKey = keys[0] ?? lastKey;
+    return keys;
   });
   positionQueue = run.catch(() => undefined);
   return run;
@@ -687,7 +722,11 @@ export function useCapture(view: ViewSpec): {
         return;
       }
       const deps = makeDeps();
-      const row = atCanvasPoint(buildFileRow(baseFor(), file), options?.canvasAt);
+      const built = buildFileRow(baseFor(), file);
+      // Raster images carry their natural size, so the card gets an aspect-based size.
+      const size = built.kind === "image" ? await readImageSize(file) : null;
+      const sized = size ? { ...built, metadata: { ...asRecord(built.metadata), ...size } } : built;
+      const row = atCanvasPoint(sized, options?.canvasAt);
       await run(deps, row, () =>
         enrichFile(deps, row, file, () => void captureFile(file, options)),
       );

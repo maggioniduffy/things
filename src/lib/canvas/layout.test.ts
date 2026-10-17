@@ -224,6 +224,14 @@ describe("placing at a point", () => {
     expect(placed).toMatchObject({ canvas_x: 120, canvas_y: 80, canvas_w: null, canvas_h: null });
   });
 
+  it("snaps the corner of a 280-wide link to the grid, not its center", () => {
+    const link = makeItem({ kind: "link" });
+    // Centered on (503, 305) the corner is (363, 185); snapped it is (360, 184).
+    const placed = placeRowAt(link, { x: 503, y: 305, snap: true });
+    expect(placed).toMatchObject({ canvas_x: 360, canvas_y: 184 });
+    expect(placeRowAt(link, { x: 503, y: 305 })).toMatchObject({ canvas_x: 363, canvas_y: 185 });
+  });
+
   it("stacks the row at the target's z when given, otherwise keeps its own", () => {
     const note = makeItem({ kind: "note" });
     expect(placeRowAt(note, { x: 240, y: 160, z: 7 }).canvas_z).toBe(7);

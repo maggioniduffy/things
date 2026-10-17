@@ -65,6 +65,8 @@ export class CanvasLayoutSaver {
   /** Last layout the server confirmed per id; null = never saved (e.g. just auto-placed). */
   private readonly lastSaved = new Map<string, CanvasRect | null>();
   private readonly known = new Set<string>();
+  /** Never-saved rects whose batch failed: they ride along with the next batch, with no timer of their own. */
+  private readonly retry = new Map<string, CanvasRect>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight: Promise<void> | null = null;
 
@@ -82,6 +84,7 @@ export class CanvasLayoutSaver {
 
   enqueue(rects: readonly CanvasRect[]): void {
     if (rects.length === 0) return;
+    this.mergeRetries();
     for (const rect of rects) {
       const clean = normalizeRect(rect);
       if (!this.lastSaved.has(clean.id)) {
@@ -102,6 +105,7 @@ export class CanvasLayoutSaver {
   flush(): Promise<void> {
     this.clearTimer();
     if (this.inFlight) return this.inFlight;
+    this.mergeRetries();
     if (this.pending.size === 0) return Promise.resolve();
 
     const batch = [...this.pending.values()];
@@ -133,8 +137,19 @@ export class CanvasLayoutSaver {
     const restore = batch
       .filter((rect) => !this.pending.has(rect.id))
       .map((rect): CanvasRestore => ({ id: rect.id, rect: this.lastSaved.get(rect.id) ?? null }));
+    // Never-saved nodes have nothing to roll back to; keep them for the next batch instead.
+    for (const entry of restore) {
+      const rect = batch.find((candidate) => candidate.id === entry.id);
+      if (rect && entry.rect === null) this.retry.set(rect.id, rect);
+    }
     const rollback = restore.flatMap((entry) => (entry.rect ? [entry.rect] : []));
     this.options.onFailure?.({ restore, rollback });
+  }
+
+  /** Moves the retry entries into `pending`; a newer rect for the same id stays. */
+  private mergeRetries(): void {
+    for (const [id, rect] of this.retry) if (!this.pending.has(id)) this.pending.set(id, rect);
+    this.retry.clear();
   }
 
   private clearTimer(): void {

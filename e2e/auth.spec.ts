@@ -94,7 +94,11 @@ test.describe("guest and redirects", () => {
   test("starts a guest session from the landing page", async ({ page }) => {
     const consoleErrors = trackConsoleErrors(page);
     await page.goto("/");
-    await page.getByRole("main").getByRole("button", { name: "Try without an account" }).click();
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "Try without an account" })
+      .first()
+      .click();
 
     await expect(page).toHaveURL(/\/app$/);
     await expect(accountGroup(page)).toContainText("Guest");

@@ -21,9 +21,18 @@ export type KeyLike = Pick<
  * The canvas key table. ⌘V is not here: a paste arrives as a `paste` event. ⌘C is, but its
  * keydown must not be cancelled (the `copy` event does the work); ⌘D is, and is cancelled so the
  * browser's bookmark dialog stays shut.
- * Letter and bracket keys act only on their own, and not while a key is held down.
+ * Letter keys act only on their own; bracket keys also with Alt or AltGr. Neither repeats.
  */
 export function canvasShortcut(event: KeyLike): CanvasAction | null {
+  // Some layouts type brackets with Alt or AltGr (Ctrl+Alt); the typed character decides there.
+  if (
+    (event.key === "[" || event.key === "]") &&
+    !event.metaKey &&
+    (!event.ctrlKey || event.altKey)
+  ) {
+    if (event.repeat || event.shiftKey) return null;
+    return event.key === "]" ? "bringToFront" : "sendToBack";
+  }
   if (event.altKey) return null;
   const mod = event.metaKey || event.ctrlKey;
 
