@@ -8,7 +8,11 @@ export const metadata: Metadata = {
 };
 
 type LoginPageProps = {
-  searchParams: Promise<{ next?: string | string[]; error?: string | string[] }>;
+  searchParams: Promise<{
+    next?: string | string[];
+    error?: string | string[];
+    reason?: string | string[];
+  }>;
 };
 
 function first(value: string | string[] | undefined) {
@@ -18,7 +22,12 @@ function first(value: string | string[] | undefined) {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const next = safeNextPath(first(params.next));
-  const callbackFailed = first(params.error) === "callback";
+  const callbackError =
+    first(params.error) !== "callback"
+      ? null
+      : first(params.reason) === "account_exists"
+        ? "account_exists"
+        : "generic";
 
-  return <LoginPanel next={next} callbackFailed={callbackFailed} />;
+  return <LoginPanel next={next} callbackError={callbackError} />;
 }

@@ -59,6 +59,24 @@
   --animate-aurora-c: aurora-drift-c 38s ease-in-out infinite alternate;
   --animate-aurora-d: aurora-drift-d 22s ease-in-out infinite alternate;
   --animate-aurora-e: aurora-drift-e 30s ease-in-out infinite alternate;
+  /* Pending wash on the Google button: fades through the aurora palette */
+  --animate-aurora-fade: aurora-fade 2.4s ease-in-out infinite;
+
+  @keyframes aurora-fade {
+    0%,
+    100% {
+      background-color: var(--color-aurora-pink);
+    }
+    25% {
+      background-color: var(--color-aurora-violet);
+    }
+    50% {
+      background-color: var(--color-aurora-blue);
+    }
+    75% {
+      background-color: var(--color-aurora-coral);
+    }
+  }
 
   @keyframes aurora-drift-a {
     from {

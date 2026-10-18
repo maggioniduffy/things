@@ -151,6 +151,16 @@ test.describe("guest and redirects", () => {
     ).toBeVisible();
   });
 
+  test("explains a Google account that already belongs to another user", async ({ page }) => {
+    await page.goto(
+      "/auth/callback?error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user",
+    );
+    await expect(page).toHaveURL(/\/login\?error=callback&reason=account_exists$/);
+    await expect(
+      page.getByRole("alert").filter({ hasText: "already has a Things account" }),
+    ).toBeVisible();
+  });
+
   test("ignores an unsafe next on the callback", async ({ page }) => {
     await page.goto("/auth/callback?code=bogus&next=%2F%2Fevil.example");
     await expect(page).toHaveURL(/\/login\?error=callback$/);
