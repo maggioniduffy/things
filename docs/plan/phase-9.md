@@ -41,7 +41,7 @@ Decisions taken with the owner:
 
 ## WP 9.3 — Sticky stack on mobile (after 9.4, same files)
 - Grid below `sm` (already one column): each card wrapper `position: sticky; top: calc(<toolbar h> + var(--i) * 6px)` so cards pile like a deck; the covered card scales to ~0.94 and dims slightly via CSS scroll-driven animation (`animation-timeline: view()`), on the inner element (not the `motion.li`, so it doesn't fight Motion layout). Unsupported browsers just get the sticky pile.
-- Off when: `prefers-reduced-motion`, list view, during a dnd-kit drag (`data-dragging` on the grid), `sm+`. Expanded folder cards participate; closed folders are one stacked card.
+- Under `prefers-reduced-motion` the pile stays sticky without the scale/dim. Off when: list view, during a dnd-kit drag (`data-dragging` on the grid), `sm+`. Expanded folder cards participate; closed folders are one stacked card.
 - Tests: unit for the class switch; e2e mobile viewport: after scrolling, the first card is still in view with `position: sticky`; check canvas/drag specs unaffected.
 
 ## Order
@@ -54,11 +54,14 @@ Decisions taken with the owner:
 
 | Finding | Fix in |
 | --- | --- |
+| Mobile stack: manual check on a phone of the feel (`animation-range` is measured on the card + 100svh `li`, so it depends on viewport height) and of tap targets | WP 8.2 |
+| Mobile stack: when a drag starts, `data-stack` goes away and stuck cards jump back to their flow positions; check how it reads with a long-press drag | WP 8.2 |
+| Sign-in pending label: inverse ink on the coral/pink part of the fill is under 4.5:1 (a text shadow helps, not a fix); revisit with design (darker fill or ink label) | WP 8.3 |
+| Folder stretch timing (0.1 s delays, spring damping 15) and focus after open/collapse: check in a browser | WP 8.1 |
 
 ## Status (2026-10-18)
 
-- Done: 9.1 (+ review fixes), 9.2, 9.5, 9.4 (+ review fixes), 9.3. e2e specs written for each, none run yet (run at the gate, alone: 6 GB RAM limit).
-- Next: gate (reviewer + full suites + manual check of the folder stretch timing and focus, the mobile sheet on a phone, the hand tool, the mobile stack feel: `animation-range` end and the 100svh spacer vs tap targets).
-- **Production:** WIP 9.1 reached production through PR #25 before its migration was applied to the cloud DB, so items stopped loading. Fix = `pnpm supabase db push` (applies `20261018000100_item_color.sql` only). Rule for later phases: push migrations to the cloud before merging code that reads new columns.
-- Local dev against the local stack: `.env.development.local` (git-ignored) overrides `.env.local` for `pnpm dev`.
-
+- Gate passed after fixes: unit 1436/1436, DB 137/137, e2e 100 + re-runs of the fixed specs, typecheck and lint green; gate review fixes (stack spacer clipped, pending-label shadow) re-checked with `mobile-stack`, `auth` and `guest-upgrade` e2e.
+- Also on this branch, outside the WP list: aurora loading fill on the sign-in buttons (`899fede`, from the owner's design handoff).
+- **Production:** WIP 9.1 reached production through PR #25 before its migration was on the cloud DB, so items stopped loading until `pnpm supabase db push` (done 2026-10-18). Rule: push migrations to the cloud before merging code that reads new columns.
+- Local dev against the local stack: `.env.development.local` (git-ignored) overrides `.env.local` for `pnpm dev`. e2e builds with `pnpm build`, which reads `.env.local`: export the local values first (`set -a; . ./.env.development.local; set +a`) so tests never hit the cloud project.

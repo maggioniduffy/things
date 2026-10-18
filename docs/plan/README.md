@@ -17,7 +17,7 @@ Things is a personal "save for later" web app: drop in any link, file or note, a
 | 6 Canvas | [phase-6.md](phase-6.md) | done (gate passed: unit 1388/1388, e2e 96/96, 300 cards at 59.6 fps; leftovers in phase-8) | #14 + `claude/cool-archimedes-gikegv` |
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
-| 9 Notes & board feedback | [phase-9.md](phase-9.md) | 9.1, 9.2, 9.4, 9.5 done; 9.3 and gate next | |
+| 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | |
 
 Update this table when a WP or gate lands.
 

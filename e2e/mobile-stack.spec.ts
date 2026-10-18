@@ -31,7 +31,16 @@ test.describe("phone", () => {
 
     // The last card can still be scrolled fully into view.
     await page.locator("main").evaluate((main) => main.scrollTo(0, main.scrollHeight));
-    await expect(page.getByRole("button", { name: "Open Stacked 8" })).toBeInViewport();
+    await expect(page.getByRole("button", { name: "Open Stacked 8" })).toBeInViewport({
+      ratio: 1,
+    });
+    // No blank screen after the last card: the scroll ends where the grid ends.
+    const gap = await page.locator("main").evaluate((main) => {
+      const grid = main.querySelector('[data-view-mode="grid"]')!.getBoundingClientRect();
+      return main.getBoundingClientRect().bottom - grid.bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(0);
+    expect(gap).toBeLessThan(160);
 
     consoleErrors.assertNone();
   });

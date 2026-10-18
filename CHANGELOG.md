@@ -1,5 +1,23 @@
 ## Unreleased
 
+### Phase 9 — Notes & board feedback
+
+#### Added
+
+- Note colors: pick a note's background from the six aurora colors, white or graphite (dark, with light text), in the detail drawer or from the canvas context menu (applies to every selected note). New `items.color` column (migration `20261018000100_item_color`); notes without a color keep the coral default.
+- All view: cards of the same collection gather into a folder, a closed stack showing the name, count and a preview. Opening it stretches the cards out inline; Collapse gathers them back. Open folders are remembered per collection, and manual-sort drops follow the on-screen order.
+- Mobile: board cards pile up like a deck while scrolling, with the covered card shrinking slightly (sticky only under reduced motion; off while dragging).
+- Canvas hand tool: a Select / Hand toggle in the controls (V / H). Hand pans on any left-drag, including over cards, and never moves them.
+- Sign-in buttons: Send code and Continue with Google fill with a flowing aurora gradient while loading, with "Sending…" / "Connecting…" labels.
+
+#### Changed
+
+- Mobile: the Add form opens as a compact bottom sheet that stays above the keyboard instead of a centered dialog.
+
+#### Fixed
+
+- e2e: `reorder.spec.ts` waits for seeded cards before measuring them; `canvas-hand.spec.ts` asserts console errors correctly.
+
 ### Landing
 
 #### Added

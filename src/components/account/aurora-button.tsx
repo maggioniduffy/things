@@ -34,7 +34,12 @@ export function AuroraButton({
     <Button
       {...props}
       type={type}
-      className={cn("relative isolate overflow-hidden", pending && "text-ink-inverse", className)}
+      className={cn(
+        "relative isolate overflow-hidden",
+        pending &&
+          "text-ink-inverse [text-shadow:0_1px_2px_color-mix(in_srgb,var(--color-ink)_55%,transparent)]",
+        className,
+      )}
       onClick={(event) => {
         if (pending) {
           event.preventDefault();

@@ -229,6 +229,10 @@
   [data-stack="true"] {
     --stack-top: 4rem; /* sticky toolbar (h-14) + a little air */
     --stack-room: 100svh;
+    /* The spacers reach past the grid: clip them so they add no scroll height after the last card
+       (clip, unlike hidden, is not a scroll container, so sticky still works). */
+    overflow-y: clip;
+    overflow-clip-margin: 1rem;
   }
   [data-stack="true"] > li {
     margin-bottom: calc(var(--stack-room) * -1);
