@@ -6,11 +6,18 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Kbd } from "@/components/ui/kbd";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCapture } from "@/lib/items/mutations";
 import { noteTagging } from "@/lib/tags/parse";
 import type { ViewSpec } from "@/lib/views";
@@ -112,43 +119,72 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
         }}
       />
 
-      <DialogFooter className="sm:justify-between">
+      {/* A plain row, so it reads the same in the dialog and the mobile sheet. */}
+      <div className="flex flex-row justify-between gap-2">
         <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
           Choose files
         </Button>
         <Button type="submit" disabled={empty}>
           Save
         </Button>
-      </DialogFooter>
+      </div>
     </form>
   );
 }
 
 /**
  * "Add" dialog: one field for a link or a note, and a file picker. Open state lives in the UI
- * store, so the toolbar button (and later the command palette) can open it.
+ * store, so the toolbar button (and later the command palette) can open it. Below `sm` it is a
+ * compact bottom sheet that stays above the on-screen keyboard.
  */
 export function QuickAdd({ view }: { view: ViewSpec }) {
   const capture = useCapture(view);
   const open = useUiStore((state) => state.quickAddOpen);
   const setOpen = useUiStore((state) => state.setQuickAddOpen);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
   // Radix only restores focus to a <Dialog.Trigger>; ours is opened from the store, so remember
   // whatever had focus (the toolbar button, usually) just before the dialog took it.
   const openerRef = useRef<HTMLElement | null>(null);
+  const rememberOpener = () => {
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  };
+  const restoreOpener = (event: Event) => {
+    event.preventDefault();
+    openerRef.current?.focus();
+    openerRef.current = null;
+  };
+
+  if (!isDesktop) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen} direction="bottom" repositionInputs>
+        <DrawerContent
+          onOpenAutoFocus={(event) => {
+            rememberOpener();
+            // vaul's content is not always focusable on open; focus the field explicitly.
+            event.preventDefault();
+            if (event.target instanceof HTMLElement)
+              event.target.querySelector("textarea")?.focus();
+          }}
+          onCloseAutoFocus={restoreOpener}
+        >
+          <DrawerHeader>
+            <DrawerTitle>Add</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              Press Enter to save, Shift and Enter for a new line.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-4">
+            <QuickAddForm capture={capture} close={() => setOpen(false)} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        onOpenAutoFocus={() => {
-          openerRef.current =
-            document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        }}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          openerRef.current?.focus();
-          openerRef.current = null;
-        }}
-      >
+      <DialogContent onOpenAutoFocus={rememberOpener} onCloseAutoFocus={restoreOpener}>
         <DialogHeader>
           <DialogTitle>Add</DialogTitle>
           <DialogDescription className="text-meta">

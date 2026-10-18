@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useUiStore } from "@/stores/ui-store";
 import type { ViewSpec } from "@/lib/views";
 import { QuickAdd } from "./quick-add";
@@ -20,14 +20,31 @@ function renderOpen() {
   return render(<QuickAdd view={VIEW} />);
 }
 
+/** jsdom has no matchMedia; `desktop` picks the dialog (true) or the mobile sheet (false). */
+function stubViewport(desktop: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: desktop,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+  }));
+  // vaul captures the pointer on press; jsdom has no pointer capture.
+  Element.prototype.setPointerCapture ??= () => {};
+  Element.prototype.releasePointerCapture ??= () => {};
+}
+
 const field = () => screen.getByRole("textbox", { name: "Link or note" });
 const saveButton = () => screen.getByRole("button", { name: "Save" });
 
 describe("QuickAdd", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    stubViewport(true);
     useUiStore.setState({ quickAddOpen: false });
   });
+  afterEach(() => vi.unstubAllGlobals());
 
   it("renders nothing while closed", () => {
     render(<QuickAdd view={VIEW} />);
@@ -171,5 +188,36 @@ describe("QuickAdd", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     useUiStore.getState().setQuickAddOpen(true);
     expect(await screen.findByRole("textbox", { name: "Link or note" })).toHaveValue("");
+  });
+
+  describe("on a phone-sized viewport", () => {
+    beforeEach(() => stubViewport(false));
+
+    it("opens as a bottom sheet titled Add with the same form", () => {
+      renderOpen();
+      const sheet = screen.getByRole("dialog", { name: "Add" });
+      expect(sheet).toHaveAttribute("data-vaul-drawer-direction", "bottom");
+      expect(field()).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Choose files" })).toBeInTheDocument();
+      expect(saveButton()).toBeDisabled();
+    });
+
+    it("saves on Enter and closes", async () => {
+      renderOpen();
+      await userEvent.type(field(), "Remember this{Enter}");
+      expect(capture.captureNote).toHaveBeenCalledWith("Remember this");
+      expect(useUiStore.getState().quickAddOpen).toBe(false);
+    });
+
+    it("returns focus to the opener after closing", async () => {
+      const opener = document.createElement("button");
+      document.body.append(opener);
+      opener.focus();
+      renderOpen();
+      await waitFor(() => expect(field()).toHaveFocus());
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(opener).toHaveFocus());
+      opener.remove();
+    });
   });
 });
