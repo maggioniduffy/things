@@ -19,6 +19,10 @@ type UiState = {
   setCanvasTool: (tool: "select" | "hand") => void;
   toggleCanvasSnap: () => void;
 
+  /** Collections whose folder is open in the All grid. Default (absent) is closed. */
+  expandedCollections: string[];
+  toggleCollectionExpanded: (collectionId: string) => void;
+
   selectedIds: string[];
   /** The last card clicked without Shift: where a Shift-click range starts. */
   anchorId: string | null;
@@ -94,6 +98,14 @@ export const useUiStore = create<UiState>()(
       canvasSnap: false,
       toggleCanvasSnap: () => set((state) => ({ canvasSnap: !state.canvasSnap })),
 
+      expandedCollections: [],
+      toggleCollectionExpanded: (collectionId) =>
+        set((state) => ({
+          expandedCollections: state.expandedCollections.includes(collectionId)
+            ? state.expandedCollections.filter((id) => id !== collectionId)
+            : [...state.expandedCollections, collectionId],
+        })),
+
       selectedIds: [],
       anchorId: null,
       select: (id, options) =>
@@ -150,6 +162,7 @@ export const useUiStore = create<UiState>()(
         canvasMinimap: state.canvasMinimap,
         canvasSnap: state.canvasSnap,
         canvasTool: state.canvasTool,
+        expandedCollections: state.expandedCollections,
       }),
       // Keep the server and first client render identical; rehydrate in an effect instead.
       skipHydration: true,

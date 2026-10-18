@@ -101,6 +101,8 @@ export function Board({ view, sort }: BoardProps) {
   const dnd: CardDnd | undefined =
     view.type === "trash" ? undefined : sortable ? "sortable" : "draggable";
   const canvas = viewMode === "canvas";
+  // Collection folders: the All view in grid mode only.
+  const groupFolders = view.type === "all" && viewMode === "grid";
   const allItems = useMemo(() => itemPages.flat(), [itemPages]);
   const itemCount = useMemo(
     () => pages?.reduce((total, page) => total + page.items.length, 0) ?? 0,
@@ -196,19 +198,32 @@ export function Board({ view, sort }: BoardProps) {
               pages={itemPages}
               nextCursor={lastCursor}
               variant={viewMode === "list" ? "list" : "grid"}
+              groupFolders={groupFolders}
             >
               {(shown) =>
                 viewMode === "list" ? (
                   <ItemList pages={shown} onRetry={retryEnrich} onOpen={openItem} dnd="sortable" />
                 ) : (
-                  <ItemGrid pages={shown} onRetry={retryEnrich} onOpen={openItem} dnd="sortable" />
+                  <ItemGrid
+                    pages={shown}
+                    onRetry={retryEnrich}
+                    onOpen={openItem}
+                    dnd="sortable"
+                    groupFolders={groupFolders}
+                  />
                 )
               }
             </SortableItems>
           ) : viewMode === "list" ? (
             <ItemList pages={itemPages} onRetry={retryEnrich} onOpen={openItem} dnd={dnd} />
           ) : (
-            <ItemGrid pages={itemPages} onRetry={retryEnrich} onOpen={openItem} dnd={dnd} />
+            <ItemGrid
+              pages={itemPages}
+              onRetry={retryEnrich}
+              onOpen={openItem}
+              dnd={dnd}
+              groupFolders={groupFolders}
+            />
           )}
         </div>
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />

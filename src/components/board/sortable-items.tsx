@@ -8,10 +8,12 @@ import {
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { CardVariant } from "@/components/cards/types";
 import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
+import { flatDropIndex, groupByCollection, visibleItemIds } from "@/lib/items/group";
 import type { BoardItem, ItemsCursor } from "@/lib/items/queries";
 import { useReorderItem } from "@/lib/items/reorder";
 import { moveRow } from "@/lib/order";
 import type { ViewSpec } from "@/lib/views";
+import { useExpandedCollections } from "./collection-folder";
 import type { DragEndEvent } from "@dnd-kit/core";
 
 type Pages = readonly (readonly BoardItem[])[];
@@ -23,6 +25,8 @@ type SortableItemsProps = {
   /** Cursor of the last loaded page; non-null while more pages exist. */
   nextCursor: ItemsCursor | null;
   variant: CardVariant;
+  /** All view folders: cards of closed folders are not on screen, so they are not sortable. */
+  groupFolders?: boolean;
   /** Renders the cards from `pages` in the order to show (a dropped card is already in place). */
   children: (pages: Pages) => ReactNode;
 };
@@ -46,7 +50,14 @@ function reorderPages(pages: Pages, items: readonly BoardItem[], ids: readonly s
  * Drag-to-reorder for the grid and list in manual sort. The DndContext, sensors and overlay live
  * in `BoardDndProvider` (shared with the sidebar); this registers what a drop on a card does.
  */
-export function SortableItems({ view, pages, nextCursor, variant, children }: SortableItemsProps) {
+export function SortableItems({
+  view,
+  pages,
+  nextCursor,
+  variant,
+  groupFolders,
+  children,
+}: SortableItemsProps) {
   const items = useMemo(() => pages.flat(), [pages]);
   const reorder = useReorderItem();
   const dnd = useBoardDnd();
@@ -66,12 +77,22 @@ export function SortableItems({ view, pages, nextCursor, variant, children }: So
   const shownItems = useMemo(() => shownPages.flat(), [shownPages]);
   const ids = useMemo(() => shownItems.map((item) => item.id), [shownItems]);
 
+  // What the sortable strategy sees: the cards on screen, in screen order.
+  const expanded = useExpandedCollections();
+  const contextIds = useMemo(
+    () => (groupFolders ? visibleItemIds(groupByCollection(shownItems, expanded)) : ids),
+    [groupFolders, shownItems, expanded, ids],
+  );
+
   const onDrop = useCallback(
     ({ active, over }: DragEndEvent) => {
       if (!over || active.id === over.id) return;
       const fromIndex = ids.indexOf(String(active.id));
-      const toIndex = ids.indexOf(String(over.id));
-      if (fromIndex === -1 || toIndex === -1) return;
+      // With folders the screen order differs from the flat order: translate the drop.
+      const toIndex = groupFolders
+        ? flatDropIndex(shownItems, expanded, String(active.id), String(over.id))
+        : ids.indexOf(String(over.id));
+      if (fromIndex === -1 || toIndex === null || toIndex === -1) return;
       const order: DroppedOrder = { base: items, ids: moveRow(ids, fromIndex, toIndex) };
       setDropped(order);
       void reorder({
@@ -82,13 +103,13 @@ export function SortableItems({ view, pages, nextCursor, variant, children }: So
         toIndex,
       }).finally(() => setDropped((current) => (current === order ? null : current)));
     },
-    [ids, items, nextCursor, reorder, shownItems, view],
+    [ids, items, nextCursor, reorder, shownItems, view, groupFolders, expanded],
   );
   useEffect(() => registerReorder?.(onDrop), [registerReorder, onDrop]);
 
   return (
     <SortableContext
-      items={ids}
+      items={contextIds}
       strategy={variant === "list" ? verticalListSortingStrategy : rectSortingStrategy}
     >
       {children(shownPages)}

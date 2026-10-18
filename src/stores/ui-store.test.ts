@@ -144,7 +144,22 @@ describe("persistence", () => {
       canvasMinimap: false,
       canvasSnap: false,
       canvasTool: "select",
+      expandedCollections: [],
     });
+  });
+
+  it("remembers open folders across a rehydrate", async () => {
+    expect(useUiStore.getState().expandedCollections).toEqual([]);
+    useUiStore.getState().toggleCollectionExpanded("c1");
+    useUiStore.getState().toggleCollectionExpanded("c2");
+    useUiStore.getState().toggleCollectionExpanded("c1");
+    expect(useUiStore.getState().expandedCollections).toEqual(["c2"]);
+    const stored = JSON.parse(localStorage.getItem(UI_STORE_KEY) ?? "null");
+    expect(stored.state.expandedCollections).toEqual(["c2"]);
+    useUiStore.setState({ expandedCollections: [] });
+    localStorage.setItem(UI_STORE_KEY, JSON.stringify(stored));
+    await useUiStore.persist.rehydrate();
+    expect(useUiStore.getState().expandedCollections).toEqual(["c2"]);
   });
 
   it("persists the canvas snap toggle", async () => {
