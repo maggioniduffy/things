@@ -33,6 +33,7 @@ export function makeItem(overrides: Partial<BoardItem> = {}): BoardItem {
     canvas_y: null,
     canvas_z: 0,
     collection_id: null,
+    color: null,
     created_at: "2026-01-01T00:00:00Z",
     deleted_at: null,
     description: null,

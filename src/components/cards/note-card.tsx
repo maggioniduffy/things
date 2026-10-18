@@ -1,5 +1,7 @@
 "use client";
 
+import { noteColorStyle } from "@/lib/items/note-colors";
+import { cn } from "@/lib/utils";
 import { CardShell } from "./card-shell";
 import { useCardStatus } from "./card-status";
 import type { CardProps } from "./types";
@@ -12,6 +14,7 @@ export function NoteCard({ item, variant, onOpen, onRetry }: CardProps) {
   const status = useCardStatus(item, onRetry);
   const text = item.note?.trim() ?? "";
   const hasTitle = Boolean(item.title);
+  const style = noteColorStyle(item.color);
   return (
     <CardShell
       card="note"
@@ -19,14 +22,20 @@ export function NoteCard({ item, variant, onOpen, onRetry }: CardProps) {
       variant={variant}
       status={status}
       onOpen={onOpen}
-      surfaceClassName="bg-aurora-coral/20"
+      surfaceClassName={style.surfaceClassName}
+      inverse={style.inverse}
       title={hasTitle || !text ? undefined : text}
       titleClassName={
         hasTitle || !text ? "line-clamp-2" : "line-clamp-6 font-normal whitespace-pre-line"
       }
       body={
         hasTitle && text ? (
-          <p className="text-body text-ink-muted line-clamp-4 [overflow-wrap:anywhere] whitespace-pre-line">
+          <p
+            className={cn(
+              "text-body line-clamp-4 [overflow-wrap:anywhere] whitespace-pre-line",
+              style.inverse ? "text-ink-inverse-muted" : "text-ink-muted",
+            )}
+          >
             {text}
           </p>
         ) : null

@@ -19,6 +19,7 @@ const ITEM_COLUMN_LIST = [
   "canvas_y",
   "canvas_z",
   "collection_id",
+  "color",
   "created_at",
   "deleted_at",
   "description",

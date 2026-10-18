@@ -28,6 +28,7 @@ import {
 import { attachTags, ensureTags } from "@/lib/tags/mutations";
 import { itemQueryKey, itemTagsQueryKey } from "./item-query";
 import { ITEM_STATE_MUTATION_KEY, REORDER_MUTATION_KEY } from "./mutation-keys";
+import type { NoteColor } from "./note-colors";
 import type { BoardItem, ItemsPage } from "./queries";
 import { BUCKET, thumbnailPath } from "./upload";
 
@@ -37,7 +38,9 @@ type Items = InfiniteData<ItemsPage>;
 const TAG_MUTATION_KEY = ["item-tag"] as const;
 
 /** Fields the drawer edits in place. */
-export type EditableFields = Partial<Pick<BoardItem, "title" | "note" | "collection_id">>;
+export type EditableFields = Partial<Pick<BoardItem, "title" | "note" | "collection_id">> & {
+  color?: NoteColor | null;
+};
 
 // ---------------------------------------------------------------------------
 // The change (pure) and how it lands in the caches

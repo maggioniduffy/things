@@ -53,6 +53,7 @@ import {
 } from "@/lib/canvas/viewport";
 import { bringToFront, sendToBack } from "@/lib/canvas/z-order";
 import { buildClipboard, type CopiedCard } from "@/lib/items/copy";
+import type { NoteColor } from "@/lib/items/note-colors";
 import type { BoardItem } from "@/lib/items/queries";
 import { useCanvasClipboard, type CanvasClipboard } from "@/stores/canvas-clipboard";
 import { useUiStore } from "@/stores/ui-store";
@@ -352,6 +353,14 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
     [selectedIds, actions],
   );
 
+  const colorSelected = useCallback(
+    (color: NoteColor | null) => {
+      const ids = selectedIds();
+      if (ids.length > 0) actions?.colorNotes(ids, color);
+    },
+    [selectedIds, actions],
+  );
+
   // The key table. Fields, open dialogs and open menus own the keyboard.
   useEffect(() => {
     function run(action: CanvasAction) {
@@ -488,6 +497,8 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
             : undefined
         }
         onMoveTo={actions ? moveSelected : undefined}
+        onColor={actions ? colorSelected : undefined}
+        isNote={(id) => itemsById.get(id)?.kind === "note"}
         onBringToFront={() => reorder("front")}
         onSendToBack={() => reorder("back")}
         onNewNote={actions?.createNote}
