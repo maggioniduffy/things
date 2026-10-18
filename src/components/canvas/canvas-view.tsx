@@ -147,6 +147,7 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
   }, [nodes, layout]);
   const minimap = useUiStore((state) => state.canvasMinimap);
   const snap = useUiStore((state) => state.canvasSnap);
+  const hand = useUiStore((state) => state.canvasTool) === "hand";
   const snapRef = useRef(snap);
   useEffect(() => {
     snapRef.current = snap;
@@ -381,6 +382,10 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           return reorder("back");
         case "move":
           return actions && selectedIds().length > 0 ? setMoveOpen(true) : undefined;
+        case "selectTool":
+          return useUiStore.getState().setCanvasTool("select");
+        case "handTool":
+          return useUiStore.getState().setCanvasTool("hand");
         case "duplicate":
           return duplicateSelected();
         case "copy":
@@ -522,12 +527,14 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           onlyRenderVisibleElements={nodes.length > VISIBLE_ONLY_ABOVE}
           // Left-drag on empty space draws a marquee; space-drag, middle mouse, trackpad scroll and
           // touch pan. Pinch or ⌘/Ctrl-scroll zooms.
-          selectionOnDrag
+          selectionOnDrag={!hand}
+          nodesDraggable={!hand}
+          className={hand ? "canvas-hand" : undefined}
           // A marquee picks every card it touches, not only the ones it fully covers.
           selectionMode={SelectionMode.Partial}
           // Selecting must not lift a card; the stack order is what ] and [ set.
           elevateNodesOnSelect={false}
-          panOnDrag={[1]}
+          panOnDrag={hand ? true : [1]}
           panOnScroll
           panActivationKeyCode="Space"
           zoomOnDoubleClick={false}

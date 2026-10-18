@@ -14,6 +14,9 @@ type UiState = {
 
   /** Canvas snaps dragged and placed cards to an 8 px grid. */
   canvasSnap: boolean;
+  /** Canvas pointer: select (marquee, move cards) or hand (drag anywhere pans). */
+  canvasTool: "select" | "hand";
+  setCanvasTool: (tool: "select" | "hand") => void;
   toggleCanvasSnap: () => void;
 
   selectedIds: string[];
@@ -85,6 +88,9 @@ export const useUiStore = create<UiState>()(
       canvasMinimap: false,
       toggleCanvasMinimap: () => set((state) => ({ canvasMinimap: !state.canvasMinimap })),
 
+      canvasTool: "select",
+      setCanvasTool: (tool) => set({ canvasTool: tool }),
+
       canvasSnap: false,
       toggleCanvasSnap: () => set((state) => ({ canvasSnap: !state.canvasSnap })),
 
@@ -143,6 +149,7 @@ export const useUiStore = create<UiState>()(
         viewMode: state.viewMode,
         canvasMinimap: state.canvasMinimap,
         canvasSnap: state.canvasSnap,
+        canvasTool: state.canvasTool,
       }),
       // Keep the server and first client render identical; rehydrate in an effect instead.
       skipHydration: true,

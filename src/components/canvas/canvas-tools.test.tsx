@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { activeCanvasPlacer } from "@/lib/canvas/placement";
+import { useUiStore } from "@/stores/ui-store";
 import { makeItem, renderWithQuery } from "@/test/fixtures";
 import { CanvasView } from "./canvas-view";
 
@@ -67,7 +68,10 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  useUiStore.setState({ canvasTool: "select" });
+});
 
 const items = [
   makeItem({ id: "a", kind: "note", title: "Alpha", canvas_x: 0, canvas_y: 0, canvas_z: 0 }),
@@ -91,6 +95,33 @@ function select(container: HTMLElement, id: string) {
 function press(init: KeyboardEventInit, target: Element | Document = document.body) {
   fireEvent.keyDown(target, init);
 }
+
+describe("canvas hand tool", () => {
+  it("H switches to the hand and V back; typing in a field does not", () => {
+    const { container } = renderCanvas();
+    const flow = () => container.querySelector(".react-flow")!;
+    expect(flow()).not.toHaveClass("canvas-hand");
+    press({ key: "h" });
+    expect(useUiStore.getState().canvasTool).toBe("hand");
+    expect(flow()).toHaveClass("canvas-hand");
+    const input = document.createElement("input");
+    document.body.append(input);
+    input.focus();
+    press({ key: "v" }, input);
+    expect(useUiStore.getState().canvasTool).toBe("hand");
+    input.remove();
+    press({ key: "v" });
+    expect(useUiStore.getState().canvasTool).toBe("select");
+  });
+
+  it("the toggle buttons set the tool", () => {
+    renderCanvas();
+    expect(screen.getByRole("button", { name: "Select" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Hand" }));
+    expect(screen.getByRole("button", { name: "Hand" })).toHaveAttribute("aria-pressed", "true");
+    expect(useUiStore.getState().canvasTool).toBe("hand");
+  });
+});
 
 describe("canvas tools", () => {
   it("creates a note at the flow point on a double-click on empty space", () => {

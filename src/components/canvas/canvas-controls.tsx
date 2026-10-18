@@ -1,7 +1,15 @@
 "use client";
 
 import { Panel, useReactFlow } from "@xyflow/react";
-import { GridIcon, MapIcon, MaximizeIcon, ZoomInIcon, ZoomOutIcon } from "lucide-react";
+import {
+  GridIcon,
+  HandIcon,
+  MapIcon,
+  MaximizeIcon,
+  MousePointer2Icon,
+  ZoomInIcon,
+  ZoomOutIcon,
+} from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useMemo } from "react";
 import { IconButton } from "@/components/ui/icon-button";
@@ -34,11 +42,33 @@ export function CanvasControls() {
   const viewport = useCanvasViewportActions();
   const minimap = useUiStore((state) => state.canvasMinimap);
   const toggleMinimap = useUiStore((state) => state.toggleCanvasMinimap);
+  const tool = useUiStore((state) => state.canvasTool);
+  const setTool = useUiStore((state) => state.setCanvasTool);
   const snap = useUiStore((state) => state.canvasSnap);
   const toggleSnap = useUiStore((state) => state.toggleCanvasSnap);
 
   return (
     <Panel position="bottom-left" className="flex flex-col gap-1">
+      <IconButton
+        size="sm"
+        variant={tool === "select" ? "outline" : "ghost"}
+        label="Select"
+        aria-pressed={tool === "select"}
+        aria-keyshortcuts="V"
+        onClick={() => setTool("select")}
+      >
+        <MousePointer2Icon />
+      </IconButton>
+      <IconButton
+        size="sm"
+        variant={tool === "hand" ? "outline" : "ghost"}
+        label="Hand"
+        aria-pressed={tool === "hand"}
+        aria-keyshortcuts="H"
+        onClick={() => setTool("hand")}
+      >
+        <HandIcon />
+      </IconButton>
       <IconButton
         size="sm"
         label="Zoom in"

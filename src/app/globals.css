@@ -259,3 +259,18 @@
 .react-flow__node:focus-visible {
   outline: none;
 }
+
+/* Canvas hand tool: the whole surface drags the view. */
+.react-flow.canvas-hand,
+.react-flow.canvas-hand .react-flow__pane,
+.react-flow.canvas-hand .react-flow__node,
+.react-flow.canvas-hand .react-flow__node * {
+  cursor: grab;
+}
+.react-flow.canvas-hand .react-flow__pane.dragging,
+.react-flow.canvas-hand .react-flow__pane.dragging ~ .react-flow__viewport-portal,
+.react-flow.canvas-hand:active .react-flow__node,
+.react-flow.canvas-hand:active .react-flow__node *,
+.react-flow.canvas-hand:active .react-flow__pane {
+  cursor: grabbing;
+}

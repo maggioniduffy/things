@@ -7,6 +7,8 @@ export type CanvasAction =
   | "bringToFront"
   | "sendToBack"
   | "move"
+  | "selectTool"
+  | "handTool"
   | "copy"
   | "duplicate";
 
@@ -64,6 +66,12 @@ export function canvasShortcut(event: KeyLike): CanvasAction | null {
     case "m":
     case "M":
       return "move";
+    case "v":
+    case "V":
+      return "selectTool";
+    case "h":
+    case "H":
+      return "handTool";
     default:
       return null;
   }
