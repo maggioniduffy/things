@@ -22,6 +22,7 @@ import {
   mapAuthError,
 } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleButton } from "./google-button";
 import { OtpCodeInput } from "./otp-code-input";
 
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -353,16 +354,13 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
             <span className="text-meta text-ink-subtle">or</span>
             <Separator className="flex-1" />
           </div>
-          <Button
-            type="button"
-            variant="secondary"
+          <GoogleButton
             onClick={linkGoogle}
+            pending={pending === "google"}
             disabled={pending !== null}
-            aria-busy={pending === "google"}
           >
-            {pending === "google" ? <Spinner /> : null}
             Link Google
-          </Button>
+          </GoogleButton>
         </div>
       ) : null}
     </>
