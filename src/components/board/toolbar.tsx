@@ -176,7 +176,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
   }
 
   return (
-    <div className="bg-paper/80 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 px-4 backdrop-blur-md sm:gap-3 sm:px-6">
+    <div className="bg-paper sm:bg-paper/80 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 px-4 backdrop-blur-md sm:gap-3 sm:px-6">
       <IconButton
         variant="ghost"
         size="sm"

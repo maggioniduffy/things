@@ -228,7 +228,9 @@
 @media (width < 40rem) {
   [data-stack="true"] {
     --stack-top: 4rem; /* sticky toolbar (h-14) + a little air */
-    --stack-room: 100svh;
+    /* Room for each card to stay stuck. Longer than any board, so no card comes unstuck and
+       scrolls up behind the pile: the whole pile leaves with the grid's end (clipped below). */
+    --stack-room: 100000px;
     /* The spacers reach past the grid: clip them so they add no scroll height after the last card
        (clip, unlike hidden, is not a scroll container, so sticky still works). */
     overflow-y: clip;
@@ -265,17 +267,31 @@
     top: calc(var(--stack-top) + var(--stack-i) * 6px);
     height: auto;
     transform-origin: 50% 0;
+    /* Card surfaces are translucent glass; in the pile that shows the cards (and the scroll)
+       underneath. An opaque paper backing in the card's shape keeps each card solid. */
+    background: var(--color-paper);
+    border-radius: var(--radius-card);
+  }
+  /* Over an opaque backing the glass blur shows nothing; skip its cost on a pile of cards. */
+  [data-stack="true"] > li > [data-stack-card] * {
+    backdrop-filter: none;
   }
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
       [data-stack="true"] > li {
         view-timeline-name: --stack-entry;
       }
-      /* The card is covered while its entry scrolls up past the toolbar (about one card tall). */
+      /* The card is covered while the next card slides over it. The entry is card + stack room
+         tall, so the range is counted back from its end (the room minus one viewport). */
       [data-stack="true"] > li > [data-stack-card] {
         animation: stack-cover linear both;
         animation-timeline: --stack-entry;
-        animation-range: exit -3rem exit 16rem;
+        animation-range: exit calc(100svh - var(--stack-room) - 3rem)
+          exit calc(100svh - var(--stack-room) + 16rem);
+      }
+      /* Nothing slides over the last card (and its entry has no room for the range above). */
+      [data-stack="true"] > li:last-child > [data-stack-card] {
+        animation: none;
       }
     }
   }
