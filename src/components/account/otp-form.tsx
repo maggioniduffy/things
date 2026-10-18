@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AUTH_MESSAGES, EMAIL_OTP_TYPE, isValidOtp, mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
+import { AuroraButton } from "./aurora-button";
 import { OtpCodeInput } from "./otp-code-input";
 import { TurnstileField, useTurnstile } from "./turnstile-field";
 
@@ -199,10 +200,9 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
             />
             <FieldError id={errorId} message={error} />
           </div>
-          <Button type="submit" disabled={pending === "send"} aria-busy={pending === "send"}>
-            {pending === "send" ? <Spinner /> : null}
+          <AuroraButton type="submit" pending={pending === "send"} pendingLabel="Sending…">
             Send code
-          </Button>
+          </AuroraButton>
         </form>
       ) : (
         <form onSubmit={onVerifySubmit} className="flex flex-col gap-3">

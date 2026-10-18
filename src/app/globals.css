@@ -65,25 +65,6 @@
   --animate-aurora-c: aurora-drift-c 38s ease-in-out infinite alternate;
   --animate-aurora-d: aurora-drift-d 22s ease-in-out infinite alternate;
   --animate-aurora-e: aurora-drift-e 30s ease-in-out infinite alternate;
-  /* Pending wash on the Google button: fades through the aurora palette */
-  --animate-aurora-fade: aurora-fade 2.4s ease-in-out infinite;
-
-  @keyframes aurora-fade {
-    0%,
-    100% {
-      background-color: var(--color-aurora-pink);
-    }
-    25% {
-      background-color: var(--color-aurora-violet);
-    }
-    50% {
-      background-color: var(--color-aurora-blue);
-    }
-    75% {
-      background-color: var(--color-aurora-coral);
-    }
-  }
-
   @keyframes aurora-drift-a {
     from {
       transform: translate3d(-4%, 3%, 0) scale(1);
@@ -356,4 +337,61 @@
 .react-flow.canvas-hand:active .react-flow__node *,
 .react-flow.canvas-hand:active .react-flow__pane {
   cursor: grabbing;
+}
+
+/*
+ * Sign-in buttons while loading (AuroraButton): the aurora gradient sweeps in left to right with a
+ * soft edge, then keeps compressing and stretching. Reduced motion: a still fill.
+ */
+.aurora-fill {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-aurora-coral),
+    var(--color-aurora-pink) 25%,
+    var(--color-aurora-violet) 55%,
+    var(--color-aurora-blue) 80%,
+    var(--color-aurora-pink)
+  );
+  background-repeat: no-repeat;
+  mask-image: linear-gradient(90deg, black 0%, black 33%, transparent 66%);
+  mask-size: 300% 100%;
+  mask-position: 0 0;
+  animation:
+    aurora-fill-reveal 0.9s cubic-bezier(0.6, 0, 0.3, 1) both,
+    aurora-fill-flow 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-fill {
+    animation: none;
+  }
+}
+@keyframes aurora-fill-reveal {
+  from {
+    mask-position: 100% 0;
+  }
+  to {
+    mask-position: 0 0;
+  }
+}
+@keyframes aurora-fill-flow {
+  0% {
+    background-size: 100% 100%;
+    background-position: 0% 0;
+  }
+  25% {
+    background-size: 260% 100%;
+    background-position: 20% 0;
+  }
+  50% {
+    background-size: 120% 100%;
+    background-position: 60% 0;
+  }
+  75% {
+    background-size: 300% 100%;
+    background-position: 90% 0;
+  }
+  100% {
+    background-size: 100% 100%;
+    background-position: 100% 0;
+  }
 }

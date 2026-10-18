@@ -22,6 +22,7 @@ import {
   mapAuthError,
 } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
+import { AuroraButton } from "./aurora-button";
 import { GoogleButton } from "./google-button";
 import { OtpCodeInput } from "./otp-code-input";
 
@@ -342,10 +343,9 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
           <FieldError id={errorId} message={error} />
         </div>
         {conflictNotice}
-        <Button type="submit" disabled={pending === "send"} aria-busy={pending === "send"}>
-          {pending === "send" ? <Spinner /> : null}
+        <AuroraButton type="submit" pending={pending === "send"} pendingLabel="Sending…">
           Send code
-        </Button>
+        </AuroraButton>
       </form>
       {googleEnabled ? (
         <div className="flex flex-col gap-3">
