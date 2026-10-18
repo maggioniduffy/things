@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAccountConflict } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/supabase/proxy";
 
@@ -10,14 +11,20 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const next = safeNextPath(searchParams.get("next"));
 
-  const failure = () => {
+  const failure = (reason?: "account_exists") => {
     const url = new URL("/login", origin);
     url.searchParams.set("error", "callback");
+    if (reason) url.searchParams.set("reason", reason);
     if (next) url.searchParams.set("next", next);
     return NextResponse.redirect(url);
   };
 
-  if (searchParams.get("error") || searchParams.get("error_description")) return failure();
+  if (searchParams.get("error") || searchParams.get("error_description")) {
+    // linkIdentity on a Google account that belongs to another user: `error_code=identity_already_exists`.
+    return failure(
+      isAccountConflict({ code: searchParams.get("error_code") }) ? "account_exists" : undefined,
+    );
+  }
 
   const code = searchParams.get("code");
   if (!code) return failure();

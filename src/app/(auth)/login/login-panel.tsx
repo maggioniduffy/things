@@ -1,28 +1,31 @@
 "use client";
 
-import { LoaderCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { GoogleButton } from "@/components/account/google-button";
 import { GuestStartButton } from "@/components/account/guest-start-button";
 import { OtpForm } from "@/components/account/otp-form";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { mapAuthError } from "@/lib/auth";
+import { AUTH_MESSAGES, mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 
 type LoginPanelProps = {
   /** Already sanitized with `safeNextPath` on the server. */
   next: string | null;
-  callbackFailed: boolean;
+  callbackError: "generic" | "account_exists" | null;
 };
 
 const CALLBACK_FAILED_MESSAGE = "We couldn't finish signing you in. Try again.";
 
-export function LoginPanel({ next, callbackFailed }: LoginPanelProps) {
+export function LoginPanel({ next, callbackError }: LoginPanelProps) {
   const router = useRouter();
   const [googlePending, setGooglePending] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(
-    callbackFailed ? CALLBACK_FAILED_MESSAGE : null,
+    callbackError === "account_exists"
+      ? AUTH_MESSAGES.accountExists
+      : callbackError
+        ? CALLBACK_FAILED_MESSAGE
+        : null,
   );
   // Referenced literally so Next inlines it; unset locally so no broken button shows.
   const googleEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED === "true";
@@ -70,18 +73,9 @@ export function LoginPanel({ next, callbackFailed }: LoginPanelProps) {
           <Separator className="flex-1" />
         </div>
         {googleEnabled ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={continueWithGoogle}
-            disabled={googlePending}
-            aria-busy={googlePending}
-          >
-            {googlePending ? (
-              <LoaderCircleIcon className="animate-spin motion-reduce:animate-none" />
-            ) : null}
+          <GoogleButton onClick={continueWithGoogle} pending={googlePending}>
             Continue with Google
-          </Button>
+          </GoogleButton>
         ) : null}
         <GuestStartButton variant="ghost" className="w-full" />
       </div>
