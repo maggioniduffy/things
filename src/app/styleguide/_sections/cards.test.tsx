@@ -19,8 +19,9 @@ describe("styleguide cards section", () => {
         for (const card of cards) expect(card).toHaveAttribute("data-enrich-status", state);
       }
     }
+    // 48 state cards plus the "Note colors" group (Default and the eight note colors).
     expect(
       container.querySelectorAll('[data-slot="item-tile"], [data-slot="item-row"]'),
-    ).toHaveLength(48);
+    ).toHaveLength(57);
   });
 });
