@@ -2,6 +2,7 @@ import { ItemCard } from "@/components/cards/item-card";
 import type { CardVariant } from "@/components/cards/types";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemKind } from "@/types/supabase";
+import { NOTE_COLORS, NOTE_COLOR_STYLES } from "@/lib/items/note-colors";
 import { Group, Section } from "./section";
 
 type State = "pending" | "done" | "failed";
@@ -111,6 +112,7 @@ function demoItems(state: State): { item: BoardItem; thumbnailUrl: string | null
       canvas_y: null,
       canvas_z: 0,
       collection_id: null,
+      color: null,
       created_at: "2026-01-01T00:00:00Z",
       deleted_at: null,
       description: null,
@@ -164,6 +166,33 @@ function CardList({ state, variant }: { state: State; variant: CardVariant }) {
   );
 }
 
+/** One note per color (and the default), so every surface and its ink can be checked. */
+function NoteColors() {
+  const colors = [null, ...NOTE_COLORS];
+  return (
+    <ul
+      aria-label="Note colors"
+      className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4"
+    >
+      {colors.map((color, index) => (
+        <ItemCard
+          key={color ?? "default"}
+          variant="grid"
+          thumbnailUrl={null}
+          item={{
+            ...demoItems("done").find(({ item }) => item.kind === "note")!.item,
+            id: `demo-note-color-${index}`,
+            color,
+            title: color ? NOTE_COLOR_STYLES[color].label : "Default",
+            note: "Pick up flour on the way home.",
+            is_favorite: color === "graphite",
+          }}
+        />
+      ))}
+    </ul>
+  );
+}
+
 export function CardsSection() {
   return (
     <Section
@@ -181,6 +210,9 @@ export function CardsSection() {
           </Group>
         </div>
       ))}
+      <Group title="Note colors" className="block">
+        <NoteColors />
+      </Group>
     </Section>
   );
 }

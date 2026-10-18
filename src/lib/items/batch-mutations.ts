@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/supabase";
 import { itemQueryKey, itemTagsQueryKey } from "./item-query";
 import { ITEM_STATE_MUTATION_KEY, REORDER_MUTATION_KEY } from "./mutation-keys";
+import type { NoteColor } from "./note-colors";
 import type { BoardItem, ItemsPage } from "./queries";
 import { applyChange } from "./state-mutations";
 
@@ -24,12 +25,13 @@ type Items = InfiniteData<ItemsPage>;
 
 /**
  * What a batch does to every item in it. `collection` with a null id means "no collection"
- * (Inbox). `favorite` always sets the flag (a drop never un-favorites). `unarchive` and `restore`
+ * (Inbox). `color` only touches notes (null = the default look). `favorite` always sets the flag (a drop never un-favorites). `unarchive` and `restore`
  * exist for the Undo toast of `archive` and `trash`.
  */
 export type BatchAction =
   | { type: "collection"; id: string | null }
   | { type: "tag"; id: string }
+  | { type: "color"; color: NoteColor | null }
   | { type: "favorite" }
   | { type: "archive" }
   | { type: "trash" }
@@ -48,6 +50,8 @@ export function batchPatch(
   switch (action.type) {
     case "collection":
       return { collection_id: action.id };
+    case "color":
+      return { color: action.color };
     case "favorite":
       return { is_favorite: true };
     case "archive":
@@ -68,6 +72,8 @@ function alreadyDone(item: BoardItem, action: BatchAction): boolean {
   switch (action.type) {
     case "collection":
       return item.collection_id === action.id;
+    case "color":
+      return item.kind !== "note" || item.color === action.color;
     case "favorite":
       return item.is_favorite;
     case "archive":
@@ -120,6 +126,8 @@ export function batchMessage(action: BatchAction, count: number, label?: string)
       return `Moved ${items} to ${action.id === null ? "Inbox" : (label ?? "the collection")}`;
     case "tag":
       return `Added #${label ?? "tag"} to ${items}`;
+    case "color":
+      return `Changed the color of ${count} ${count === 1 ? "note" : "notes"}`;
     case "favorite":
       return `Added ${items} to Favorites`;
     case "archive":
@@ -139,6 +147,8 @@ function batchErrorMessage(action: BatchAction): string {
       return "Couldn't move those items.";
     case "tag":
       return "Couldn't add that tag.";
+    case "color":
+      return "Couldn't change the color.";
     case "favorite":
       return "Couldn't update favorites.";
     case "archive":

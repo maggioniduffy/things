@@ -54,3 +54,9 @@ Decisions taken with the owner:
 
 | Finding | Fix in |
 | --- | --- |
+
+## Status (2026-10-18, paused)
+
+- **WP 9.1** built (builder report: typecheck, lint, unit tests and `pnpm supabase test db` green; `e2e/note-color.spec.ts` written, not run). Committed as WIP **without the reviewer pass** — next session starts with the reviewer on the 9.1 diff (`git show` of the `phase9(wp9.1)` commit): migration/RLS, optimistic + rollback of the batch `color` action and drawer edit, WCAG contrast of the tints and graphite, radiogroup a11y.
+- Next: 9.2 ∥ 9.5 (worktrees) → 9.4 → 9.3 → gate.
+- Branch `phase-9-board-feedback` is off `main` and does not include `auth/google-sign-in` (O3); rebase once that merges.

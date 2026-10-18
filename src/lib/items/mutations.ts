@@ -116,6 +116,7 @@ function baseRow({ id, userId, collectionId, now }: RowBase, kind: ItemKind): Bo
     canvas_y: null,
     canvas_z: 0,
     collection_id: collectionId,
+    color: null,
     created_at: now,
     deleted_at: null,
     description: null,

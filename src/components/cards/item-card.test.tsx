@@ -447,3 +447,40 @@ describe("ItemCard stale pending link", () => {
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
   });
 });
+
+describe("NoteCard color", () => {
+  function tile(color: string | null) {
+    const { container } = renderCard(
+      makeItem({ kind: "note", title: "Colored", note: "Body", color }),
+    );
+    return container.querySelector<HTMLElement>('[data-slot="item-tile"]')!;
+  }
+
+  it("keeps the coral default for a note without a color or with an unknown one", () => {
+    expect(tile(null)).toHaveClass("bg-aurora-coral/20");
+    expect(tile("magenta")).toHaveClass("bg-aurora-coral/20");
+    expect(tile(null)).not.toHaveAttribute("data-inverse");
+  });
+
+  it("tints the card with an aurora color and keeps dark ink", () => {
+    const el = tile("violet");
+    expect(el).toHaveClass("bg-aurora-violet/30");
+    expect(el).not.toHaveAttribute("data-inverse");
+    expect(el.querySelector("p")).toHaveClass("text-ink");
+  });
+
+  it("uses a solid white surface", () => {
+    expect(tile("white")).toHaveClass("bg-note-white");
+  });
+
+  it("swaps to inverse ink on graphite and keeps the title as the first paragraph", () => {
+    const el = tile("graphite");
+    expect(el).toHaveClass("bg-note-graphite");
+    expect(el).toHaveAttribute("data-inverse", "true");
+    const [title, excerpt] = Array.from(el.querySelectorAll("p"));
+    expect(title).toHaveTextContent("Colored");
+    expect(title).toHaveClass("text-ink-inverse");
+    expect(excerpt).toHaveClass("text-ink-inverse-muted");
+    expect(el.querySelector('[data-slot="badge"]')).toHaveClass("text-ink-inverse-muted");
+  });
+});

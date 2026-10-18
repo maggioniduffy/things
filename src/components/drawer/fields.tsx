@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { itemTagsQueryKey, itemTagsQueryOptions } from "@/lib/items/item-query";
+import { noteColorStyle } from "@/lib/items/note-colors";
 import type { BoardItem } from "@/lib/items/queries";
 import { useTagActions, type ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +15,7 @@ import { collectionsQueryOptions, tagsQueryOptions } from "@/lib/sidebar/queries
 import { useTagManager } from "@/lib/tags/mutations";
 import { MAX_TAG_LENGTH, parseHashtags } from "@/lib/tags/parse";
 import { cn } from "@/lib/utils";
+import { NoteColorPicker } from "./note-color-picker";
 
 /**
  * A text draft that saves on demand (blur, Enter) and once more when the field unmounts, so
@@ -88,20 +90,31 @@ export function NoteField({ item, actions }: { item: BoardItem; actions: ItemAct
     const added = parseHashtags(next).names.filter((name) => !had.has(name.toLowerCase()));
     if (added.length > 0) void addTagsByName(item.id, added);
   });
+  const style = noteColorStyle(item.color);
   return (
-    <textarea
-      aria-label="Note"
-      value={draft}
-      placeholder="Write something"
-      rows={10}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={flush}
-      className={cn(
-        "rounded-control border-line bg-aurora-coral/20 text-body text-ink min-h-48 w-full resize-y border px-3 py-2",
-        "placeholder:text-ink-subtle ease-out-soft hover:border-ink/30 transition-[color,background-color,border-color] duration-(--duration-fast)",
-        "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
-      )}
-    />
+    <div className="grid gap-3">
+      <textarea
+        aria-label="Note"
+        value={draft}
+        placeholder="Write something"
+        rows={10}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={flush}
+        className={cn(
+          "rounded-control border-line text-body min-h-48 w-full resize-y border px-3 py-2",
+          style.surfaceClassName,
+          style.inverse
+            ? "text-ink-inverse placeholder:text-ink-inverse-muted"
+            : "text-ink placeholder:text-ink-subtle",
+          "ease-out-soft hover:border-ink/30 transition-[color,background-color,border-color] duration-(--duration-fast)",
+          "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
+        )}
+      />
+      <NoteColorPicker
+        value={item.color}
+        onChange={(color) => void actions.edit(item, { color })}
+      />
+    </div>
   );
 }
 

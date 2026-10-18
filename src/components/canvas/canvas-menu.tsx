@@ -8,6 +8,7 @@ import {
   CopyPlusIcon,
   FolderInputIcon,
   InboxIcon,
+  PaletteIcon,
   PlusIcon,
   SquareArrowOutUpRightIcon,
 } from "lucide-react";
@@ -23,6 +24,13 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { CanvasTarget } from "@/lib/canvas/layout";
+import {
+  DEFAULT_NOTE_STYLE,
+  NOTE_COLORS,
+  NOTE_COLOR_STYLES,
+  type NoteColor,
+} from "@/lib/items/note-colors";
+import { cn } from "@/lib/utils";
 import { useCollectionList } from "./move-dialog";
 
 /** What a right-click landed on. `null` = something with its own behavior (controls, minimap). */
@@ -42,6 +50,10 @@ type CanvasMenuProps = {
   onOpen?: (id: string) => void;
   /** Present when moving is possible (persisted canvases). */
   onMoveTo?: (collectionId: string | null, label: string) => void;
+  /** Present when notes can be recolored (persisted canvases); null = the default look. */
+  onColor?: (color: NoteColor | null) => void;
+  /** Whether the node with this id is a note; the Color submenu shows only for notes. */
+  isNote?: (id: string) => boolean;
   onBringToFront: () => void;
   onSendToBack: () => void;
   /** Present when notes can be created (persisted canvases). */
@@ -55,6 +67,17 @@ type CanvasMenuProps = {
   canPaste?: boolean;
 };
 
+const DEFAULT_SWATCH = DEFAULT_NOTE_STYLE.swatchClassName;
+
+function ColorDot({ className }: { className: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("border-line size-4 shrink-0 rounded-full border", className)}
+    />
+  );
+}
+
 /** The node and pane context menus of the canvas. Wraps the flow; React Flow keeps its own events. */
 export function CanvasMenu({
   children,
@@ -63,6 +86,8 @@ export function CanvasMenu({
   collectionId,
   onOpen,
   onMoveTo,
+  onColor,
+  isNote,
   onBringToFront,
   onSendToBack,
   onNewNote,
@@ -125,6 +150,26 @@ export function CanvasMenu({
                         {collection.emoji ?? ""}
                       </span>
                       {collection.name}
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            ) : null}
+            {onColor && isNote?.(target.id) ? (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <PaletteIcon aria-hidden="true" />
+                  Color
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent className="w-44">
+                  <ContextMenuItem onSelect={() => onColor(null)}>
+                    <ColorDot className={DEFAULT_SWATCH} />
+                    Default
+                  </ContextMenuItem>
+                  {NOTE_COLORS.map((color) => (
+                    <ContextMenuItem key={color} onSelect={() => onColor(color)}>
+                      <ColorDot className={NOTE_COLOR_STYLES[color].swatchClassName} />
+                      {NOTE_COLOR_STYLES[color].label}
                     </ContextMenuItem>
                   ))}
                 </ContextMenuSubContent>

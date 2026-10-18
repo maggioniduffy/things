@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   enqueue: vi.fn(),
   createNote: vi.fn(),
   moveItems: vi.fn(),
+  colorNotes: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
@@ -28,6 +29,7 @@ vi.mock("./use-canvas-actions", () => ({
     collectionId,
     createNote: mocks.createNote,
     moveItems: mocks.moveItems,
+    colorNotes: mocks.colorNotes,
   }),
 }));
 
@@ -225,6 +227,28 @@ describe("canvas tools", () => {
     expect(screen.getByRole("menuitem", { name: /Move to…/ })).toBeInTheDocument();
     // The card under the pointer became the selection.
     expect(node(container, "b")).toHaveClass("selected");
+  });
+
+  it("colors the selected notes from the Color submenu, leaving other kinds out of the menu", async () => {
+    const { container } = renderWithQuery(
+      <CanvasView
+        items={[
+          ...items,
+          makeItem({ id: "l", kind: "link", title: "Link", canvas_x: 600, canvas_y: 0 }),
+        ]}
+        persist={target}
+      />,
+    );
+    fireEvent.contextMenu(node(container, "l"), { clientX: 10, clientY: 10 });
+    await screen.findByRole("menuitem", { name: /Bring to front/ });
+    expect(screen.queryByRole("menuitem", { name: /Color/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+
+    fireEvent.contextMenu(node(container, "b"), { clientX: 10, clientY: 10 });
+    const trigger = await screen.findByRole("menuitem", { name: /Color/ });
+    fireEvent.keyDown(trigger, { key: "ArrowRight" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Graphite" }));
+    expect(mocks.colorNotes).toHaveBeenCalledWith(["b"], "graphite");
   });
 
   it("creates a note where the pane is right-clicked", async () => {

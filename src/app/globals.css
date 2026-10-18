@@ -15,6 +15,12 @@
   --color-ink-subtle: #6b6b74; /* darkened from the plan's #8B8B94 (3.1:1) to meet AA 4.5:1 on paper */
   --color-line: rgb(15 15 18 / 0.12);
 
+  /* Note surfaces: white and graphite (dark, with inverse ink) next to the aurora tints */
+  --color-note-white: #ffffff;
+  --color-note-graphite: #2b2b30;
+  --color-ink-inverse: #f6f6f8; /* 13:1 on graphite */
+  --color-ink-inverse-muted: #c9c9d2; /* 8.6:1 on graphite */
+
   /* Aurora stops */
   --color-aurora-pink: #ee5bc4;
   --color-aurora-violet: #8e6cf0;

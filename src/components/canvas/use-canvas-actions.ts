@@ -10,6 +10,7 @@ import {
   usePasteCopies,
   type CopiedCard,
 } from "@/lib/items/copy";
+import type { NoteColor } from "@/lib/items/note-colors";
 import { useCapture } from "@/lib/items/mutations";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ViewSpec } from "@/lib/views";
@@ -23,6 +24,8 @@ export type CanvasActions = {
   createNote: (point: CanvasTarget) => void;
   /** Moves items to a collection (null = Inbox) in one optimistic batch. `label` is for the toast. */
   moveItems: (ids: readonly string[], collectionId: string | null, label: string) => void;
+  /** Sets the background color of the notes among `ids` (null = default); other kinds are ignored. */
+  colorNotes: (ids: readonly string[], color: NoteColor | null) => void;
   /**
    * Pastes the copied cards onto this canvas, their bounding box centered on `point`. `onCreated`
    * gets the new ids before they reach the lists.
@@ -85,6 +88,13 @@ export function useCanvasActions(collectionId: string | null): CanvasActions {
     [move],
   );
 
+  const colorNotes = useCallback(
+    (ids: readonly string[], color: NoteColor | null) => {
+      void move(ids, { type: "color", color });
+    },
+    [move],
+  );
+
   const pasteCopies = useCallback(
     (clipboard: CanvasClipboard, point: CanvasTarget, onCreated: (ids: string[]) => void) => {
       void copy({
@@ -105,7 +115,7 @@ export function useCanvasActions(collectionId: string | null): CanvasActions {
   );
 
   return useMemo(
-    () => ({ collectionId, createNote, moveItems, pasteCopies, duplicateCards }),
-    [collectionId, createNote, moveItems, pasteCopies, duplicateCards],
+    () => ({ collectionId, createNote, moveItems, colorNotes, pasteCopies, duplicateCards }),
+    [collectionId, createNote, moveItems, colorNotes, pasteCopies, duplicateCards],
   );
 }

@@ -23,6 +23,7 @@ function fixtureItems(count: number): BoardItem[] {
       canvas_y: placed ? Math.floor(index / 40) * 280 : null,
       canvas_z: 0,
       collection_id: null,
+      color: null,
       created_at: "2026-01-01T00:00:00Z",
       deleted_at: null,
       description: null,

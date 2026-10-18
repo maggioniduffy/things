@@ -38,10 +38,23 @@ function UploadBar({ itemId }: { itemId: string }) {
 }
 
 /** Sits above the card's open button (z-20) so it stays clickable. */
-function RetryButton({ item, retry }: { item: BoardItem; retry: CardStatus["retry"] }) {
+function RetryButton({
+  item,
+  retry,
+  inverse,
+}: {
+  item: BoardItem;
+  retry: CardStatus["retry"];
+  inverse?: boolean;
+}) {
   if (!retry || !item.url) return null;
   return (
-    <Button variant="ghost" size="sm" className="relative z-20" onClick={() => void retry(item)}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className={cn("relative z-20", inverse && "text-ink-inverse hover:bg-ink-inverse/10")}
+      onClick={() => void retry(item)}
+    >
       Retry
     </Button>
   );
@@ -99,6 +112,8 @@ type CardShellProps = Omit<CardProps, "thumbnailUrl"> & {
   className?: string;
   /** Background class of the grid card; defaults to the shared surface token. */
   surfaceClassName?: string;
+  /** The surface is dark: title, badge and status text switch to the inverse ink tokens. */
+  inverse?: boolean;
 };
 
 /**
@@ -120,6 +135,7 @@ export function CardShell({
   listMeta,
   className,
   surfaceClassName,
+  inverse = false,
   onOpen,
 }: CardShellProps) {
   const { as: Root, dragHandle } = useContext(CardChromeContext);
@@ -170,6 +186,7 @@ export function CardShell({
       data-card={card}
       data-item-id={item.id}
       data-enrich-status={item.enrich_status}
+      data-inverse={inverse || undefined}
       aria-busy={pending || undefined}
       className={cn(
         "group rounded-card border-line shadow-card relative flex min-h-32 flex-col gap-2 border p-4 backdrop-blur-md",
@@ -182,12 +199,19 @@ export function CardShell({
       {dragHandle}
       {media}
       <div className="flex items-center justify-between gap-2">
-        <Badge>{kindSingularLabel(item.kind)}</Badge>
+        <Badge
+          className={
+            inverse ? "bg-ink-inverse/10 text-ink-inverse-muted border-ink-inverse/25" : undefined
+          }
+        >
+          {kindSingularLabel(item.kind)}
+        </Badge>
         <CardMarkers item={item} />
       </div>
       <p
         className={cn(
-          "text-card text-ink line-clamp-3 font-medium [overflow-wrap:anywhere]",
+          "text-card line-clamp-3 font-medium [overflow-wrap:anywhere]",
+          inverse ? "text-ink-inverse" : "text-ink",
           titleClassName,
         )}
       >
@@ -196,13 +220,15 @@ export function CardShell({
       {body}
       {pending ? (
         <>
-          <Skeleton className="h-3 w-2/3" />
+          <Skeleton className={cn("h-3 w-2/3", inverse && "bg-ink-inverse/15")} />
           <UploadBar itemId={item.id} />
         </>
       ) : failed ? (
         <div className="mt-auto flex items-center justify-between gap-2">
-          <p className="text-meta text-ink-subtle">{failedCopy}</p>
-          <RetryButton item={item} retry={retry} />
+          <p className={cn("text-meta", inverse ? "text-ink-inverse-muted" : "text-ink-subtle")}>
+            {failedCopy}
+          </p>
+          <RetryButton item={item} retry={retry} inverse={inverse} />
         </div>
       ) : (
         footer
