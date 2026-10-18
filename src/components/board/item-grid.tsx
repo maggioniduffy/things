@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { groupByCollection, type GroupEntry } from "@/lib/items/group";
 import type { BoardItem } from "@/lib/items/queries";
@@ -115,8 +116,13 @@ function GroupedGrid({ pages, onRetry, onOpen, dnd }: Omit<ItemGridProps, "group
 
 /** The card grid of a board. */
 export function ItemGrid({ pages, onRetry, onOpen, dnd, groupFolders }: ItemGridProps) {
+  const dragging = useBoardDnd()?.dragging ?? false;
   return (
     <ul
+      // Below sm the entries pile up as a sticky stack (globals.css); sticky breaks dnd-kit's
+      // measurements, so the stack is off while dragging.
+      data-stack={dragging ? undefined : "true"}
+      data-dragging={dragging ? "true" : undefined}
       className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 px-4 sm:px-6"
       data-view-mode="grid"
     >

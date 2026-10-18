@@ -215,35 +215,27 @@ function FolderCards({
             ? { duration: 0.12 }
             : { duration: 0.2, ease: "easeIn", delay: Math.min(last - index, 8) * 0.025 });
         return (
-          <motion.li
+          <BoardCard
             key={item.id}
-            className="list-none"
-            style={{ transformOrigin: "50% 0%" }}
-            initial={
-              !animateIn
+            dnd={dnd}
+            item={item}
+            variant="grid"
+            thumbnailUrl={item.thumbnail_path ? signedUrls.get(item.thumbnail_path) : null}
+            onRetry={onRetry}
+            onOpen={onOpen}
+            liMotion={{
+              style: { transformOrigin: "50% 0%" },
+              initial: !animateIn
                 ? false
                 : reduced
                   ? { opacity: 0 }
-                  : { opacity: 0, scaleX: 0.55, scaleY: 0.15, y: -24 }
-            }
-            animate={{ opacity: 1, scaleX: 1, scaleY: 1, y: 0, transition: enter }}
-            exit={
-              reduced
+                  : { opacity: 0, scaleX: 0.55, scaleY: 0.15, y: -24 },
+              animate: { opacity: 1, scaleX: 1, scaleY: 1, y: 0, transition: enter },
+              exit: reduced
                 ? { opacity: 0, transition: leave }
-                : { opacity: 0, scaleX: 0.6, scaleY: 0.1, y: -24, transition: leave }
-            }
-          >
-            <ul role="presentation" className="h-full [&>li]:h-full">
-              <BoardCard
-                dnd={dnd}
-                item={item}
-                variant="grid"
-                thumbnailUrl={item.thumbnail_path ? signedUrls.get(item.thumbnail_path) : null}
-                onRetry={onRetry}
-                onOpen={onOpen}
-              />
-            </ul>
-          </motion.li>
+                : { opacity: 0, scaleX: 0.6, scaleY: 0.1, y: -24, transition: leave },
+            }}
+          />
         );
       })}
     </>
@@ -276,35 +268,39 @@ export function CollectionFolder({ collectionId, items, expanded, ...cards }: Fo
   return (
     <>
       <li className={cn("list-none", expanded && "self-start")}>
-        <AnimatePresence initial={false} mode="wait">
-          <motion.div
-            key={expanded ? "header" : "stack"}
-            className="h-full"
-            initial={userToggled ? (reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94 }) : false}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              transition: { duration: 0.16, delay: expanded ? 0 : 0.1 },
-            }}
-            exit={{ opacity: 0, transition: { duration: 0.1 } }}
-          >
-            {expanded ? (
-              <FolderChip
-                collectionId={collectionId}
-                items={items}
-                onToggle={onToggle}
-                focusOnMount={userToggled}
-              />
-            ) : (
-              <StackTile
-                collectionId={collectionId}
-                items={items}
-                onToggle={onToggle}
-                focusOnMount={userToggled}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div data-stack-card="" className="h-full">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={expanded ? "header" : "stack"}
+              className="h-full"
+              initial={
+                userToggled ? (reduced ? { opacity: 0 } : { opacity: 0, scale: 0.94 }) : false
+              }
+              animate={{
+                opacity: 1,
+                scale: 1,
+                transition: { duration: 0.16, delay: expanded ? 0 : 0.1 },
+              }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+            >
+              {expanded ? (
+                <FolderChip
+                  collectionId={collectionId}
+                  items={items}
+                  onToggle={onToggle}
+                  focusOnMount={userToggled}
+                />
+              ) : (
+                <StackTile
+                  collectionId={collectionId}
+                  items={items}
+                  onToggle={onToggle}
+                  focusOnMount={userToggled}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </li>
       <AnimatePresence initial={false}>
         {expanded ? (

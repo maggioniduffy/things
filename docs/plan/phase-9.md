@@ -54,12 +54,11 @@ Decisions taken with the owner:
 
 | Finding | Fix in |
 | --- | --- |
-| Open-folder cards each sit in a one-item `<ul role="presentation">` because `CardFrame` renders its own `<li>`; drop the wrapper with a small `board-cards.tsx` change | 9.3 or gate |
 
 ## Status (2026-10-18)
 
-- Done: 9.1 (+ review fixes), 9.2, 9.5, 9.4 (+ review fixes). e2e specs written for each, none run yet (run at the gate, alone: 6 GB RAM limit).
-- Next: 9.3 (sticky stack) → gate (reviewer + full suites + manual check of the folder stretch timing and focus, the mobile sheet on a phone, the hand tool).
+- Done: 9.1 (+ review fixes), 9.2, 9.5, 9.4 (+ review fixes), 9.3. e2e specs written for each, none run yet (run at the gate, alone: 6 GB RAM limit).
+- Next: gate (reviewer + full suites + manual check of the folder stretch timing and focus, the mobile sheet on a phone, the hand tool, the mobile stack feel: `animation-range` end and the 100svh spacer vs tap targets).
 - **Production:** WIP 9.1 reached production through PR #25 before its migration was applied to the cloud DB, so items stopped loading. Fix = `pnpm supabase db push` (applies `20261018000100_item_color.sql` only). Rule for later phases: push migrations to the cloud before merging code that reads new columns.
 - Local dev against the local stack: `.env.development.local` (git-ignored) overrides `.env.local` for `pnpm dev`.
 

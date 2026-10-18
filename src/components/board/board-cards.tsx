@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 import { memo, useCallback, useMemo, type CSSProperties, type Ref } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
 import { CardChromeContext } from "@/components/cards/card-shell";
@@ -25,6 +25,11 @@ type BoardCardProps = {
   thumbnailUrl?: string | null;
   onOpen?: (item: BoardItem) => void;
   onRetry?: (item: BoardItem) => void | Promise<void>;
+  /**
+   * Motion props for the card's own `li` (an open folder's stretch in and out). Layout animation
+   * is off while these are set.
+   */
+  liMotion?: Pick<HTMLMotionProps<"li">, "initial" | "animate" | "exit" | "style">;
 };
 
 type FrameProps = BoardCardProps & {
@@ -42,7 +47,7 @@ type FrameProps = BoardCardProps & {
 /**
  * The shared frame of a board card. The outer `motion.li` owns Motion layout; the inner element
  * owns the dnd-kit node and transform, so the two libraries never write `transform` on the same
- * element. It also carries the selected state (an outline in the focus token).
+ * element. A plain wrapper between them is the mobile stack's sticky element. It also carries the selected state (an outline in the focus token).
  */
 function CardFrame({
   item,
@@ -50,6 +55,7 @@ function CardFrame({
   thumbnailUrl,
   onOpen,
   onRetry,
+  liMotion,
   handleLabel,
   setNodeRef,
   setActivatorNodeRef,
@@ -62,7 +68,7 @@ function CardFrame({
   const reduced = useReducedMotion() ?? false;
   const selected = useUiStore((state) => state.selectedIds.includes(item.id));
 
-  const layout = ui?.dragging || reduced ? false : "position";
+  const layout = ui?.dragging || reduced || liMotion ? false : "position";
   const wasJustDragged = ui?.wasJustDragged;
   const open = useCallback(
     (target: BoardItem) => {
@@ -97,28 +103,31 @@ function CardFrame({
   );
 
   return (
-    <motion.li layout={layout} className="list-none">
-      <div
-        ref={setNodeRef}
-        {...listeners}
-        data-sortable-id={item.id}
-        data-selected={selected ? "true" : undefined}
-        style={{ ...dragStyle, opacity: carried ? 0.4 : 1 }}
-        className={cn(
-          "h-full select-none [&>*]:h-full",
-          "data-[selected=true]:*:outline-focus data-[selected=true]:*:outline-2 data-[selected=true]:*:-outline-offset-1",
-        )}
-      >
-        <CardChromeContext.Provider value={chrome}>
-          <ItemCard
-            item={item}
-            variant={variant}
-            thumbnailUrl={thumbnailUrl}
-            onOpen={open}
-            onRetry={onRetry}
-          />
-        </CardChromeContext.Provider>
-        {selected ? <span className="sr-only">Selected</span> : null}
+    <motion.li layout={layout} className="list-none" {...liMotion}>
+      {/* Mobile stack: this wrapper is the sticky, scroll-animated element (see globals.css). */}
+      <div data-stack-card="" className="h-full">
+        <div
+          ref={setNodeRef}
+          {...listeners}
+          data-sortable-id={item.id}
+          data-selected={selected ? "true" : undefined}
+          style={{ ...dragStyle, opacity: carried ? 0.4 : 1 }}
+          className={cn(
+            "h-full select-none [&>*]:h-full",
+            "data-[selected=true]:*:outline-focus data-[selected=true]:*:outline-2 data-[selected=true]:*:-outline-offset-1",
+          )}
+        >
+          <CardChromeContext.Provider value={chrome}>
+            <ItemCard
+              item={item}
+              variant={variant}
+              thumbnailUrl={thumbnailUrl}
+              onOpen={open}
+              onRetry={onRetry}
+            />
+          </CardChromeContext.Provider>
+          {selected ? <span className="sr-only">Selected</span> : null}
+        </div>
       </div>
     </motion.li>
   );
