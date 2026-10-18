@@ -44,5 +44,5 @@ test("hand tool: dragging a card pans the view and a click still opens it", asyn
 
   await node.getByRole("button", { name: /^Open / }).dblclick();
   await expect(page.getByRole("dialog")).toBeVisible();
-  expect(errors).toEqual([]);
+  errors.assertNone();
 });

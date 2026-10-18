@@ -11,6 +11,7 @@ async function seed(page: Page, context: Parameters<typeof readSession>[0]) {
     TITLES.map((title, index) => ({ kind: "note", title, position: `a${index}` })),
   );
   await page.reload();
+  await expect(page.locator("[data-item-id]")).toHaveCount(TITLES.length);
 }
 
 function tileTitles(page: Page) {
