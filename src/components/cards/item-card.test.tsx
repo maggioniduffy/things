@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BoardItem } from "@/lib/items/queries";
@@ -482,5 +482,12 @@ describe("NoteCard color", () => {
     expect(title).toHaveClass("text-ink-inverse");
     expect(excerpt).toHaveClass("text-ink-inverse-muted");
     expect(el.querySelector('[data-slot="badge"]')).toHaveClass("text-ink-inverse-muted");
+  });
+
+  it("draws the unread dot in inverse ink on graphite", () => {
+    const { container } = renderCard(
+      makeItem({ kind: "note", title: "Unread", note: "Body", color: "graphite", is_read: false }),
+    );
+    expect(within(container).getByRole("img", { name: "Unread" })).toHaveClass("bg-ink-inverse");
   });
 });

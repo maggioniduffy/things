@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { NoteColorPicker } from "./note-color-picker";
+import { KEYBOARD_SAVE_DELAY_MS, NoteColorPicker } from "./note-color-picker";
 
 const LABELS = ["Default", "Pink", "Violet", "Blue", "Red", "Coral", "Olive", "White", "Graphite"];
 
@@ -34,19 +34,46 @@ describe("NoteColorPicker", () => {
   });
 
   it("moves and selects with the arrow keys, wrapping at the ends", async () => {
-    const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<NoteColorPicker value="graphite" onChange={onChange} />);
+    render(<NoteColorPicker value="graphite" onChange={() => {}} />);
     screen.getByRole("radio", { name: "Graphite" }).focus();
     await user.keyboard("{ArrowRight}");
-    expect(onChange).toHaveBeenLastCalledWith(null);
     expect(screen.getByRole("radio", { name: "Default" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Default" })).toBeChecked();
     await user.keyboard("{ArrowLeft}");
-    expect(onChange).toHaveBeenLastCalledWith("graphite");
+    expect(screen.getByRole("radio", { name: "Graphite" })).toBeChecked();
     await user.keyboard("{Home}");
-    expect(onChange).toHaveBeenLastCalledWith(null);
+    expect(screen.getByRole("radio", { name: "Default" })).toBeChecked();
     await user.keyboard("{End}");
-    expect(onChange).toHaveBeenLastCalledWith("graphite");
+    expect(screen.getByRole("radio", { name: "Graphite" })).toBeChecked();
+  });
+
+  it("saves keyboard browsing once, after a pause", () => {
+    vi.useFakeTimers();
+    try {
+      const onChange = vi.fn();
+      render(<NoteColorPicker value={null} onChange={onChange} />);
+      for (const name of ["Default", "Pink", "Violet"]) {
+        fireEvent.keyDown(screen.getByRole("radio", { name }), { key: "ArrowRight" });
+      }
+      expect(onChange).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(KEYBOARD_SAVE_DELAY_MS));
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith("blue");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("saves a pending keyboard pick on unmount", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const { unmount } = render(<NoteColorPicker value={null} onChange={onChange} />);
+    screen.getByRole("radio", { name: "Default" }).focus();
+    await user.keyboard("{ArrowLeft}");
+    expect(onChange).not.toHaveBeenCalled();
+    unmount();
+    expect(onChange).toHaveBeenCalledWith("graphite");
   });
 
   it("puts only the checked swatch in the tab order", () => {

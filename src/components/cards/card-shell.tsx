@@ -60,8 +60,11 @@ function RetryButton({
   );
 }
 
-/** Favorite star and unread dot. Small, token-colored, announced to screen readers. */
-function CardMarkers({ item }: { item: BoardItem }) {
+/**
+ * Favorite star and unread dot. Small, token-colored, announced to screen readers. On a dark
+ * surface the dot switches to inverse ink (the blue is under 3:1 on graphite).
+ */
+function CardMarkers({ item, inverse = false }: { item: BoardItem; inverse?: boolean }) {
   if (!item.is_favorite && item.is_read) return null;
   return (
     <span data-slot="card-markers" className="flex items-center gap-1.5">
@@ -74,7 +77,10 @@ function CardMarkers({ item }: { item: BoardItem }) {
         <span
           role="img"
           aria-label="Unread"
-          className="bg-aurora-blue size-2 shrink-0 rounded-full"
+          className={cn(
+            "size-2 shrink-0 rounded-full",
+            inverse ? "bg-ink-inverse" : "bg-aurora-blue",
+          )}
         />
       ) : null}
     </span>
@@ -168,7 +174,7 @@ export function CardShell({
             {listMeta}
           </span>
         ) : null}
-        <CardMarkers item={item} />
+        <CardMarkers item={item} inverse={inverse} />
         <Badge>{kindSingularLabel(item.kind)}</Badge>
         <button
           type="button"
@@ -206,7 +212,7 @@ export function CardShell({
         >
           {kindSingularLabel(item.kind)}
         </Badge>
-        <CardMarkers item={item} />
+        <CardMarkers item={item} inverse={inverse} />
       </div>
       <p
         className={cn(

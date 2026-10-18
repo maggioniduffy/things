@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon } from "lucide-react";
-import { useId, useRef, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { focusRing } from "@/components/ui/focus-ring";
 import {
   DEFAULT_NOTE_STYLE,
@@ -29,9 +29,13 @@ const OPTIONS: Option[] = [
   })),
 ];
 
+/** How long arrow-key browsing waits before saving, so stepping through swatches saves once. */
+export const KEYBOARD_SAVE_DELAY_MS = 400;
+
 /**
  * Round swatches in a radiogroup: Default plus the eight note colors. Roving tabindex, arrow keys
- * move and select (wrapping), Home and End jump to the ends.
+ * move and select (wrapping), Home and End jump to the ends. A click saves at once; keyboard
+ * selection shows at once but saves after a pause (or on unmount), one write instead of one per key.
  */
 export function NoteColorPicker({
   value,
@@ -43,8 +47,37 @@ export function NoteColorPicker({
 }) {
   const labelId = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const current = isNoteColor(value) ? value : null;
+  const [pending, setPending] = useState<{ color: NoteColor | null } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushRef = useRef<() => void>(() => {});
+  const stored = isNoteColor(value) ? value : null;
+  const current = pending ? pending.color : stored;
   const selected = OPTIONS.findIndex((option) => option.color === current);
+
+  // The latest flush, read by the timer and the unmount cleanup (refs are written after render).
+  useEffect(() => {
+    flushRef.current = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      if (pending) onChange(pending.color);
+      setPending(null);
+    };
+  });
+  // Save a pending keyboard pick when the drawer closes before the delay runs out.
+  useEffect(() => () => flushRef.current(), []);
+
+  function choose(color: NoteColor | null) {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    setPending(null);
+    onChange(color);
+  }
+
+  function browse(color: NoteColor | null) {
+    setPending({ color });
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => flushRef.current(), KEYBOARD_SAVE_DELAY_MS);
+  }
 
   function onKeyDown(event: KeyboardEvent, index: number) {
     let next = index;
@@ -56,7 +89,7 @@ export function NoteColorPicker({
     event.preventDefault();
     next = (next + OPTIONS.length) % OPTIONS.length;
     refs.current[next]?.focus();
-    onChange(OPTIONS[next]?.color ?? null);
+    browse(OPTIONS[next]?.color ?? null);
   }
 
   return (
@@ -79,7 +112,7 @@ export function NoteColorPicker({
               aria-label={option.label}
               title={option.label}
               tabIndex={checked ? 0 : -1}
-              onClick={() => onChange(option.color)}
+              onClick={() => choose(option.color)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
                 "border-line ease-out-soft flex size-7 cursor-pointer items-center justify-center rounded-full border transition-shadow duration-(--duration-fast)",

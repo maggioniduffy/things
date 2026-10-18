@@ -26,7 +26,7 @@ test.describe("note color", () => {
     const reloaded = page.locator('[data-slot="item-tile"]').first();
     await expect(reloaded).toHaveClass(/bg-note-graphite/);
     // The title is still the card's first paragraph.
-    await expect(reloaded.locator("> p:first-of-type")).toHaveText("Tinted 1");
+    await expect(reloaded.locator(":scope > p:first-of-type")).toHaveText("Tinted 1");
 
     consoleErrors.assertNone();
   });
