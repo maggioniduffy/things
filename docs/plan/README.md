@@ -12,12 +12,12 @@ Things is a personal "save for later" web app: drop in any link, file or note, a
 | 1 Supabase, auth, guests | [phase-1.md](phase-1.md) | done (gate passed after open-redirect fix) | Phase 1 PR |
 | 2 Shell & data layer | [phase-2.md](phase-2.md) | done (gate passed after cache-isolation fix) | #5 |
 | 3 Capture | [phase-3.md](phase-3.md) | done (gate passed after concurrent-capture and rollback fixes) | Phase 3 PR |
-| 4 Browse | [phase-4.md](phase-4.md) | WP 4.1–4.4 done; gate, CHANGELOG and PR next | |
+| 4 Browse | [phase-4.md](phase-4.md) | done (gate passed after the local Analytics 404 fix; 4.4 `/api/cron/daily` runs daily from `vercel.json`, needs `CRON_SECRET` in O6) | #7 |
 | 5 Organize & DnD | [phase-5.md](phase-5.md) | done (gate passed after smart-view input and sidebar-handler fixes) | Phase 5 PR |
-| 6 Canvas | [phase-6.md](phase-6.md) | done (gate passed: unit 1388/1388, e2e 96/96, 300 cards at 59.6 fps; leftovers in phase-8) | #14 + `claude/cool-archimedes-gikegv` |
+| 6 Canvas | [phase-6.md](phase-6.md) | done (gate passed: unit 1388/1388, e2e 96/96, 300 cards at 59.6 fps; leftovers in phase-8) | Phase 6 PR |
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
-| 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | |
+| 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | Phase 9 PR |
 
 Update this table when a WP or gate lands.
 

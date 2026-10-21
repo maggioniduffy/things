@@ -97,6 +97,25 @@
 - Items that stop matching a smart view or join a tag after a drop update on the next refetch, not optimistically.
 - Very large selections send every id in one request, without chunking.
 
+### Phase 4 — Browse
+
+#### Added
+
+- A card per kind (link, video, image, PDF, note, file) on one card shell: pending and failed states with Retry, favorite and unread markers, and a full-card open button. The board renders them through `ItemGrid` and `ItemList`; the styleguide shows every card pending, done and failed, in grid and list.
+- Detail drawer opened with `?item=`, so the link survives a reload. It previews each kind (image lightbox, PDF iframe from a signed URL, YouTube/Vimeo embed or uploaded video, link card, note editor, file download), edits title, note, collection and tags, and shows the metadata.
+- Item states: opening an item marks it read; favorite, archive, trash, restore and delete forever are optimistic with rollback. Trash and archive show an Undo toast that runs the inverse mutation.
+- `/api/cron/daily`, scheduled daily at 04:00 UTC in `vercel.json`: removes trash older than 30 days (Storage objects first, then rows), sweeps orphaned Storage folders older than a day, and deletes `unfurl_log` rows older than 24 hours. Each step runs even if an earlier one fails.
+- The route checks `Authorization: Bearer <CRON_SECRET>` in constant time and answers 401 without it. It is the only place that uses the secret-key admin client (`lib/supabase/admin.ts`, server-only).
+
+#### Fixed (gate review)
+
+- Vercel Web Analytics renders only on Vercel (`process.env.VERCEL`). Elsewhere `/_vercel/insights/script.js` 404s, which logged a console error on every page and failed the e2e console checks.
+
+#### Notes
+
+- With `CRON_SECRET` unset the cron route answers 500 and does nothing; set it in Vercel together with `SUPABASE_SECRET_KEY` (owner action O6).
+- Guest cleanup joins the same cron in WP 8.4.
+
 ### Phase 3 — Capture
 
 #### Added

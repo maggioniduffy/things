@@ -26,7 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         <Grain />
-        <Analytics />
+        {/* /_vercel/insights only exists on Vercel; elsewhere the script 404s into the console. */}
+        {process.env.VERCEL && <Analytics />}
       </body>
     </html>
   );
