@@ -33,7 +33,7 @@ On the canvas, React Flow owns node position and drag; Motion animates only each
 | --- | --- | --- | --- |
 | 8.1 | B | Motion pass per the motion table; `MotionConfig reducedMotion="user"` | Reduced-motion e2e |
 | 8.2 | B ∥ | Responsive: drawer → bottom sheet (vaul), canvas pan/zoom + tap to open, sidebar as sheet | Playwright mobile viewport |
-| 8.3 | B | a11y: `@axe-core/playwright` on every route; focus rings, DnD announcements, contrast fixes; scout digests axe output between rounds | 0 critical |
+| 8.3 | B | a11y: `@axe-core/playwright` on every route; focus rings, DnD announcements, contrast fixes; researcher digests axe output between rounds | 0 critical |
 | 8.4 | B | PWA manifest + icons, error boundaries (`error.tsx`, `global-error.tsx`), guest cleanup added to `/api/cron/daily` (inactive 30 days, files then `auth.admin.deleteUser`) | Route tests |
 | 8.5 | B | 500-item grid drag at 60 fps; virtualize (`@tanstack/react-virtual`) only if the trace says so | Trace digest |
 | 8.G | R + O | Gate + production deploy (needs owner actions O2–O6); smoke test on the live URL | Live |

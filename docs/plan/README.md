@@ -32,16 +32,16 @@ Update this table when a WP or gate lands.
 | Builder (**B**) | Sonnet | Implements one WP per brief, writes its tests, runs typecheck/lint and its own tests | Commits, pushes, widens scope |
 | Reviewer (**R**) | Opus | Independent check of a WP diff or a phase gate | Fixes what it finds |
 
-Rule of thumb: a summary → scout; code → builder; a decision or verdict → Opus. In WP tables, ∥ = may run in parallel with the previous WP.
+Rule of thumb: a summary → researcher; code → builder; a decision or verdict → Opus. In WP tables, ∥ = may run in parallel with the previous WP.
 
 **The loop** (one phase = one session = one PR, branch `phase-N-<slug>`)
 
-1. Opus reads the files above; scouts verify anything research-notes doesn't cover.
+1. Opus reads the files above; researchers verify anything research-notes doesn't cover.
 2. Opus writes WP briefs (template below), orders them, marks ∥.
 3. Builder per WP → code + tests + green WP checks (typecheck, lint, the WP's own unit tests; e2e specs are written but run at the gate) → report. Parallel builders only for ∥ WPs with disjoint files, each in its own worktree.
 4. Opus reads report + diff; small fixes inline, otherwise re-brief. Reviewer on risky WPs (auth, RLS, SSRF, storage, ordering, canvas save). A "deviated" or "blocked" report goes back through Opus before anything else runs.
 5. Commit per WP: `phaseN(wpX): …`.
-6. After the last WP: gate → reviewer → scout drafts CHANGELOG → PR. The main suites run only here: every phase ends with `pnpm typecheck && pnpm lint && pnpm test && pnpm e2e` green plus its gate; failures found then are fixed before the PR.
+6. After the last WP: gate → reviewer → researcher drafts CHANGELOG → PR. The main suites run only here: every phase ends with `pnpm typecheck && pnpm lint && pnpm test && pnpm e2e` green plus its gate; failures found then are fixed before the PR.
 
 Scout findings that contradict the spec go into `docs/research-notes.md` (spec stays as-is). Non-blocking review findings go into the "Open findings" table of the phase that will fix them; once fixed, move them to [archive.md](archive.md).
 
@@ -67,10 +67,10 @@ Scout briefs are one paragraph: question, where to look, word budget, required c
 ```
 Phase N. You are the orchestrator (Opus). Read CLAUDE.md, docs/plan/README.md,
 docs/plan/phase-N.md and docs/research-notes.md (data-model.md / design.md only if needed).
-1. Send scouts for anything Phase N needs verified that research-notes doesn't cover.
+1. Send researchers for anything Phase N needs verified that research-notes doesn't cover.
 2. Write the WP briefs, then run builders WP by WP (parallel only where marked ∥, in worktrees).
 3. Review each WP (reviewer agent for auth/RLS/SSRF/storage/ordering/canvas-save WPs), commit per WP.
-4. Run the gate, have a scout draft the CHANGELOG entry, push phase-N-<slug> and open a PR.
+4. Run the gate, have a researcher draft the CHANGELOG entry, push phase-N-<slug> and open a PR.
 Stop and ask me only for owner actions or a decision that changes the spec.
 ```
 

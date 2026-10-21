@@ -13,7 +13,7 @@ Supabase (@supabase/ssr, Postgres + RLS, Storage; auth = email OTP, Google, anon
 
 ## How work is run (model routing)
 - Opus (main session): orchestrates, plans, writes WP briefs, reviews, runs gates, commits.
-- `scout` agent (Haiku): large-but-simple reading — docs, package types, codebase sweeps, logs — returns summaries.
+- `researcher` agent (Haiku wrapper around OpenCode): large-but-simple reading — docs, package types, codebase sweeps, logs — returns summaries. `tester` (same setup) writes and runs tests.
 - `builder` agent (Sonnet): implements one work package per brief; never commits.
 - `reviewer` agent (Opus): independent check of a WP diff or a phase gate.
 See docs/plan/README.md for the loop and the brief template.
@@ -40,3 +40,11 @@ pnpm supabase gen types typescript --local > src/types/database.types.ts
 ## Definition of done
 - Work package: typecheck + lint green · the WP's own new/changed unit tests green (`pnpm test <paths>`). No full suite, no e2e.
 - Phase gate: full `pnpm test` + `pnpm e2e` green (including the specs the phase's WPs wrote) · no console errors · styleguide still renders · CHANGELOG.md entry.
+
+## Delegation
+OpenCode-backed wrappers (haiku, thin; config in `opencode.json`, model `opencode/deepseek-v4.1-flash-free`). They count toward the two-agent limit.
+- `researcher`: docs/API lookups, endpoint probes, file inventories, summarizing long logs. Read-only.
+- `tester`: unit/DB tests, fixtures, long mechanical edits.
+- Give them paths, never file contents or secrets. Never send customer data.
+- Don't switch to a free model that may train on data (Big Pickle, MiMo, Nemotron); the Zen free tier for deepseek is zero-retention per opencode.ai/docs/zen.
+- Report agent results to the user in 1–3 lines. If a test failure's cause isn't obvious, the investigation goes to a stronger agent, not the tester.
