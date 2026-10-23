@@ -49,6 +49,19 @@ describe("mapAuthError", () => {
     expect(mapAuthError(new TypeError("Failed to fetch"))).toBe(AUTH_MESSAGES.network);
   });
 
+  it("maps auth server failures apart from network failures", () => {
+    expect(mapAuthError({ name: "AuthRetryableFetchError", status: 504 })).toBe(
+      AUTH_MESSAGES.server,
+    );
+    expect(
+      mapAuthError({
+        name: "AuthApiError",
+        status: 500,
+        message: "Error sending magic link email",
+      }),
+    ).toBe(AUTH_MESSAGES.server);
+  });
+
   it("falls back for unknown shapes", () => {
     expect(mapAuthError({ code: "something_new" })).toBe(AUTH_MESSAGES.unknown);
     expect(mapAuthError(null)).toBe(AUTH_MESSAGES.unknown);

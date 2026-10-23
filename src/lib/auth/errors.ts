@@ -23,6 +23,9 @@ export const AUTH_MESSAGES = {
   get accountExists() {
     return getActiveMessages().auth.errors.accountExists;
   },
+  get server() {
+    return getActiveMessages().auth.errors.server;
+  },
   get unknown() {
     return getActiveMessages().auth.errors.unknown;
   },
@@ -94,6 +97,9 @@ export function mapAuthError(error: unknown): string {
   ) {
     return AUTH_MESSAGES.invalidEmail;
   }
+  // A 5xx (or a 502–504 that supabase-js wraps as AuthRetryableFetchError) means the auth server
+  // failed, e.g. the SMTP send timed out: not the visitor's connection.
+  if (typeof status === "number" && status >= 500) return AUTH_MESSAGES.server;
   if (
     name === "AuthRetryableFetchError" ||
     status === 0 ||

@@ -11,6 +11,7 @@ export const auth = {
     network: `Can't reach ${brand}. Check your connection and try again.`,
     invalidEmail: "That email address doesn't look right. Check it and try again.",
     accountExists: `That email already has a ${brand} account. Sign in to it instead — items saved as a guest won't move over yet.`,
+    server: `${brand} couldn't do that right now. Try again in a few minutes.`,
     unknown: "Something went wrong. Try again.",
     callbackFailed: "We couldn't finish signing you in. Try again.",
   },

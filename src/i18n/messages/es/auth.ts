@@ -12,6 +12,7 @@ export const auth: Messages["auth"] = {
     network: `No podemos conectar con ${brand}. Revisá tu conexión y probá de nuevo.`,
     invalidEmail: "Ese email no parece correcto. Revisalo y probá de nuevo.",
     accountExists: `Ese email ya tiene una cuenta de ${brand}. Ingresá con ella — por ahora las cosas guardadas como invitado no se pasan.`,
+    server: `${brand} no pudo hacerlo en este momento. Probá de nuevo en unos minutos.`,
     unknown: "Algo salió mal. Probá de nuevo.",
     callbackFailed: "No pudimos terminar de ingresarte. Probá de nuevo.",
   },
