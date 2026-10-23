@@ -7,6 +7,7 @@ export const marketing = {
   nav: {
     label: "Page sections",
     howItWorks: "How it works",
+    install: "Install",
     features: "Features",
     faq: "FAQ",
   },
@@ -17,18 +18,25 @@ export const marketing = {
   },
   how: {
     title: "How it works",
+    lead: "Three steps from a stray link to something you can find in seconds.",
     steps: [
       {
         title: "Capture in one gesture",
         body: "Paste a link, drop a file or jot a note. It saves at once, with no form to fill in first.",
+        example: "Paste a link, drop a PDF or type a note.",
+        chips: ["https://…", "report.pdf", "Buy oat milk"],
       },
       {
         title: "Organize without effort",
         body: "Each save is filed by format and enriched with a title, image and thumbnail a moment later.",
+        example: "It's filed as Article, PDF or Note.",
+        chips: ["Article", "PDF", "Note"],
       },
       {
         title: "Find it again",
         body: "Search, filter by format, tag or status, and open any item for a full preview.",
+        example: "Find it with ⌘K or by format.",
+        chips: ["⌘K", "Format", "Tag"],
       },
     ],
   },

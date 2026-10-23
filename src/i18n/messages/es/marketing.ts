@@ -8,6 +8,7 @@ export const marketing: Messages["marketing"] = {
   nav: {
     label: "Secciones de la página",
     howItWorks: "Cómo funciona",
+    install: "Instalar",
     features: "Funciones",
     faq: "Preguntas frecuentes",
   },
@@ -18,18 +19,25 @@ export const marketing: Messages["marketing"] = {
   },
   how: {
     title: "Cómo funciona",
+    lead: "Tres pasos para pasar de un enlace suelto a algo que encontrás en segundos.",
     steps: [
       {
         title: "Guardá en un gesto",
         body: "Pegá un enlace, soltá un archivo o anotá algo. Se guarda al instante, sin formularios.",
+        example: "Pegá un enlace, soltá un PDF o escribí una nota.",
+        chips: ["https://…", "informe.pdf", "Comprar avena"],
       },
       {
         title: "Orden sin esfuerzo",
         body: "Cada cosa se ordena por formato y, un momento después, suma título, imagen y miniatura.",
+        example: "Se archiva como Artículo, PDF o Nota.",
+        chips: ["Artículo", "PDF", "Nota"],
       },
       {
         title: "Encontralo de nuevo",
         body: "Buscá, filtrá por formato, etiqueta o estado, y abrí cualquier cosa para verla completa.",
+        example: "Encontralo con ⌘K o por formato.",
+        chips: ["⌘K", "Formato", "Etiqueta"],
       },
     ],
   },
