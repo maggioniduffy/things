@@ -254,16 +254,17 @@ otp_expiry = 600
 # Email templates: all three show the 6-digit code ({{ .Token }}) and never a link.
 # signInWithOtp sends magic_link (existing users) or confirmation (new users);
 # updateUser({ email }) sends email_change (guest -> email upgrade).
+# Spanish when user_metadata.locale is "es" (the app sets it on sign-in, upgrade and language switch).
 [auth.email.template.magic_link]
-subject = "Your Thingteca code: {{ .Token }}"
+subject = '{{ $es := false }}{{ with .Data }}{{ if eq (printf "%v" .locale) "es" }}{{ $es = true }}{{ end }}{{ end }}{{ if $es }}Tu código de Cosateca: {{ .Token }}{{ else }}Your Thingteca code: {{ .Token }}{{ end }}'
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.confirmation]
-subject = "Your Thingteca code: {{ .Token }}"
+subject = '{{ $es := false }}{{ with .Data }}{{ if eq (printf "%v" .locale) "es" }}{{ $es = true }}{{ end }}{{ end }}{{ if $es }}Tu código de Cosateca: {{ .Token }}{{ else }}Your Thingteca code: {{ .Token }}{{ end }}'
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]
-subject = "Confirm your new email with code {{ .Token }}"
+subject = '{{ $es := false }}{{ with .Data }}{{ if eq (printf "%v" .locale) "es" }}{{ $es = true }}{{ end }}{{ end }}{{ if $es }}Confirmá tu nuevo email con el código {{ .Token }}{{ else }}Confirm your new email with code {{ .Token }}{{ end }}'
 content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize notification email template

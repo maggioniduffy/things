@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getLocale } from "@/i18n/server";
 import { isAccountConflict } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/supabase/proxy";
@@ -30,8 +31,14 @@ export async function GET(request: NextRequest) {
   if (!code) return failure();
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) return failure();
+
+  // Auth emails pick their language from user_metadata.locale; keep it in step with this site.
+  const locale = await getLocale();
+  if (data.user?.user_metadata?.locale !== locale) {
+    await supabase.auth.updateUser({ data: { locale } }).catch(() => {});
+  }
 
   return NextResponse.redirect(new URL(next ?? "/app", origin));
 }
