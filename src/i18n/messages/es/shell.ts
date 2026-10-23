@@ -93,6 +93,7 @@ export const shell: Messages["shell"] = {
 
   tagDialog: {
     renameTitle: "Renombrar etiqueta",
+    renameDescription: "Todo lo que tiene esta etiqueta la conserva con el nuevo nombre.",
     deleteTitle: (name) => `¿Eliminar #${name}?`,
     deleteDescription: "Las cosas conservan todo lo demás.",
   },

@@ -96,6 +96,7 @@ export const shell = {
 
   tagDialog: {
     renameTitle: "Rename tag",
+    renameDescription: "Every thing with this tag keeps it under the new name.",
     deleteTitle: (name: string) => `Delete #${name}?`,
     deleteDescription: "Items keep everything else.",
   },

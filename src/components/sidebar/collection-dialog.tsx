@@ -4,13 +4,13 @@ import { BanIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/i18n/client";
 import {
@@ -145,14 +145,14 @@ function CollectionForm({
         </div>
       </fieldset>
 
-      <DialogFooter>
+      <ResponsiveDialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
           {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={trimmedName === ""}>
           {editing ? t.actions.save : t.actions.create}
         </Button>
-      </DialogFooter>
+      </ResponsiveDialogFooter>
     </form>
   );
 }
@@ -201,18 +201,18 @@ function ColorSwatch({
 export function CollectionDialog({ open, onOpenChange, collection }: CollectionDialogProps) {
   const t = useT().shell;
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
             {collection ? t.collectionDialog.editTitle : t.collectionDialog.newTitle}
-          </DialogTitle>
-          <DialogDescription className="text-meta">
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription className="text-meta">
             {t.collectionDialog.description}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <CollectionForm collection={collection} close={() => onOpenChange(false)} />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

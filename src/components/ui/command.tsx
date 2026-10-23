@@ -63,7 +63,7 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "rounded-control text-body text-ink placeholder:text-ink-subtle flex h-10 w-full bg-transparent py-3 disabled:cursor-not-allowed disabled:opacity-50",
+          "rounded-control text-ink placeholder:text-ink-subtle sm:text-body flex h-10 w-full bg-transparent py-3 text-base disabled:cursor-not-allowed disabled:opacity-50",
           // Inset ring: the palette clips overflow, so an outset outline would be cut off.
           "focus-visible:outline-ring focus-visible:outline-2 focus-visible:-outline-offset-2",
           className,

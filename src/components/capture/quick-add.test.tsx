@@ -21,10 +21,10 @@ function renderOpen() {
   return render(<QuickAdd view={VIEW} />);
 }
 
-/** jsdom has no matchMedia; `desktop` picks the dialog (true) or the mobile sheet (false). */
+/** jsdom has no matchMedia; `desktop` picks the dialog (true) or the mobile sheet (false); the query is max-width, so it matches on phones. */
 function stubViewport(desktop: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: desktop,
+    matches: !desktop,
     media: query,
     addEventListener: () => {},
     removeEventListener: () => {},

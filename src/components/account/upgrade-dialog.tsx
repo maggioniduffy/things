@@ -7,12 +7,12 @@ import { toast } from "sonner";
 import { useLocale, useT } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -55,12 +55,12 @@ function FieldError({ id, message }: { id: string; message: string | null }) {
  */
 export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
         {/* Mounted only while open, so closing the dialog resets the form. */}
         <UpgradeFlow onClose={() => onOpenChange(false)} />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }
 
@@ -255,10 +255,10 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
   if (step === "code") {
     return (
       <>
-        <DialogHeader>
-          <DialogTitle>{login.checkEmailTitle}</DialogTitle>
-          <DialogDescription>{login.checkEmailBody}</DialogDescription>
-        </DialogHeader>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{login.checkEmailTitle}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>{login.checkEmailBody}</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -311,10 +311,10 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>{upgrade.title}</DialogTitle>
-        <DialogDescription>{upgrade.description}</DialogDescription>
-      </DialogHeader>
+      <ResponsiveDialogHeader>
+        <ResponsiveDialogTitle>{upgrade.title}</ResponsiveDialogTitle>
+        <ResponsiveDialogDescription>{upgrade.description}</ResponsiveDialogDescription>
+      </ResponsiveDialogHeader>
       <form onSubmit={onSendCode} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={emailId} className="text-meta text-ink font-medium">

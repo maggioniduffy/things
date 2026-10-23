@@ -5,13 +5,13 @@ import { useState } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
@@ -82,15 +82,15 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
           <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
             {t.deleteForever}
           </Button>
-          <Dialog open={confirming} onOpenChange={setConfirming}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t.deleteForeverTitle}</DialogTitle>
-                <DialogDescription>
+          <ResponsiveDialog open={confirming} onOpenChange={setConfirming}>
+            <ResponsiveDialogContent>
+              <ResponsiveDialogHeader>
+                <ResponsiveDialogTitle>{t.deleteForeverTitle}</ResponsiveDialogTitle>
+                <ResponsiveDialogDescription>
                   {t.deleteForeverBody(itemDisplayTitle(item, card))}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
+                </ResponsiveDialogDescription>
+              </ResponsiveDialogHeader>
+              <ResponsiveDialogFooter>
                 <Button variant="secondary" onClick={() => setConfirming(false)}>
                   {t.cancel}
                 </Button>
@@ -103,9 +103,9 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
                 >
                   {t.deleteForever}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </ResponsiveDialogFooter>
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
         </>
       ) : null}
     </div>

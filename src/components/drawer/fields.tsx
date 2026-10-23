@@ -76,7 +76,7 @@ export function TitleField({ item, actions }: { item: BoardItem; actions: ItemAc
         // Enter while an IME is composing confirms the composition, not the field.
         if (event.key === "Enter" && !event.nativeEvent.isComposing) event.currentTarget.blur();
       }}
-      className="text-card h-10 font-medium"
+      className="text-card sm:text-card h-10 font-medium"
     />
   );
 }
@@ -105,7 +105,7 @@ export function NoteField({ item, actions }: { item: BoardItem; actions: ItemAct
         onChange={(event) => setDraft(event.target.value)}
         onBlur={flush}
         className={cn(
-          "rounded-control border-line text-body min-h-48 w-full resize-y border px-3 py-2",
+          "rounded-control border-line sm:text-body min-h-48 w-full resize-y border px-3 py-2 text-base",
           style.surfaceClassName,
           style.inverse
             ? "text-ink-inverse placeholder:text-ink-inverse-muted"
@@ -123,7 +123,7 @@ export function NoteField({ item, actions }: { item: BoardItem; actions: ItemAct
 }
 
 const SELECT_CLASS = cn(
-  "rounded-control border-line bg-surface text-body text-ink h-9 w-full min-w-0 border px-2",
+  "rounded-control border-line bg-surface text-ink h-9 w-full min-w-0 border px-2 text-base sm:text-body",
   "ease-out-soft hover:border-ink/30 transition-[color,background-color,border-color] duration-(--duration-fast)",
   "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
 );

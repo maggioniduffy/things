@@ -12,13 +12,13 @@ import { useState } from "react";
 import { MoveDialog } from "@/components/canvas/move-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { useT } from "@/i18n/client";
 import { useBatchMove, type BatchAction } from "@/lib/items/batch-mutations";
 import type { ViewSpec } from "@/lib/views";
@@ -193,13 +193,13 @@ export function SelectionBar({ view, itemIds }: SelectionBarProps) {
         currentCollectionId={view.type === "collection" ? view.collectionId : null}
         onPick={(collectionId, label) => run({ type: "collection", id: collectionId }, label)}
       />
-      <Dialog open={confirming} onOpenChange={setConfirming}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t.deleteForeverTitle(ids.length)}</DialogTitle>
-            <DialogDescription>{t.deleteForeverBody}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
+      <ResponsiveDialog open={confirming} onOpenChange={setConfirming}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>{t.deleteForeverTitle(ids.length)}</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>{t.deleteForeverBody}</ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <ResponsiveDialogFooter>
             <Button variant="secondary" onClick={() => setConfirming(false)}>
               {t.cancel}
             </Button>
@@ -212,9 +212,9 @@ export function SelectionBar({ view, itemIds }: SelectionBarProps) {
             >
               {t.deleteForever}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }
