@@ -1,11 +1,33 @@
 ## Unreleased
 
+### Spanish — Cosateca
+
+#### Added
+
+- Spanish (rioplatense, voseo) for the whole app: landing, sign-in, guest and upgrade flows, app shell, sidebar, board, cards, drawer, capture, canvas and every toast. Typed dictionaries in `src/i18n/messages/{en,es}`; Spanish is checked against the English shape at typecheck. Glossary in `docs/i18n-glossary.md`.
+- Locale per request: language cookie, then domain (cosa.teca.plus → Spanish, thing.teca.plus → English), then Accept-Language. A language switcher in the footer and the sidebar sets the cookie on the current host and saves the choice to the account.
+- Per-locale titles, descriptions, Open Graph/Twitter images (`public/brand/og-{en,es}.png`) and web manifest (`src/app/manifest.ts`).
+- Auth emails and subjects in the user's language (`user_metadata.locale`, set on sign-in, guest start, upgrade, Google return and language switch); English when unset.
+
+#### Changed
+
+- Auth errors tell a server failure (5xx, e.g. an SMTP timeout) apart from a network error.
+- Next.js 16.4.0 → 16.4.3 (security advisories GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr).
+- Supabase email templates are excluded from Prettier (it splits Go `{{ }}` actions).
+
+#### Fixed
+
+- /app no longer crashes on the server while loading (board skeleton is a client component).
+- Render paths read copy from `useT()`/`useLocale()`, never from the module-level locale, so concurrent requests can't swap languages; `getActiveMessages()` is for event handlers and throws on the server in development.
+- Sidebar: sign out no longer overflows the account row.
+- Footer: "Buy me a coffee!" typo.
+
 ### Rename — Thingteca / Cosateca
 
 #### Changed
 
 - Things is now Thingteca (English, thing.teca.plus) and Cosateca (Spanish, cosa.teca.plus). Name updated in the UI, page titles, Open Graph and Twitter images, manifest, auth emails and docs.
-- Wordmark sets the "teca" suffix apart: the mark's blue-violet-pink gradient in color, a light weight in mono, emails and on aurora. Name lives in `src/lib/brand.ts` for the Spanish phase to switch.
+- Wordmark sets the "teca" suffix apart: the mark's blue-violet-pink gradient in color, a light weight in mono, emails and on aurora. The name comes from the i18n dictionaries (`common.brand`).
 
 ### Phase 9 — Notes & board feedback
 

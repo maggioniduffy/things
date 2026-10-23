@@ -18,6 +18,7 @@ Thingteca (English) / Cosateca (Spanish), formerly Things, is a personal "save f
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 | 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | Phase 9 PR |
+| Rename + Spanish (Cosateca) | [../i18n-glossary.md](../i18n-glossary.md) | done (unit 1469/1469; e2e `i18n.spec.ts` written, run at the next gate with local Supabase) | #28–#32 |
 
 Update this table when a WP or gate lands.
 
