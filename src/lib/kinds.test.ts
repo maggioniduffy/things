@@ -1,12 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setActiveLocale } from "@/i18n/active";
 import { ITEM_KINDS } from "@/lib/views";
-import { KIND_LABELS, kindPluralLabel, kindPluralLowercase, kindSingularLabel } from "./kinds";
+import { kindLabels, kindPluralLabel, kindPluralLowercase, kindSingularLabel } from "./kinds";
 
 describe("kinds", () => {
+  afterEach(() => setActiveLocale("en"));
+
   it("labels every item kind", () => {
     for (const kind of ITEM_KINDS) {
-      expect(KIND_LABELS[kind].singular).not.toBe("");
-      expect(KIND_LABELS[kind].plural).not.toBe("");
+      expect(kindLabels()[kind].singular).not.toBe("");
+      expect(kindLabels()[kind].plural).not.toBe("");
     }
   });
 
@@ -32,6 +35,14 @@ describe("kinds", () => {
 
   it("lower-cases plurals except PDFs", () => {
     expect(kindPluralLowercase("link")).toBe("links");
+    expect(kindPluralLowercase("pdf")).toBe("PDFs");
+  });
+
+  it("speaks Spanish in the es locale", () => {
+    setActiveLocale("es");
+    expect(kindPluralLabel("image")).toBe("Imágenes");
+    expect(kindSingularLabel("link")).toBe("Enlace");
+    expect(kindPluralLowercase("note")).toBe("notas");
     expect(kindPluralLowercase("pdf")).toBe("PDFs");
   });
 });

@@ -19,6 +19,6 @@ export const common = {
     signIn: "Sign in",
     github: "GitHub",
     changelog: "Changelog",
-    coffee: "Buy me a coffe!",
+    coffee: "Buy me a coffee!",
   },
 };

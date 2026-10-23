@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { planMove, type OrderedRow, type PositionUpdate } from "@/lib/order";
 import { createClient } from "@/lib/supabase/client";
 
@@ -57,7 +58,7 @@ export function useSidebarReorder(
     },
     onError: (_error, { previous }) => {
       queryClient.setQueryData(queryKey, previous);
-      toast.error("Couldn't move that.");
+      toast.error(getActiveMessages().shell.toasts.moveFailed);
     },
     onSettled: () => {
       // Only the last of overlapping reorders refetches, or it would flash older data.
@@ -76,7 +77,7 @@ export function useSidebarReorder(
         updates = planMove(previous, movedId, toIndex);
       } catch {
         // fractional-indexing throws on a malformed stored key.
-        toast.error("Couldn't move that.");
+        toast.error(getActiveMessages().shell.toasts.moveFailed);
         return;
       }
       if (updates.length === 0) return;

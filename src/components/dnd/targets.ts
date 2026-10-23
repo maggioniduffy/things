@@ -1,3 +1,4 @@
+import { getActiveMessages } from "@/i18n/active";
 import type { BatchAction } from "@/lib/items/batch-mutations";
 
 /** `data` of a sidebar droppable: what dropping cards on it does. */
@@ -26,22 +27,34 @@ export function dropData(target: DropTarget): SidebarDropData {
 export const INBOX_TARGET: DropTarget = {
   id: "target:inbox",
   action: { type: "collection", id: null },
-  label: "Inbox",
+  // Read when used, so it follows the active language.
+  get label() {
+    return getActiveMessages().shell.views.inbox;
+  },
 };
 export const FAVORITES_TARGET: DropTarget = {
   id: "target:favorites",
   action: { type: "favorite" },
-  label: "Favorites",
+  // Read when used, so it follows the active language.
+  get label() {
+    return getActiveMessages().shell.views.favorites;
+  },
 };
 export const ARCHIVE_TARGET: DropTarget = {
   id: "target:archive",
   action: { type: "archive" },
-  label: "Archive",
+  // Read when used, so it follows the active language.
+  get label() {
+    return getActiveMessages().shell.views.archive;
+  },
 };
 export const TRASH_TARGET: DropTarget = {
   id: "target:trash",
   action: { type: "trash" },
-  label: "Trash",
+  // Read when used, so it follows the active language.
+  get label() {
+    return getActiveMessages().shell.views.trash;
+  },
 };
 
 export function collectionTarget(id: string, name: string): DropTarget {

@@ -1,3 +1,6 @@
+import { getActiveLocale } from "@/i18n/active";
+import { INTL_LOCALE } from "@/i18n/config";
+
 const UNITS = ["B", "KB", "MB", "GB"] as const;
 
 /** Human-readable file size: "812 B", "34 KB", "1.2 MB". Null for a missing or invalid size. */
@@ -10,6 +13,11 @@ export function formatBytes(bytes: number | null | undefined): string | null {
     unit += 1;
   }
   // One decimal below 10 (1.2 MB), whole numbers above (34 KB); bytes are always whole.
-  const text = unit === 0 || value >= 10 ? Math.round(value).toString() : value.toFixed(1);
-  return `${text.replace(/\.0$/, "")} ${UNITS[unit]}`;
+  const text =
+    unit === 0 || value >= 10
+      ? Math.round(value).toString()
+      : new Intl.NumberFormat(INTL_LOCALE[getActiveLocale()], {
+          maximumFractionDigits: 1,
+        }).format(Number(value.toFixed(1)));
+  return `${text} ${UNITS[unit]}`;
 }

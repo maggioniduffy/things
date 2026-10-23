@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./dialog";
 
@@ -20,8 +21,8 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 }
 
 function CommandDialog({
-  title = "Command palette",
-  description = "Search for a command to run.",
+  title,
+  description,
   children,
   className,
   showCloseButton = false,
@@ -32,6 +33,7 @@ function CommandDialog({
   className?: string;
   showCloseButton?: boolean;
 }) {
+  const t = useT().shell.ui;
   return (
     <Dialog {...props}>
       <DialogContent
@@ -39,8 +41,8 @@ function CommandDialog({
         showCloseButton={showCloseButton}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{title ?? t.commandTitle}</DialogTitle>
+          <DialogDescription>{description ?? t.commandDescription}</DialogDescription>
         </DialogHeader>
         <Command className="bg-transparent backdrop-blur-none">{children}</Command>
       </DialogContent>

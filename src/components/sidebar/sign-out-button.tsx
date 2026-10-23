@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 import { clearBrowserQueryClient } from "@/lib/query-client";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignOutButton() {
+  const t = useT().shell;
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -21,7 +23,7 @@ export function SignOutButton() {
 
   return (
     <Button variant="secondary" size="sm" onClick={signOut} disabled={pending}>
-      Sign out
+      {t.sidebar.signOut}
     </Button>
   );
 }

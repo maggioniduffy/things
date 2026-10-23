@@ -3,6 +3,7 @@
 import { FolderIcon, HashIcon, SparklesIcon } from "lucide-react";
 import { useState } from "react";
 import { collectionTarget, tagTarget } from "@/components/dnd/targets";
+import { useT } from "@/i18n/client";
 import { auroraColorVar } from "@/lib/collections/fields";
 import { useCollectionActions } from "@/lib/collections/mutations";
 import { useSmartViewActions } from "@/lib/smart-views/mutations";
@@ -49,13 +50,14 @@ export function CollectionRow({
   count,
   onNavigate,
 }: RowProps & { collection: SidebarCollection; count?: number }) {
+  const t = useT().shell;
   const { remove } = useCollectionActions();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { setNodeRef, style, isDragging, handle } = useSortableRow(
     "collections",
     collection.id,
-    `collection ${collection.name}`,
+    t.sidebar.collectionSortLabel(collection.name),
   );
 
   return (
@@ -78,7 +80,7 @@ export function CollectionRow({
       {handle}
       <RowMenu
         name={collection.name}
-        editLabel="Edit"
+        editLabel={t.actions.edit}
         onEdit={() => setEditing(true)}
         onDelete={() => setDeleting(true)}
       />
@@ -86,8 +88,8 @@ export function CollectionRow({
       <ConfirmDeleteDialog
         open={deleting}
         onOpenChange={setDeleting}
-        title={`Delete ${collection.name}?`}
-        description="Items in it move to Inbox."
+        title={t.collectionDialog.deleteTitle(collection.name)}
+        description={t.collectionDialog.deleteDescription}
         onConfirm={() => void remove(collection.id)}
       />
     </li>
@@ -96,6 +98,7 @@ export function CollectionRow({
 
 /** One tag link with its rename / delete menu. */
 export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
+  const t = useT().shell;
   const { remove } = useTagManager();
   const [renaming, setRenaming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -111,8 +114,8 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
         drop={tagTarget(tag.id, tag.name)}
       />
       <RowMenu
-        name={`Tag ${tag.name}`}
-        editLabel="Rename"
+        name={t.sidebar.tagRowName(tag.name)}
+        editLabel={t.actions.rename}
         onEdit={() => setRenaming(true)}
         onDelete={() => setDeleting(true)}
       />
@@ -120,8 +123,8 @@ export function TagRow({ tag, onNavigate }: RowProps & { tag: SidebarTag }) {
       <ConfirmDeleteDialog
         open={deleting}
         onOpenChange={setDeleting}
-        title={`Delete #${tag.name}?`}
-        description="Items keep everything else."
+        title={t.tagDialog.deleteTitle(tag.name)}
+        description={t.tagDialog.deleteDescription}
         onConfirm={() => void remove(tag.id)}
       />
     </li>
@@ -133,13 +136,14 @@ export function SmartViewRow({
   smartView,
   onNavigate,
 }: RowProps & { smartView: SidebarSmartView }) {
+  const t = useT().shell;
   const { remove } = useSmartViewActions();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { setNodeRef, style, isDragging, handle } = useSortableRow(
     "smart-views",
     smartView.id,
-    `smart view ${smartView.name}`,
+    t.sidebar.smartViewSortLabel(smartView.name),
   );
 
   return (
@@ -160,7 +164,7 @@ export function SmartViewRow({
       {handle}
       <RowMenu
         name={smartView.name}
-        editLabel="Edit"
+        editLabel={t.actions.edit}
         onEdit={() => setEditing(true)}
         onDelete={() => setDeleting(true)}
       />
@@ -168,8 +172,8 @@ export function SmartViewRow({
       <ConfirmDeleteDialog
         open={deleting}
         onOpenChange={setDeleting}
-        title={`Delete ${smartView.name}?`}
-        description="Only the saved filter goes away. Your items stay where they are."
+        title={t.smartViewDialog.deleteTitle(smartView.name)}
+        description={t.smartViewDialog.deleteDescription}
         onConfirm={() => void remove(smartView.id)}
       />
     </li>

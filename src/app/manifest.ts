@@ -9,8 +9,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     description: m.description,
     start_url: "/app",
     display: "standalone",
-    background_color: "#f3f4f6",
-    theme_color: "#f3f4f6",
+    // --color-paper; the manifest can't read CSS variables.
+    background_color: "rgb(243 244 246)",
+    theme_color: "rgb(243 244 246)",
     icons: [
       { src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },

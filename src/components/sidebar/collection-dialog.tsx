@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/i18n/client";
 import {
   AURORA_COLORS,
   MAX_COLLECTION_NAME_LENGTH,
@@ -40,6 +41,7 @@ function CollectionForm({
   collection?: SidebarCollection;
   close: () => void;
 }) {
+  const t = useT().shell;
   const { create, update } = useCollectionActions();
   const nameId = useId();
   const emojiId = useId();
@@ -82,7 +84,7 @@ function CollectionForm({
     >
       <div className="grid gap-1.5">
         <label htmlFor={nameId} className="text-meta text-ink-muted font-medium">
-          Name
+          {t.actions.name}
         </label>
         <Input
           id={nameId}
@@ -96,7 +98,7 @@ function CollectionForm({
 
       <div className="grid gap-1.5">
         <label htmlFor={emojiId} className="text-meta text-ink-muted font-medium">
-          Emoji (optional)
+          {t.collectionDialog.emoji}
         </label>
         <Input
           id={emojiId}
@@ -113,18 +115,20 @@ function CollectionForm({
         />
         {emojiInvalid ? (
           <p id={emojiErrorId} role="alert" className="text-meta text-destructive">
-            Use a single emoji.
+            {t.collectionDialog.emojiInvalid}
           </p>
         ) : null}
       </div>
 
       <fieldset className="grid gap-1.5">
-        <legend className="text-meta text-ink-muted mb-1.5 font-medium">Color</legend>
+        <legend className="text-meta text-ink-muted mb-1.5 font-medium">
+          {t.collectionDialog.color}
+        </legend>
         <div className="flex flex-wrap gap-2">
           <ColorSwatch
             group={colorName}
             value={null}
-            label="None"
+            label={t.colors.none}
             checked={color === null}
             onSelect={() => setColor(null)}
           />
@@ -143,10 +147,10 @@ function CollectionForm({
 
       <DialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
-          Cancel
+          {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={trimmedName === ""}>
-          {editing ? "Save" : "Create"}
+          {editing ? t.actions.save : t.actions.create}
         </Button>
       </DialogFooter>
     </form>
@@ -195,13 +199,16 @@ function ColorSwatch({
 
 /** Create (no `collection`) or edit a collection: name, optional emoji, optional aurora color. */
 export function CollectionDialog({ open, onOpenChange, collection }: CollectionDialogProps) {
+  const t = useT().shell;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{collection ? "Edit collection" : "New collection"}</DialogTitle>
+          <DialogTitle>
+            {collection ? t.collectionDialog.editTitle : t.collectionDialog.newTitle}
+          </DialogTitle>
           <DialogDescription className="text-meta">
-            Items live in one collection. Items without one stay in Inbox.
+            {t.collectionDialog.description}
           </DialogDescription>
         </DialogHeader>
         <CollectionForm collection={collection} close={() => onOpenChange(false)} />

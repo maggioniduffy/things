@@ -9,6 +9,7 @@ import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
 import { KindIcon } from "@/components/kind-icon";
 import { Button } from "@/components/ui/button";
 import { focusRing } from "@/components/ui/focus-ring";
+import { useT } from "@/i18n/client";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { auroraColorVar } from "@/lib/collections/fields";
 import type { BoardItem } from "@/lib/items/queries";
@@ -53,15 +54,16 @@ export function useExpandedCollections(): ReadonlySet<string> {
 }
 
 function useFolderInfo(collectionId: string, loaded: number) {
+  const t = useT().shell;
   const collections = useQuery(collectionsQueryOptions(createClient()));
   const counts = useQuery(countsQueryOptions(createClient()));
   const collection = collections.data?.find((row) => row.id === collectionId);
   const total = counts.data?.collections[collectionId] ?? loaded;
   return {
-    name: collection?.name ?? "Collection",
+    name: collection?.name ?? t.folder.defaultName,
     emoji: collection?.emoji ?? null,
     color: auroraColorVar(collection?.color),
-    countLabel: `${total} ${total === 1 ? "item" : "items"}`,
+    countLabel: t.itemCount(total),
   };
 }
 
@@ -81,6 +83,7 @@ function FolderMark({ emoji, color }: { emoji: string | null; color: string | un
 
 /** The collection link, above the folder's main button (z-20) so it stays clickable. */
 function OpenCollectionLink({ collectionId }: { collectionId: string }) {
+  const t = useT().shell;
   return (
     <Link
       href={`/app/c/${collectionId}`}
@@ -90,7 +93,7 @@ function OpenCollectionLink({ collectionId }: { collectionId: string }) {
         focusRing,
       )}
     >
-      Open collection
+      {t.folder.openCollection}
     </Link>
   );
 }
@@ -102,6 +105,7 @@ function StackTile({
   onToggle,
   focusOnMount,
 }: Pick<FolderProps, "collectionId" | "items"> & { onToggle: () => void; focusOnMount: boolean }) {
+  const t = useT().shell;
   const { name, emoji, color, countLabel } = useFolderInfo(collectionId, items.length);
   const buttonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -142,7 +146,7 @@ function StackTile({
           ref={buttonRef}
           type="button"
           aria-expanded={false}
-          aria-label={`Open folder ${name}, ${countLabel}`}
+          aria-label={t.folder.openFolder(name, countLabel)}
           onClick={onToggle}
           className="rounded-card absolute inset-0 z-10 cursor-pointer"
         />
@@ -158,6 +162,7 @@ function FolderChip({
   onToggle,
   focusOnMount,
 }: Pick<FolderProps, "collectionId" | "items"> & { onToggle: () => void; focusOnMount: boolean }) {
+  const t = useT().shell;
   const { name, emoji, color, countLabel } = useFolderInfo(collectionId, items.length);
   const buttonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -178,10 +183,10 @@ function FolderChip({
         variant="secondary"
         size="sm"
         aria-expanded={true}
-        aria-label={`Collapse folder ${name}`}
+        aria-label={t.folder.collapseFolder(name)}
         onClick={onToggle}
       >
-        Collapse
+        {t.folder.collapse}
       </Button>
     </div>
   );

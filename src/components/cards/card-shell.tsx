@@ -6,6 +6,7 @@ import { KindIcon } from "@/components/kind-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/i18n/client";
 import { kindSingularLabel } from "@/lib/kinds";
 import type { BoardItem } from "@/lib/items/queries";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ import type { CardProps, CardType } from "./types";
 
 /** Thin bar for a file upload: determinate when progress is known, otherwise a static partial fill. */
 function UploadBar({ itemId }: { itemId: string }) {
+  const t = useT().shell;
   const progress = useUploadStore((state) => state.progress[itemId]);
   if (progress === undefined) return null;
 
@@ -23,7 +25,7 @@ function UploadBar({ itemId }: { itemId: string }) {
   return (
     <div
       role="progressbar"
-      aria-label="Uploading"
+      aria-label={t.card.uploading}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent ?? undefined}
@@ -47,6 +49,7 @@ function RetryButton({
   retry: CardStatus["retry"];
   inverse?: boolean;
 }) {
+  const t = useT().shell;
   if (!retry || !item.url) return null;
   return (
     <Button
@@ -55,7 +58,7 @@ function RetryButton({
       className={cn("relative z-20", inverse && "text-ink-inverse hover:bg-ink-inverse/10")}
       onClick={() => void retry(item)}
     >
-      Retry
+      {t.actions.retry}
     </Button>
   );
 }
@@ -65,18 +68,19 @@ function RetryButton({
  * surface the dot switches to inverse ink (the blue is under 3:1 on graphite).
  */
 function CardMarkers({ item, inverse = false }: { item: BoardItem; inverse?: boolean }) {
+  const t = useT().shell.card;
   if (!item.is_favorite && item.is_read) return null;
   return (
     <span data-slot="card-markers" className="flex items-center gap-1.5">
       {item.is_favorite ? (
-        <span role="img" aria-label="Favorite" className="text-aurora-coral flex">
+        <span role="img" aria-label={t.favorite} className="text-aurora-coral flex">
           <StarIcon aria-hidden="true" className="size-3.5 fill-current" />
         </span>
       ) : null}
       {!item.is_read ? (
         <span
           role="img"
-          aria-label="Unread"
+          aria-label={t.unread}
           className={cn(
             "size-2 shrink-0 rounded-full",
             inverse ? "bg-ink-inverse" : "bg-aurora-blue",
@@ -144,11 +148,12 @@ export function CardShell({
   inverse = false,
   onOpen,
 }: CardShellProps) {
+  const t = useT().shell.card;
   const { as: Root, dragHandle } = useContext(CardChromeContext);
   const displayTitle = itemDisplayTitle(item);
   const { pending, failed, failedCopy, retry } = status;
   // One accessible name per card; collapse line breaks of note titles.
-  const openLabel = `Open ${displayTitle.replace(/\s+/g, " ")}`;
+  const openLabel = t.open(displayTitle.replace(/\s+/g, " "));
 
   if (variant === "list") {
     return (

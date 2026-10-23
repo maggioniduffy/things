@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { SearchIcon, XIcon } from "lucide-react";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { IconButton } from "./icon-button";
 import { Input } from "./input";
@@ -24,10 +25,11 @@ function SearchField({
   onValueChange,
   onChange,
   hint = "/",
-  clearLabel = "Clear search",
+  clearLabel,
   ref,
   ...props
 }: SearchFieldProps) {
+  const t = useT().shell;
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const [innerValue, setInnerValue] = React.useState(defaultValue);
   const isControlled = value !== undefined;
@@ -73,7 +75,7 @@ function SearchField({
           type="button"
           variant="ghost"
           size="sm"
-          label={clearLabel}
+          label={clearLabel ?? t.ui.clearSearch}
           tooltip={false}
           className="absolute inset-y-0 right-0.5 my-auto"
           onClick={() => {

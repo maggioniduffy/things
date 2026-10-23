@@ -29,6 +29,7 @@ import { itemDisplayTitle } from "@/components/cards/card-status";
 import { CardChromeContext } from "@/components/cards/card-shell";
 import { ItemCard } from "@/components/cards/item-card";
 import type { CardVariant } from "@/components/cards/types";
+import { getActiveMessages } from "@/i18n/active";
 import { useBatchMove } from "@/lib/items/batch-mutations";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUiStore } from "@/stores/ui-store";
@@ -39,9 +40,6 @@ import {
   type SidebarSortData,
   type SidebarSortSection,
 } from "./targets";
-
-const SCREEN_READER_INSTRUCTIONS =
-  "To move a card, press space or enter on its handle, use the arrow keys to choose a place in the list or an item in the sidebar, then space or enter to drop. Sidebar collections and smart views can be reordered the same way. Press escape to cancel.";
 
 /** `data` every draggable card registers, so the overlay and announcements can describe it. */
 export type CardDragData = {
@@ -89,7 +87,7 @@ type ActiveDrag = { id: string; data: CardDragData; ids: readonly string[] };
 const OVERLAY_CHROME = { as: "div" as const };
 
 function plural(count: number): string {
-  return `${count} ${count === 1 ? "item" : "items"}`;
+  return getActiveMessages().shell.itemCount(count);
 }
 
 /** The card under the pointer; a stack with a count badge when it carries a selection. */
@@ -246,6 +244,8 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
   }
 
   const announcements = useMemo<Announcements>(() => {
+    // Read per announcement, so a language switch applies without remounting the provider.
+    const t = () => getActiveMessages().shell.dnd;
     const subject = (data: unknown, id: unknown): string => {
       const count = activeRef.current?.ids.length ?? 1;
       if (count > 1) return plural(count);
@@ -255,7 +255,7 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
     const place = (over: DragOverEvent["over"]): string | null => {
       const sortable = (over?.data.current as { sortable?: { index: number; items: unknown[] } })
         ?.sortable;
-      return sortable ? `position ${sortable.index + 1} of ${sortable.items.length}` : null;
+      return sortable ? t().position(sortable.index + 1, sortable.items.length) : null;
     };
     return {
       onDragStart: ({ active: dragged }) => {
@@ -263,25 +263,25 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
           ? useUiStore.getState().selectedIds.length
           : 1;
         const what = count > 1 ? plural(count) : subject(dragged.data.current, dragged.id);
-        return `Picked up ${what}.`;
+        return t().pickedUp(what);
       },
       onDragOver: ({ active: dragged, over }) => {
         if (!over) return undefined;
         const what = subject(dragged.data.current, dragged.id);
-        if (isSidebarDropData(over.data.current)) return `${what} over ${over.data.current.label}.`;
+        if (isSidebarDropData(over.data.current)) return t().over(what, over.data.current.label);
         const at = place(over);
-        return at ? `${what} moved to ${at}.` : undefined;
+        return at ? t().movedTo(what, at) : undefined;
       },
       onDragEnd: ({ active: dragged, over }) => {
         const what = subject(dragged.data.current, dragged.id);
         if (over && isSidebarDropData(over.data.current)) {
-          return `${what} dropped on ${over.data.current.label}.`;
+          return t().droppedOn(what, over.data.current.label);
         }
         const at = over ? place(over) : null;
-        return at ? `${what} dropped at ${at}.` : `${what} dropped.`;
+        return at ? t().droppedAt(what, at) : t().dropped(what);
       },
       onDragCancel: ({ active: dragged }) =>
-        `Moving ${subject(dragged.data.current, dragged.id)} was cancelled.`,
+        t().cancelled(subject(dragged.data.current, dragged.id)),
     };
   }, []);
 
@@ -313,7 +313,7 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
       collisionDetection={boardCollisionDetection}
       accessibility={{
         announcements,
-        screenReaderInstructions: { draggable: SCREEN_READER_INSTRUCTIONS },
+        screenReaderInstructions: { draggable: getActiveMessages().shell.dnd.instructions },
       }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { normalizeCollectionName } from "@/lib/collections/fields";
 import { cleanRules, type Rules } from "@/lib/filters";
 import { keyAfter } from "@/lib/order";
@@ -92,7 +93,7 @@ export function useSmartViewActions(): SmartViewActions {
     },
     onError: (_error, _row, snapshot) => {
       if (snapshot) queryClient.setQueryData(SMART_VIEWS_KEY, snapshot.views);
-      toast.error("Couldn't create that smart view.");
+      toast.error(getActiveMessages().shell.toasts.smartViewCreateFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: SMART_VIEWS_KEY }),
   });
@@ -125,7 +126,7 @@ export function useSmartViewActions(): SmartViewActions {
     },
     onError: (_error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(SMART_VIEWS_KEY, snapshot.views);
-      toast.error("Couldn't save your changes.");
+      toast.error(getActiveMessages().shell.toasts.smartViewSaveFailed);
     },
     onSettled: (_data, _error, { id, patch }) =>
       Promise.all([
@@ -155,7 +156,7 @@ export function useSmartViewActions(): SmartViewActions {
     },
     onError: (_error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(SMART_VIEWS_KEY, snapshot.views);
-      toast.error("Couldn't delete that smart view.");
+      toast.error(getActiveMessages().shell.toasts.smartViewDeleteFailed);
     },
     onSuccess: (_data, { id }) => {
       // Items are untouched: only the saved filter goes away.

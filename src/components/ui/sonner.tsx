@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { Toaster as Sonner, toast, type ToasterProps } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 
 const UNDO_DURATION_MS = 5000;
 
@@ -60,7 +61,7 @@ function undoToast(message: string, onUndo: () => void) {
   return toast(message, {
     duration: UNDO_DURATION_MS,
     action: {
-      label: "Undo",
+      label: getActiveMessages().shell.ui.undo,
       onClick: () => onUndo(),
     },
   });
