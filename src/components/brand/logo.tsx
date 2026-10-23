@@ -1,5 +1,7 @@
+"use client";
+
 import { useId } from "react";
-import { BRAND } from "@/lib/brand";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 type MarkVariant = "color" | "duo" | "mono";
@@ -70,13 +72,15 @@ function Mark({
 
 /**
  * Two-card mark + wordmark. The "teca" suffix takes the mark's gradient ("color", "duo") or a
- * light weight ("mono"). Accessible name is always the full product name.
+ * light weight ("mono"). Accessible name is always the full product name
+ * (Thingteca / Cosateca).
  */
 export function Logo({ size = 24, showWordmark = true, variant = "color", className }: LogoProps) {
+  const { brand } = useT().common;
   if (!showWordmark) {
     return (
       <span className={cn("text-ink inline-flex shrink-0", className)}>
-        <Mark size={size} variant={variant} role="img" aria-label={BRAND.name} />
+        <Mark size={size} variant={variant} role="img" aria-label={brand.name} />
       </span>
     );
   }
@@ -91,7 +95,7 @@ export function Logo({ size = 24, showWordmark = true, variant = "color", classN
         className="font-heading tracking-heading leading-none font-semibold"
         style={{ fontSize: Math.round(size * 0.9) }}
       >
-        {BRAND.stem}
+        {brand.stem}
         <span
           className={
             variant === "mono"
@@ -99,7 +103,7 @@ export function Logo({ size = 24, showWordmark = true, variant = "color", classN
               : "from-aurora-blue via-aurora-violet to-aurora-pink bg-linear-to-r bg-clip-text text-transparent"
           }
         >
-          {BRAND.suffix}
+          teca
         </span>
       </span>
     </span>
