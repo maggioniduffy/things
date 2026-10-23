@@ -10,6 +10,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { undoToast } from "@/components/ui/sonner";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import { createClient } from "@/lib/supabase/client";
@@ -114,51 +115,48 @@ export function planBatch(
   return { action, ids: changes.map((change) => change.before.id), changes };
 }
 
-function itemsLabel(count: number): string {
-  return `${count} ${count === 1 ? "item" : "items"}`;
-}
-
 /** Toast copy of a batch, e.g. "Moved 5 items to Reading". `label` is the target's name. */
 export function batchMessage(action: BatchAction, count: number, label?: string): string {
-  const items = itemsLabel(count);
+  const { inbox, toasts } = getActiveMessages().items;
   switch (action.type) {
     case "collection":
-      return `Moved ${items} to ${action.id === null ? "Inbox" : (label ?? "the collection")}`;
+      return toasts.batchMoved(count, action.id === null ? inbox : (label ?? toasts.theCollection));
     case "tag":
-      return `Added #${label ?? "tag"} to ${items}`;
+      return toasts.batchTagged(count, label ?? toasts.tagFallback);
     case "color":
-      return `Changed the color of ${count} ${count === 1 ? "note" : "notes"}`;
+      return toasts.batchColored(count);
     case "favorite":
-      return `Added ${items} to Favorites`;
+      return toasts.batchFavorited(count);
     case "archive":
-      return `Archived ${items}`;
+      return toasts.batchArchived(count);
     case "trash":
-      return `Moved ${items} to trash`;
+      return toasts.batchTrashed(count);
     case "unarchive":
-      return `Unarchived ${items}`;
+      return toasts.batchUnarchived(count);
     case "restore":
-      return `Restored ${items}`;
+      return toasts.batchRestored(count);
   }
 }
 
 function batchErrorMessage(action: BatchAction): string {
+  const { toasts } = getActiveMessages().items;
   switch (action.type) {
     case "collection":
-      return "Couldn't move those items.";
+      return toasts.errBatchMove;
     case "tag":
-      return "Couldn't add that tag.";
+      return toasts.errBatchTag;
     case "color":
-      return "Couldn't change the color.";
+      return toasts.errBatchColor;
     case "favorite":
-      return "Couldn't update favorites.";
+      return toasts.errBatchFavorite;
     case "archive":
-      return "Couldn't archive those items.";
+      return toasts.errBatchArchive;
     case "unarchive":
-      return "Couldn't unarchive those items.";
+      return toasts.errBatchUnarchive;
     case "trash":
-      return "Couldn't move those items to trash.";
+      return toasts.errBatchTrash;
     case "restore":
-      return "Couldn't restore those items.";
+      return toasts.errBatchRestore;
   }
 }
 

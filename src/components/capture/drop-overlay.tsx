@@ -1,4 +1,7 @@
+"use client";
+
 import { Aurora } from "@/components/brand";
+import { useT } from "@/i18n/client";
 
 /**
  * Full-screen "Drop to save" layer shown while an external drag is over the page. It never
@@ -6,11 +9,12 @@ import { Aurora } from "@/components/brand";
  * only (CSS), and off under prefers-reduced-motion.
  */
 export function DropOverlay({ visible }: { visible: boolean }) {
+  const t = useT().items.capture;
   return (
     <>
       {/* Announced once when it appears; the visual layer itself is aria-hidden. */}
       <div role="status" className="sr-only">
-        {visible ? "Drop to save" : ""}
+        {visible ? t.dropToSave : ""}
       </div>
       {visible ? (
         <div
@@ -21,7 +25,7 @@ export function DropOverlay({ visible }: { visible: boolean }) {
           <Aurora variant="hero" />
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="font-heading text-page tracking-heading text-ink font-semibold">
-              Drop to save
+              {t.dropToSave}
             </p>
           </div>
         </div>

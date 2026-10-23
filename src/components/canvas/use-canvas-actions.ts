@@ -47,7 +47,7 @@ export type CanvasActions = {
 function focusNoteEditor(): void {
   let tries = 0;
   const tick = () => {
-    const field = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Note"]');
+    const field = document.querySelector<HTMLTextAreaElement>("textarea[data-note-editor]");
     if (field) field.focus();
     else if ((tries += 1) < 40) setTimeout(tick, 50);
   };
@@ -100,7 +100,7 @@ export function useCanvasActions(collectionId: string | null): CanvasActions {
       void copy({
         placements: pastePlacements(clipboard, point),
         z: point.z ?? 0,
-        verb: "Pasted",
+        verb: "pasted",
         onCreated,
       });
     },
@@ -109,7 +109,7 @@ export function useCanvasActions(collectionId: string | null): CanvasActions {
 
   const duplicateCards = useCallback(
     (cards: readonly CopiedCard[], z: number, onCreated: (ids: string[]) => void) => {
-      void copy({ placements: duplicatePlacements(cards), z, verb: "Duplicated", onCreated });
+      void copy({ placements: duplicatePlacements(cards), z, verb: "duplicated", onCreated });
     },
     [copy],
   );

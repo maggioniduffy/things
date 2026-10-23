@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { useViewer } from "@/components/providers/viewer-provider";
+import { getActiveMessages } from "@/i18n/active";
 import { createClient } from "@/lib/supabase/client";
 import { placeRowAt, type CanvasTarget } from "@/lib/canvas/layout";
 import { generateNKeysBetween } from "fractional-indexing";
@@ -67,23 +68,23 @@ export function captureTargetFor(view: ViewSpec): CaptureTarget {
 // Copy
 // ---------------------------------------------------------------------------
 
-export const GUEST_QUOTA_COPY =
-  "Guest accounts can store up to 25 MB. Add an email to keep saving files.";
-const RATE_LIMIT_COPY = "Too many links saved in the last hour. Try again later.";
+/** Copy is read where it is shown, so it follows the active language. */
+export const guestQuotaCopy = (): string => getActiveMessages().items.toasts.guestQuota;
 
 /** Toast copy for an upload failure (the Retry action is added by the caller). */
 export function uploadErrorMessage(code: UploadErrorCode, fileName: string): string {
+  const copy = getActiveMessages().items.toasts;
   switch (code) {
     case "too_large":
-      return "Files can be up to 50 MB.";
+      return copy.fileTooLarge;
     case "guest_file_too_large":
-      return "Guest files can be up to 10 MB.";
+      return copy.guestFileTooLarge;
     case "guest_quota":
-      return GUEST_QUOTA_COPY;
+      return copy.guestQuota;
     case "network":
     case "aborted":
     case "unknown":
-      return `Couldn't upload ${fileName}.`;
+      return copy.errUpload(fileName);
   }
 }
 
@@ -440,7 +441,7 @@ async function enrichLink(
       // Could not save the details: fall through to the failed state so the card can be retried.
     }
   } else if (outcome.status === 429) {
-    toast.error(RATE_LIMIT_COPY);
+    toast.error(getActiveMessages().items.toasts.rateLimit);
   }
 
   const favicon = faviconFallback(item.url);
@@ -499,7 +500,9 @@ async function enrichFile(
       }
       const message = uploadErrorMessage(code, file.name);
       if (code === "network" || code === "unknown" || code === "aborted") {
-        toast.error(message, { action: { label: "Retry", onClick: retry } });
+        toast.error(message, {
+          action: { label: getActiveMessages().items.toasts.retry, onClick: retry },
+        });
       } else {
         toast.error(message);
       }
@@ -568,7 +571,9 @@ function useInsertItem() {
       // Take out exactly this card (a snapshot restore would also undo other captures in flight).
       removeFromCaches(queryClient, row);
       toast.error(
-        isGuestQuotaError(error) ? GUEST_QUOTA_COPY : `Couldn't save ${row.file_name ?? "that"}.`,
+        isGuestQuotaError(error)
+          ? guestQuotaCopy()
+          : getActiveMessages().items.toasts.errSaveFile(row.file_name),
       );
     },
   });
@@ -580,7 +585,10 @@ function useInsertItem() {
 
 function collectionName(queryClient: QueryClient, collectionId: string): string {
   const collections = queryClient.getQueryData<SidebarCollection[]>(["collections"]);
-  return collections?.find((collection) => collection.id === collectionId)?.name ?? "collection";
+  return (
+    collections?.find((collection) => collection.id === collectionId)?.name ??
+    getActiveMessages().items.toasts.savedToFallback
+  );
 }
 
 /** Tells the user where a capture went when the current view does not show it. */
@@ -589,9 +597,10 @@ function announceDestination(deps: FlowDeps, row: BoardItem): void {
   const destination: ViewSpec = row.collection_id
     ? { type: "collection", collectionId: row.collection_id }
     : { type: "inbox" };
-  const name = row.collection_id ? collectionName(deps.queryClient, row.collection_id) : "Inbox";
-  toast(`Saved to ${name}`, {
-    action: { label: "Open", onClick: () => deps.navigate(viewHref(destination)) },
+  const copy = getActiveMessages().items;
+  const name = row.collection_id ? collectionName(deps.queryClient, row.collection_id) : copy.inbox;
+  toast(copy.toasts.savedTo(name), {
+    action: { label: copy.toasts.open, onClick: () => deps.navigate(viewHref(destination)) },
   });
 }
 

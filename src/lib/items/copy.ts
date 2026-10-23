@@ -4,6 +4,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { useViewer } from "@/components/providers/viewer-provider";
 import { undoToast } from "@/components/ui/sonner";
 import { snapPoint, type CanvasTarget } from "@/lib/canvas/layout";
@@ -11,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { CanvasClipboard } from "@/stores/canvas-clipboard";
 import type { Database } from "@/types/supabase";
 import {
-  GUEST_QUOTA_COPY,
+  guestQuotaCopy,
   reservePositions,
   insertIntoCaches,
   isGuestQuotaError,
@@ -35,13 +36,15 @@ export const DUPLICATE_OFFSET = 16;
 /** A card on screen, as far as copying is concerned. */
 export type CopiedCard = { item: BoardItem; x: number; y: number; w: number; h: number };
 
+const untitled = (): string => getActiveMessages().items.untitled;
+
 /** One line of the system-clipboard text: URL for links, note text for notes, a name for files. */
 export function copyLine(item: BoardItem): string {
   const first = (...values: (string | null)[]): string | null =>
     values.map((value) => value?.trim() ?? "").find((value) => value !== "") ?? null;
-  if (item.kind === "note") return first(item.note, item.title) ?? "Untitled";
-  if (item.file_path) return first(item.title, item.file_name) ?? "Untitled";
-  return first(item.url, item.title, item.file_name) ?? "Untitled";
+  if (item.kind === "note") return first(item.note, item.title) ?? untitled();
+  if (item.file_path) return first(item.title, item.file_name) ?? untitled();
+  return first(item.url, item.title, item.file_name) ?? untitled();
 }
 
 /** The in-app clipboard for `cards` (in the order given): offsets from their bounding box. */
@@ -151,12 +154,6 @@ export function buildCopyRows(
 // Saving
 // ---------------------------------------------------------------------------
 
-const FAILED_COPY = "Couldn't paste those items.";
-
-function plural(count: number): string {
-  return `${count} ${count === 1 ? "item" : "items"}`;
-}
-
 function isQuotaFailure(error: unknown): boolean {
   if (isGuestQuotaError(error)) return true;
   const message = (error as { message?: unknown } | null)?.message;
@@ -200,7 +197,7 @@ async function deleteCopies(
       .remove(rows.flatMap((row) => storagePathsOf(row)));
     if (removed.error) throw removed.error;
   } catch {
-    toast.error("Couldn't undo that.");
+    toast.error(getActiveMessages().items.toasts.errUndo);
   }
 }
 
@@ -208,7 +205,7 @@ export type CopyRequest = {
   placements: readonly Placement[];
   /** Stack level for the first copy. */
   z: number;
-  verb: "Pasted" | "Duplicated";
+  verb: "pasted" | "duplicated";
   /** Called with the new ids once they are known, before the cards reach the lists. */
   onCreated?: (ids: string[]) => void;
 };
@@ -259,7 +256,7 @@ export function usePasteCopies(
             });
           }
           if (sources.length === 0) {
-            toast("Nothing to paste.");
+            toast(getActiveMessages().items.toasts.nothingToPaste);
             return [];
           }
           // Reserved once the sources are known, so the count is exact and no key goes unused.
@@ -271,7 +268,7 @@ export function usePasteCopies(
             now: new Date().toISOString(),
           });
         } catch {
-          toast.error(FAILED_COPY);
+          toast.error(getActiveMessages().items.toasts.errPaste);
           return [];
         }
 
@@ -313,12 +310,13 @@ export function usePasteCopies(
           // Keep the files if the rows could not be removed: they still point at them.
           const kept = inserted && (await client.from("items").delete().in("id", newIds)).error;
           if (!kept) await removeObjects(client, copied);
-          toast.error(isQuotaFailure(error) ? GUEST_QUOTA_COPY : FAILED_COPY);
+          const msgs = getActiveMessages().items.toasts;
+          toast.error(isQuotaFailure(error) ? guestQuotaCopy() : msgs.errPaste);
           return [];
         }
 
         undoToast(
-          `${request.verb} ${plural(rows.length)}`,
+          getActiveMessages().items.toasts[request.verb](rows.length),
           () => void withInFlightWrite(queryClient, () => deleteCopies(client, queryClient, rows)),
         );
         return newIds;

@@ -1,7 +1,8 @@
 import { QueryClientProvider, type InfiniteData } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setActiveLocale } from "@/i18n/active";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import { makeCounts, makeItem, makeTestQueryClient } from "@/test/fixtures";
 import {
@@ -151,6 +152,21 @@ describe("planBatch", () => {
   it("ignores ids that are not loaded", () => {
     const plan = planBatch([cards[0]!], [ids[0]!, "unknown"], { type: "favorite" });
     expect(plan.ids).toEqual([ids[0]]);
+  });
+});
+
+describe("copy in Spanish", () => {
+  afterEach(() => setActiveLocale("en"));
+
+  it("builds the toast copy with plurals", () => {
+    setActiveLocale("es");
+    expect(batchMessage({ type: "collection", id: COLLECTION }, 5, "Lectura")).toBe(
+      "Se movieron 5 cosas a Lectura",
+    );
+    expect(batchMessage({ type: "collection", id: null }, 1)).toBe(
+      "Se movió 1 cosa a Bandeja de entrada",
+    );
+    expect(batchMessage({ type: "trash" }, 3)).toBe("Se movieron 3 cosas a la papelera");
   });
 });
 

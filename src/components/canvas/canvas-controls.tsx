@@ -13,6 +13,7 @@ import {
 import { useReducedMotion } from "motion/react";
 import { useMemo } from "react";
 import { IconButton } from "@/components/ui/icon-button";
+import { useT } from "@/i18n/client";
 import { useUiStore } from "@/stores/ui-store";
 
 const ANIMATION_MS = 200;
@@ -39,6 +40,7 @@ export function useCanvasViewportActions() {
 
 /** Zoom in/out, fit all, snap and the minimap toggle. */
 export function CanvasControls() {
+  const t = useT().items.canvas;
   const viewport = useCanvasViewportActions();
   const minimap = useUiStore((state) => state.canvasMinimap);
   const toggleMinimap = useUiStore((state) => state.toggleCanvasMinimap);
@@ -52,7 +54,7 @@ export function CanvasControls() {
       <IconButton
         size="sm"
         variant={tool === "select" ? "outline" : "ghost"}
-        label="Select"
+        label={t.select}
         aria-pressed={tool === "select"}
         aria-keyshortcuts="V"
         onClick={() => setTool("select")}
@@ -62,7 +64,7 @@ export function CanvasControls() {
       <IconButton
         size="sm"
         variant={tool === "hand" ? "outline" : "ghost"}
-        label="Hand"
+        label={t.hand}
         aria-pressed={tool === "hand"}
         aria-keyshortcuts="H"
         onClick={() => setTool("hand")}
@@ -71,7 +73,7 @@ export function CanvasControls() {
       </IconButton>
       <IconButton
         size="sm"
-        label="Zoom in"
+        label={t.zoomIn}
         aria-keyshortcuts="Control+= Meta+="
         onClick={viewport.zoomIn}
       >
@@ -79,7 +81,7 @@ export function CanvasControls() {
       </IconButton>
       <IconButton
         size="sm"
-        label="Zoom out"
+        label={t.zoomOut}
         aria-keyshortcuts="Control+- Meta+-"
         onClick={viewport.zoomOut}
       >
@@ -87,7 +89,7 @@ export function CanvasControls() {
       </IconButton>
       <IconButton
         size="sm"
-        label="Fit all items"
+        label={t.fitAll}
         aria-keyshortcuts="Shift+1"
         onClick={viewport.fitAll}
       >
@@ -96,7 +98,7 @@ export function CanvasControls() {
       <IconButton
         size="sm"
         variant={snap ? "outline" : "ghost"}
-        label="Snap to grid"
+        label={t.snapToGrid}
         aria-pressed={snap}
         onClick={toggleSnap}
       >
@@ -105,7 +107,7 @@ export function CanvasControls() {
       <IconButton
         size="sm"
         variant={minimap ? "outline" : "ghost"}
-        label={minimap ? "Hide minimap" : "Show minimap"}
+        label={minimap ? t.hideMinimap : t.showMinimap}
         aria-pressed={minimap}
         onClick={toggleMinimap}
       >

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getActiveMessages } from "@/i18n/active";
 import type { Database } from "@/types/supabase";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
@@ -17,6 +18,8 @@ const MAX_NAME_LENGTH = 100;
 
 export type UploadErrorCode =
   "too_large" | "guest_file_too_large" | "guest_quota" | "network" | "aborted" | "unknown";
+
+const copy = () => getActiveMessages().items.upload;
 
 /** Typed upload failure: callers branch on `code` (toast copy lives in the UI, not here). */
 export class UploadError extends Error {
@@ -69,10 +72,10 @@ export function thumbnailPath(userId: string, itemId: string): string {
 /** Client-side size check, run before anything is inserted. `null` means the file is fine. */
 export function checkFileSize(size: number, opts: { isGuest: boolean }): UploadError | null {
   if (size > MAX_FILE_BYTES) {
-    return new UploadError("too_large", "This file is over the 50 MB limit.");
+    return new UploadError("too_large", copy().tooLarge);
   }
   if (opts.isGuest && size > GUEST_MAX_FILE_BYTES) {
-    return new UploadError("guest_file_too_large", "Guest accounts can upload files up to 10 MB.");
+    return new UploadError("guest_file_too_large", copy().guestTooLarge);
   }
   return null;
 }
@@ -139,13 +142,13 @@ function isAbortError(error: unknown): boolean {
  */
 export function toUploadError(error: unknown, opts: { isGuest: boolean }): UploadError {
   if (error instanceof UploadError) return error;
-  if (isAbortError(error)) return new UploadError("aborted", "Upload cancelled.", { cause: error });
+  if (isAbortError(error)) return new UploadError("aborted", copy().cancelled, { cause: error });
 
   const { status, text, hasResponse } = readFacts(error);
   const lower = text.toLowerCase();
 
   if (lower.includes("guest_quota_exceeded")) {
-    return new UploadError("guest_quota", "Guest storage is full.", { cause: error });
+    return new UploadError("guest_quota", copy().guestFull, { cause: error });
   }
   if (
     status === 413 ||
@@ -153,15 +156,15 @@ export function toUploadError(error: unknown, opts: { isGuest: boolean }): Uploa
     lower.includes("exceeded the maximum allowed size") ||
     lower.includes("maximum size exceeded")
   ) {
-    return new UploadError("too_large", "This file is over the 50 MB limit.", { cause: error });
+    return new UploadError("too_large", copy().tooLarge, { cause: error });
   }
   if (opts.isGuest && status === 500) {
-    return new UploadError("guest_quota", "Guest storage is full.", { cause: error });
+    return new UploadError("guest_quota", copy().guestFull, { cause: error });
   }
   if (!hasResponse) {
-    return new UploadError("network", "Network error while uploading.", { cause: error });
+    return new UploadError("network", copy().network, { cause: error });
   }
-  return new UploadError("unknown", text || "Upload failed.", { cause: error });
+  return new UploadError("unknown", text || copy().failed, { cause: error });
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +188,7 @@ type UploadArgs = {
  * Throws `UploadError`.
  */
 export async function uploadFile(args: UploadArgs): Promise<void> {
-  if (args.signal?.aborted) throw new UploadError("aborted", "Upload cancelled.");
+  if (args.signal?.aborted) throw new UploadError("aborted", copy().cancelled);
   args.onProgress?.(null);
 
   if (args.file.size > RESUMABLE_THRESHOLD_BYTES) {
@@ -219,7 +222,7 @@ async function uploadStandard({ client, file, path, contentType, isGuest, signal
   // storage-js has no abort hook: on abort we stop waiting, but the request may still finish.
   // The caller owns cleanup (remove the object) if it cares.
   return new Promise<void>((resolve, reject) => {
-    const onAbort = () => reject(new UploadError("aborted", "Upload cancelled."));
+    const onAbort = () => reject(new UploadError("aborted", copy().cancelled));
     signal.addEventListener("abort", onAbort, { once: true });
     request.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
   });
@@ -237,7 +240,7 @@ async function uploadResumable({
   const { url, publishableKey } = getSupabaseEnv();
   // Lazy: tus-js-client only loads when a large file is actually saved.
   const { Upload } = await import("tus-js-client");
-  if (signal?.aborted) throw new UploadError("aborted", "Upload cancelled.");
+  if (signal?.aborted) throw new UploadError("aborted", copy().cancelled);
 
   return new Promise<void>((resolve, reject) => {
     const upload = new Upload(file, {
@@ -280,7 +283,7 @@ async function uploadResumable({
       cleanup();
       // `true` also terminates the upload on the server so no partial object lingers.
       void upload.abort(true).catch(() => {});
-      reject(new UploadError("aborted", "Upload cancelled."));
+      reject(new UploadError("aborted", copy().cancelled));
     };
     const cleanup = () => signal?.removeEventListener("abort", onAbort);
 

@@ -13,7 +13,7 @@ import { useUiStore } from "@/stores/ui-store";
 import { useUploadStore } from "@/stores/upload-store";
 import { makeCounts, makeItem, makeTestQueryClient } from "@/test/fixtures";
 import {
-  GUEST_QUOTA_COPY,
+  guestQuotaCopy,
   buildFileRow,
   buildLinkRow,
   buildNoteRow,
@@ -371,7 +371,7 @@ describe("error copy", () => {
   it("has the toast copy per upload code", () => {
     expect(uploadErrorMessage("too_large", "a")).toBe("Files can be up to 50 MB.");
     expect(uploadErrorMessage("guest_file_too_large", "a")).toBe("Guest files can be up to 10 MB.");
-    expect(uploadErrorMessage("guest_quota", "a")).toBe(GUEST_QUOTA_COPY);
+    expect(uploadErrorMessage("guest_quota", "a")).toBe(guestQuotaCopy());
     expect(uploadErrorMessage("network", "a.pdf")).toBe("Couldn't upload a.pdf.");
     expect(uploadErrorMessage("unknown", "a.pdf")).toBe("Couldn't upload a.pdf.");
   });
@@ -767,7 +767,7 @@ describe("insert failure", () => {
     fake.state.insertResult = () => ({ error: { message: "guest_quota_exceeded", code: "P0001" } });
     await act(() => capture.current.captureFile(file("a.pdf", "application/pdf", 1000)));
 
-    expect(mocks.toast.error).toHaveBeenCalledWith(GUEST_QUOTA_COPY);
+    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy());
     expect(ids(itemsQueryKey(INBOX, "manual"))).toEqual([EXISTING.id]);
     expect(mocks.uploadFile).not.toHaveBeenCalled();
   });
@@ -901,7 +901,7 @@ describe("capturing a file", () => {
   it.each([
     ["too_large", "Files can be up to 50 MB.", false],
     ["guest_file_too_large", "Guest files can be up to 10 MB.", false],
-    ["guest_quota", GUEST_QUOTA_COPY, false],
+    ["guest_quota", guestQuotaCopy(), false],
     ["network", "Couldn't upload a.pdf.", true],
     ["unknown", "Couldn't upload a.pdf.", true],
   ] as const)(

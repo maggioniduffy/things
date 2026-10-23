@@ -3,6 +3,7 @@
 import { CheckIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { focusRing } from "@/components/ui/focus-ring";
+import { useT } from "@/i18n/client";
 import {
   DEFAULT_NOTE_STYLE,
   NOTE_COLORS,
@@ -12,18 +13,16 @@ import {
 } from "@/lib/items/note-colors";
 import { cn } from "@/lib/utils";
 
-type Option = { color: NoteColor | null; label: string; swatchClassName: string; inverse: boolean };
+type Option = { color: NoteColor | null; swatchClassName: string; inverse: boolean };
 
 const OPTIONS: Option[] = [
   {
     color: null,
-    label: DEFAULT_NOTE_STYLE.label,
     swatchClassName: DEFAULT_NOTE_STYLE.swatchClassName,
     inverse: false,
   },
   ...NOTE_COLORS.map((color) => ({
     color,
-    label: NOTE_COLOR_STYLES[color].label,
     swatchClassName: NOTE_COLOR_STYLES[color].swatchClassName,
     inverse: NOTE_COLOR_STYLES[color].inverse,
   })),
@@ -45,6 +44,7 @@ export function NoteColorPicker({
   value: string | null;
   onChange: (color: NoteColor | null) => void;
 }) {
+  const t = useT().items;
   const labelId = useId();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pending, setPending] = useState<{ color: NoteColor | null } | null>(null);
@@ -95,22 +95,23 @@ export function NoteColorPicker({
   return (
     <div className="grid gap-1.5">
       <span id={labelId} className="text-meta text-ink-muted font-medium">
-        Color
+        {t.drawer.color}
       </span>
       <div role="radiogroup" aria-labelledby={labelId} className="flex flex-wrap gap-2">
         {OPTIONS.map((option, index) => {
           const checked = index === selected;
+          const label = option.color ? t.noteColors[option.color] : t.noteColors.default;
           return (
             <button
-              key={option.label}
+              key={option.color ?? "default"}
               ref={(node) => {
                 refs.current[index] = node;
               }}
               type="button"
               role="radio"
               aria-checked={checked}
-              aria-label={option.label}
-              title={option.label}
+              aria-label={label}
+              title={label}
               tabIndex={checked ? 0 : -1}
               onClick={() => choose(option.color)}
               onKeyDown={(event) => onKeyDown(event, index)}

@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/i18n/client";
 import { itemTagsQueryKey, itemTagsQueryOptions } from "@/lib/items/item-query";
 import { noteColorStyle } from "@/lib/items/note-colors";
 import type { BoardItem } from "@/lib/items/queries";
@@ -51,6 +52,7 @@ export function useDraft(value: string, commit: (draft: string) => void) {
 }
 
 export function TitleField({ item, actions }: { item: BoardItem; actions: ItemActions }) {
+  const t = useT().items.drawer;
   const { addTagsByName } = useTagActions();
   const { draft, setDraft, flush } = useDraft(item.title ?? "", (next) => {
     const typed = next.trim();
@@ -64,9 +66,9 @@ export function TitleField({ item, actions }: { item: BoardItem; actions: ItemAc
   });
   return (
     <Input
-      aria-label="Title"
+      aria-label={t.title}
       value={draft}
-      placeholder="Untitled"
+      placeholder={t.untitledPlaceholder}
       maxLength={300}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={flush}
@@ -80,6 +82,7 @@ export function TitleField({ item, actions }: { item: BoardItem; actions: ItemAc
 }
 
 export function NoteField({ item, actions }: { item: BoardItem; actions: ItemActions }) {
+  const t = useT().items.drawer;
   const { addTagsByName } = useTagActions();
   const { draft, setDraft, flush } = useDraft(item.note ?? "", (next) => {
     if (next === (item.note ?? "")) return;
@@ -94,9 +97,10 @@ export function NoteField({ item, actions }: { item: BoardItem; actions: ItemAct
   return (
     <div className="grid gap-3">
       <textarea
-        aria-label="Note"
+        aria-label={t.note}
+        data-note-editor=""
         value={draft}
-        placeholder="Write something"
+        placeholder={t.notePlaceholder}
         rows={10}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={flush}
@@ -125,13 +129,14 @@ const SELECT_CLASS = cn(
 );
 
 export function CollectionField({ item, actions }: { item: BoardItem; actions: ItemActions }) {
+  const t = useT().items;
   const id = useId();
   const collections = useQuery(collectionsQueryOptions(createClient()));
   const options = collections.data ?? [];
   return (
     <div className="grid gap-1.5">
       <label htmlFor={id} className="text-meta text-ink-muted font-medium">
-        Collection
+        {t.drawer.collection}
       </label>
       <select
         id={id}
@@ -139,7 +144,7 @@ export function CollectionField({ item, actions }: { item: BoardItem; actions: I
         onChange={(event) => void actions.edit(item, { collection_id: event.target.value || null })}
         className={SELECT_CLASS}
       >
-        <option value="">Inbox</option>
+        <option value="">{t.inbox}</option>
         {options.map((collection) => (
           <option key={collection.id} value={collection.id}>
             {collection.emoji ? `${collection.emoji} ` : ""}
@@ -148,7 +153,7 @@ export function CollectionField({ item, actions }: { item: BoardItem; actions: I
         ))}
         {/* A collection the list does not know (still loading): keep the current value selectable. */}
         {item.collection_id && !options.some((c) => c.id === item.collection_id) ? (
-          <option value={item.collection_id}>Collection</option>
+          <option value={item.collection_id}>{t.drawer.collection}</option>
         ) : null}
       </select>
     </div>
@@ -156,6 +161,7 @@ export function CollectionField({ item, actions }: { item: BoardItem; actions: I
 }
 
 export function TagsField({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const id = useId();
   const client = createClient();
   const queryClient = useQueryClient();
@@ -187,7 +193,7 @@ export function TagsField({ item }: { item: BoardItem }) {
   return (
     <div className="grid gap-1.5">
       <span id={id} className="text-meta text-ink-muted font-medium">
-        Tags
+        {t.tags}
       </span>
       {applied.length > 0 ? (
         <ul aria-labelledby={id} className="flex flex-wrap gap-1.5">
@@ -198,7 +204,7 @@ export function TagsField({ item }: { item: BoardItem }) {
                 <IconButton
                   variant="ghost"
                   size="sm"
-                  label={`Remove tag ${tag.name}`}
+                  label={t.removeTag(tag.name)}
                   tooltip={false}
                   className="size-5"
                   onClick={() => void removeTag(item.id, tag.id)}
@@ -212,14 +218,14 @@ export function TagsField({ item }: { item: BoardItem }) {
       ) : null}
       {available.length > 0 ? (
         <select
-          aria-label="Add a tag"
+          aria-label={t.addTag}
           value=""
           onChange={(event) => {
             if (event.target.value) void addTag(item.id, event.target.value);
           }}
           className={SELECT_CLASS}
         >
-          <option value="">Add a tag…</option>
+          <option value="">{t.addTagOption}</option>
           {available.map((tag) => (
             <option key={tag.id} value={tag.id}>
               {tag.name}
@@ -228,9 +234,9 @@ export function TagsField({ item }: { item: BoardItem }) {
         </select>
       ) : null}
       <Input
-        aria-label="New tag"
+        aria-label={t.newTag}
         value={newName}
-        placeholder="New tag, then Enter"
+        placeholder={t.newTagPlaceholder}
         maxLength={MAX_TAG_LENGTH}
         onChange={(event) => setNewName(event.target.value)}
         onKeyDown={(event) => {

@@ -10,6 +10,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { undoToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
@@ -154,21 +155,35 @@ export function statePatch(
   }
 }
 
-const ERROR_COPY: Record<StateAction, string> = {
-  trash: "Couldn't move to trash.",
-  restore: "Couldn't restore that.",
-  archive: "Couldn't archive that.",
-  unarchive: "Couldn't unarchive that.",
-  favorite: "Couldn't update favorite.",
-  read: "Couldn't mark as read.",
-};
+/** Error toast copy per action, in the active language (read when the action runs). */
+function errorCopy(action: StateAction): string {
+  const copy = getActiveMessages().items.toasts;
+  return {
+    trash: copy.errTrash,
+    restore: copy.errRestore,
+    archive: copy.errArchive,
+    unarchive: copy.errUnarchive,
+    favorite: copy.errFavorite,
+    read: copy.errRead,
+  }[action];
+}
 
-const UNDO_COPY: Partial<Record<StateAction, { message: string; inverse: StateAction }>> = {
-  trash: { message: "Moved to trash", inverse: "restore" },
-  restore: { message: "Restored", inverse: "trash" },
-  archive: { message: "Archived", inverse: "unarchive" },
-  unarchive: { message: "Unarchived", inverse: "archive" },
-};
+/** Undo toast of the actions that have an inverse. */
+function undoCopy(action: StateAction): { message: string; inverse: StateAction } | undefined {
+  const copy = getActiveMessages().items.toasts;
+  switch (action) {
+    case "trash":
+      return { message: copy.movedToTrash, inverse: "restore" };
+    case "restore":
+      return { message: copy.restored, inverse: "trash" };
+    case "archive":
+      return { message: copy.archived, inverse: "unarchive" };
+    case "unarchive":
+      return { message: copy.unarchived, inverse: "archive" };
+    default:
+      return undefined;
+  }
+}
 
 function patchChange(before: BoardItem, patch: Partial<BoardItem>, errorCopy: string): ItemChange {
   return {
@@ -192,7 +207,7 @@ function deleteChange(before: BoardItem): ItemChange {
   return {
     before,
     after: null,
-    errorCopy: "Couldn't delete that.",
+    errorCopy: getActiveMessages().items.toasts.errDelete,
     write: async (client) => {
       // Objects first: if this fails the row stays and the delete can be retried, with no orphans.
       const removed = await client.storage.from(BUCKET).remove(storagePathsOf(before));
@@ -274,8 +289,8 @@ export function useItemActions(): ItemActions {
 
     async function apply(action: StateAction, item: BoardItem): Promise<void> {
       const patch = statePatch(action, item);
-      const change = patchChange(item, patch, ERROR_COPY[action]);
-      const undo = UNDO_COPY[action];
+      const change = patchChange(item, patch, errorCopy(action));
+      const undo = undoCopy(action);
       if (!undo) {
         await run(change);
         return;
@@ -299,7 +314,7 @@ export function useItemActions(): ItemActions {
         await run(deleteChange(item));
       },
       edit: async (item, fields) => {
-        await run(patchChange(item, fields, "Couldn't save your changes."));
+        await run(patchChange(item, fields, getActiveMessages().items.toasts.errSave));
       },
     };
   }, [mutateAsync]);
@@ -369,7 +384,8 @@ export function useTagActions(): TagActions {
         queryClient.setQueryData(itemTagsQueryKey(itemId), context.tags);
         for (const [key, data] of context.lists) queryClient.setQueryData(key, data);
       }
-      toast.error(attach ? "Couldn't add that tag." : "Couldn't remove that tag.");
+      const copy = getActiveMessages().items.toasts;
+      toast.error(attach ? copy.errAddTag : copy.errRemoveTag);
     },
     onSettled: async (_data, _error, { itemId }) => {
       if (queryClient.isMutating({ mutationKey: TAG_MUTATION_KEY }) > 1) return;
@@ -398,7 +414,7 @@ export function useTagActions(): TagActions {
         try {
           tags = await ensureTags(createClient(), queryClient, names);
         } catch {
-          toast.error("Couldn't add those tags.");
+          toast.error(getActiveMessages().items.toasts.errAddTags);
           return;
         }
         await run({ itemId, tagIds: tags.map((tag) => tag.id), attach: true });
