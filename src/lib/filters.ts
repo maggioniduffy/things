@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getActiveMessages } from "@/i18n/active";
 import { kindPluralLabel } from "@/lib/kinds";
 import { ITEM_KINDS } from "@/lib/views";
 
@@ -195,34 +196,33 @@ function listOf(parts: readonly string[]): string {
 
 /** Short pieces of a plain-language summary, e.g. `["PDFs and links", "unread", "last 7 days"]`. */
 export function describeRules(rules: Rules, lookups: RuleLookups): string[] {
+  const t = getActiveMessages().shell.rules;
   const clean = cleanRules(rules);
   const parts: string[] = [];
-  if (clean.kinds) parts.push(`Kind: ${listOf(clean.kinds.map(kindPluralLabel))}`);
+  if (clean.kinds) parts.push(t.kind(listOf(clean.kinds.map(kindPluralLabel))));
   if (clean.collectionIds) {
     const names = clean.collectionIds.map(
-      (id) => lookups.collections.find((collection) => collection.id === id)?.name ?? "Unknown",
+      (id) => lookups.collections.find((collection) => collection.id === id)?.name ?? t.unknown,
     );
-    parts.push(`In: ${listOf(names)}`);
+    parts.push(t.in(listOf(names)));
   }
   if (clean.tagIds) {
     const names = clean.tagIds.map((id) => {
       const name = lookups.tags.find((tag) => tag.id === id)?.name;
-      return name ? `#${name}` : "Unknown tag";
+      return name ? `#${name}` : t.unknownTag;
     });
-    parts.push(`Tagged: ${listOf(names)}`);
+    parts.push(t.tagged(listOf(names)));
   }
-  if (clean.domains) parts.push(`From: ${listOf(clean.domains)}`);
-  if (clean.isRead !== undefined) parts.push(clean.isRead ? "Read" : "Unread");
+  if (clean.domains) parts.push(t.from(listOf(clean.domains)));
+  if (clean.isRead !== undefined) parts.push(clean.isRead ? t.read : t.unread);
   if (clean.isFavorite !== undefined) {
-    parts.push(clean.isFavorite ? "Favorites" : "Not favorites");
+    parts.push(clean.isFavorite ? t.favorites : t.notFavorites);
   }
   if (clean.savedWithinDays !== undefined) {
     parts.push(
-      clean.savedWithinDays === 1
-        ? "Saved in the last day"
-        : `Saved in the last ${clean.savedWithinDays} days`,
+      clean.savedWithinDays === 1 ? t.savedLastDay : t.savedLastDays(clean.savedWithinDays),
     );
   }
-  if (clean.query) parts.push(`Matching "${clean.query}"`);
+  if (clean.query) parts.push(t.matching(clean.query));
   return parts;
 }

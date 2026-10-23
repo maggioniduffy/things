@@ -2,6 +2,7 @@ import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GUEST_BANNER_DISMISSED_KEY, resetGuestBannerDismissedForTests } from "@/lib/auth/guest";
+import { I18nProvider } from "@/i18n/client";
 import { makeCounts, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
 import { GuestBanner } from "./guest-banner";
 
@@ -92,5 +93,18 @@ describe("GuestBanner", () => {
     renderWithQuery(<GuestBanner />);
     await user.click(await screen.findByRole("button", { name: "Keep my things" }));
     expect(await screen.findByRole("dialog", { name: "Keep your things" })).toBeInTheDocument();
+  });
+
+  it("renders Spanish inside the es provider", async () => {
+    renderWithQuery(
+      <I18nProvider locale="es">
+        <GuestBanner />
+      </I18nProvider>,
+    );
+    const region = await screen.findByRole("region", { name: "Cuenta de invitado" });
+    expect(region).toHaveTextContent(
+      "Estás usando Cosateca como invitado. Sumá un email para no perder tus cosas.",
+    );
+    expect(screen.getByRole("button", { name: "Conservar mis cosas" })).toBeInTheDocument();
   });
 });

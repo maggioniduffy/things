@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/drawer";
 import { Kbd } from "@/components/ui/kbd";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useT } from "@/i18n/client";
 import { useCapture } from "@/lib/items/mutations";
 import { noteTagging } from "@/lib/tags/parse";
 import type { ViewSpec } from "@/lib/views";
@@ -48,6 +49,7 @@ function useAutoGrow(value: string) {
 
 /** The dialog body; mounted only while open, so the draft starts empty every time. */
 function QuickAddForm({ capture, close }: { capture: Capture; close: () => void }) {
+  const t = useT().items.capture;
   const [text, setText] = useState("");
   const textareaRef = useAutoGrow(text);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -81,8 +83,8 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
         ref={textareaRef}
         value={text}
         rows={3}
-        aria-label="Link or note"
-        placeholder="Paste a link or write a note"
+        aria-label={t.fieldLabel}
+        placeholder={t.fieldPlaceholder}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={(event) => {
           // Enter while an IME is composing confirms the composition, not the form.
@@ -122,10 +124,10 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
       {/* A plain row, so it reads the same in the dialog and the mobile sheet. */}
       <div className="flex flex-row justify-between gap-2">
         <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
-          Choose files
+          {t.chooseFiles}
         </Button>
         <Button type="submit" disabled={empty}>
-          Save
+          {t.save}
         </Button>
       </div>
     </form>
@@ -138,6 +140,7 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
  * compact bottom sheet that stays above the on-screen keyboard.
  */
 export function QuickAdd({ view }: { view: ViewSpec }) {
+  const t = useT().items.capture;
   const capture = useCapture(view);
   const open = useUiStore((state) => state.quickAddOpen);
   const setOpen = useUiStore((state) => state.setQuickAddOpen);
@@ -169,10 +172,8 @@ export function QuickAdd({ view }: { view: ViewSpec }) {
           onCloseAutoFocus={restoreOpener}
         >
           <DrawerHeader>
-            <DrawerTitle>Add</DrawerTitle>
-            <DrawerDescription className="sr-only">
-              Press Enter to save, Shift and Enter for a new line.
-            </DrawerDescription>
+            <DrawerTitle>{t.add}</DrawerTitle>
+            <DrawerDescription className="sr-only">{t.shortcutHint}</DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4">
             <QuickAddForm capture={capture} close={() => setOpen(false)} />
@@ -186,9 +187,9 @@ export function QuickAdd({ view }: { view: ViewSpec }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent onOpenAutoFocus={rememberOpener} onCloseAutoFocus={restoreOpener}>
         <DialogHeader>
-          <DialogTitle>Add</DialogTitle>
+          <DialogTitle>{t.add}</DialogTitle>
           <DialogDescription className="text-meta">
-            <Kbd>Enter</Kbd> to save, <Kbd>Shift</Kbd> + <Kbd>Enter</Kbd> for a new line.
+            <Kbd>Enter</Kbd> {t.enterToSave} <Kbd>Shift</Kbd> + <Kbd>Enter</Kbd> {t.forNewLine}
           </DialogDescription>
         </DialogHeader>
         <QuickAddForm capture={capture} close={() => setOpen(false)} />

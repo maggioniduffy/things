@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getActiveMessages } from "@/i18n/active";
+import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUploadStore } from "@/stores/upload-store";
 import type { CardProps } from "./types";
@@ -9,6 +11,7 @@ const NOTE_TITLE_MAX = 140;
 
 export function itemDisplayTitle(item: BoardItem): string {
   const note = item.note?.trim() ?? "";
+  const t = getActiveMessages().shell.card;
   const noteTitle =
     note.length > NOTE_TITLE_MAX ? `${note.slice(0, NOTE_TITLE_MAX).trimEnd()}…` : note;
   return (
@@ -16,7 +19,7 @@ export function itemDisplayTitle(item: BoardItem): string {
     item.url ||
     item.file_name ||
     noteTitle ||
-    (item.kind === "note" ? "Empty note" : "Untitled")
+    (item.kind === "note" ? t.emptyNote : t.untitled)
   );
 }
 
@@ -49,6 +52,7 @@ export type CardStatus = {
 
 /** Capture status of a card: pending, failed (including stale pending) and the Retry action. */
 export function useCardStatus(item: BoardItem, onRetry: CardProps["onRetry"]): CardStatus {
+  const t = useT().shell.card;
   const [now, setNow] = useState(() => Date.now());
   const isPendingRow = item.enrich_status === "pending";
   // A pending card re-checks now and then, so a capture interrupted by a reload turns into Retry.
@@ -74,7 +78,7 @@ export function useCardStatus(item: BoardItem, onRetry: CardProps["onRetry"]): C
   return {
     pending: item.enrich_status === "pending" && !stale,
     failed: item.enrich_status === "failed" || stale,
-    failedCopy: item.file_path ? "Upload didn't finish" : "Couldn't fetch details",
+    failedCopy: item.file_path ? t.uploadIncomplete : t.fetchFailed,
     retry,
   };
 }

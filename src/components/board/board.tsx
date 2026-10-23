@@ -10,6 +10,7 @@ import { PasteListener } from "@/components/capture/paste-listener";
 import { QuickAdd } from "@/components/capture/quick-add";
 import { CanvasView } from "@/components/canvas/canvas-view";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 import { useRetryEnrich } from "@/lib/items/mutations";
 import { itemsInfiniteQueryOptions } from "@/lib/items/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -26,6 +27,7 @@ import { Toolbar, useEffectiveViewMode, useViewInfo } from "./toolbar";
 type BoardProps = { view: ViewSpec; sort: SortMode };
 
 export function Board({ view, sort }: BoardProps) {
+  const t = useT().shell.board;
   const query = useInfiniteQuery(itemsInfiniteQueryOptions(createClient(), view, sort));
   const info = useViewInfo(view);
   const viewMode = useEffectiveViewMode(view);
@@ -153,9 +155,9 @@ export function Board({ view, sort }: BoardProps) {
         role="alert"
         className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center"
       >
-        <p className="text-body text-ink">Couldn&apos;t load your things.</p>
+        <p className="text-body text-ink">{t.loadFailed}</p>
         <Button variant="secondary" onClick={() => void query.refetch()}>
-          Try again
+          {t.tryAgain}
         </Button>
       </div>
     );
@@ -169,9 +171,9 @@ export function Board({ view, sort }: BoardProps) {
       <>
         {hasNextPage ? (
           <div role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center">
-            <p className="text-body text-ink">Couldn&apos;t load all your things.</p>
+            <p className="text-body text-ink">{t.loadAllFailed}</p>
             <Button variant="secondary" onClick={() => void fetchNextPage()}>
-              Try again
+              {t.tryAgain}
             </Button>
           </div>
         ) : null}
@@ -229,9 +231,9 @@ export function Board({ view, sort }: BoardProps) {
         <div ref={sentinelRef} aria-hidden="true" className="h-px" />
         {hasNextPage && isFetchNextPageError && !isFetchingNextPage ? (
           <div role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center">
-            <p className="text-body text-ink">Couldn&apos;t load more things.</p>
+            <p className="text-body text-ink">{t.loadMoreFailed}</p>
             <Button variant="secondary" onClick={() => void fetchNextPage()}>
-              Try again
+              {t.tryAgain}
             </Button>
           </div>
         ) : hasNextPage ? (
@@ -241,7 +243,7 @@ export function Board({ view, sort }: BoardProps) {
               onClick={() => void fetchNextPage()}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage ? "Loading…" : "Load more"}
+              {isFetchingNextPage ? t.loading : t.loadMore}
             </Button>
           </div>
         ) : (

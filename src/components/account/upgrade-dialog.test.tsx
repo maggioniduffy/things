@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { I18nProvider } from "@/i18n/client";
 import { UpgradeDialog } from "./upgrade-dialog";
 
 const mocks = vi.hoisted(() => ({
@@ -62,7 +63,7 @@ describe("UpgradeDialog", () => {
     await requestCode(user);
 
     expect(mocks.updateUser).toHaveBeenCalledWith(
-      { email: "me@example.com" },
+      { email: "me@example.com", data: { locale: "en" } },
       { emailRedirectTo: `${window.location.origin}/auth/callback?next=/app` },
     );
     expect(await screen.findByLabelText(/Enter the 6-digit code we sent to/)).toBeInTheDocument();
@@ -152,5 +153,20 @@ describe("UpgradeDialog", () => {
     renderOpen();
     await user.click(screen.getByRole("button", { name: "Link Google" }));
     expect(await screen.findByRole("button", { name: "Sign in instead" })).toBeInTheDocument();
+  });
+
+  it("sends the es locale with the email change under the Spanish provider", async () => {
+    const user = userEvent.setup();
+    render(
+      <I18nProvider locale="es">
+        <UpgradeDialog open onOpenChange={vi.fn()} />
+      </I18nProvider>,
+    );
+    await user.type(screen.getByLabelText("Email"), "me@example.com");
+    await user.click(screen.getByRole("button", { name: "Enviar código" }));
+    expect(mocks.updateUser).toHaveBeenCalledWith(
+      { email: "me@example.com", data: { locale: "es" } },
+      expect.anything(),
+    );
   });
 });

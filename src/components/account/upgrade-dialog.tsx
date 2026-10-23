@@ -4,6 +4,7 @@ import { LoaderCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useLocale, useT } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,6 +66,8 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
 
 function UpgradeFlow({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const { login, upgrade } = useT().auth;
+  const locale = useLocale();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -115,7 +118,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
     setPending("send");
     try {
       const { error: updateError } = await createClient().auth.updateUser(
-        { email: address },
+        { email: address, data: { locale } },
         { emailRedirectTo: callbackUrl() },
       );
       if (updateError) {
@@ -155,7 +158,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
         codeInput.current?.focus();
         return;
       }
-      toast.success(`Your things are saved to ${email}.`);
+      toast.success(upgrade.saved(email));
       onClose();
       router.refresh();
     } catch (thrown) {
@@ -244,7 +247,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
         aria-busy={pending === "leave"}
       >
         {pending === "leave" ? <Spinner /> : null}
-        Sign in instead
+        {upgrade.signInInstead}
       </Button>
     </div>
   ) : null;
@@ -253,10 +256,8 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
     return (
       <>
         <DialogHeader>
-          <DialogTitle>Check your email</DialogTitle>
-          <DialogDescription>
-            Codes expire after 10 minutes. Nothing arrived? Check spam, or send a new one.
-          </DialogDescription>
+          <DialogTitle>{login.checkEmailTitle}</DialogTitle>
+          <DialogDescription>{login.checkEmailBody}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(event) => {
@@ -267,8 +268,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
         >
           <div className="flex flex-col gap-1.5">
             <label htmlFor={codeId} className="text-body text-ink-muted">
-              Enter the 6-digit code we sent to{" "}
-              <span className="text-ink font-medium break-all">{email}</span>
+              {login.codeLabel} <span className="text-ink font-medium break-all">{email}</span>
             </label>
             <OtpCodeInput
               ref={codeInput}
@@ -287,11 +287,11 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
           </div>
           <Button type="submit" disabled={pending === "verify"} aria-busy={pending === "verify"}>
             {pending === "verify" ? <Spinner /> : null}
-            Verify
+            {login.verify}
           </Button>
           <div className="flex flex-wrap items-center justify-between gap-x-2">
             <Button type="button" variant="ghost" size="sm" onClick={useDifferentEmail}>
-              Use a different email
+              {login.useDifferentEmail}
             </Button>
             <Button
               type="button"
@@ -301,7 +301,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
               disabled={cooldown > 0 || pending !== null}
             >
               {pending === "resend" ? <Spinner /> : null}
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+              {cooldown > 0 ? login.resendIn(cooldown) : login.resend}
             </Button>
           </div>
         </form>
@@ -312,23 +312,20 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Keep your things</DialogTitle>
-        <DialogDescription>
-          Add an email and we&apos;ll send a 6-digit code. Everything you&apos;ve saved stays right
-          where it is.
-        </DialogDescription>
+        <DialogTitle>{upgrade.title}</DialogTitle>
+        <DialogDescription>{upgrade.description}</DialogDescription>
       </DialogHeader>
       <form onSubmit={onSendCode} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={emailId} className="text-meta text-ink font-medium">
-            Email
+            {login.emailLabel}
           </label>
           <Input
             id={emailId}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder={login.emailPlaceholder}
             required
             value={email}
             onChange={(event) => {
@@ -343,15 +340,15 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
           <FieldError id={errorId} message={error} />
         </div>
         {conflictNotice}
-        <AuroraButton type="submit" pending={pending === "send"} pendingLabel="Sending…">
-          Send code
+        <AuroraButton type="submit" pending={pending === "send"} pendingLabel={login.sending}>
+          {login.sendCode}
         </AuroraButton>
       </form>
       {googleEnabled ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3" aria-hidden="true">
             <Separator className="flex-1" />
-            <span className="text-meta text-ink-subtle">or</span>
+            <span className="text-meta text-ink-subtle">{login.or}</span>
             <Separator className="flex-1" />
           </div>
           <GoogleButton
@@ -359,7 +356,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
             pending={pending === "google"}
             disabled={pending !== null}
           >
-            Link Google
+            {upgrade.linkGoogle}
           </GoogleButton>
         </div>
       ) : null}

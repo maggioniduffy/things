@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useT } from "@/i18n/client";
 
 type ConfirmDeleteDialogProps = {
   open: boolean;
@@ -27,6 +28,7 @@ export function ConfirmDeleteDialog({
   description,
   onConfirm,
 }: ConfirmDeleteDialogProps) {
+  const t = useT().shell;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false}>
@@ -36,7 +38,7 @@ export function ConfirmDeleteDialog({
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t.actions.cancel}
           </Button>
           <Button
             type="button"
@@ -46,7 +48,7 @@ export function ConfirmDeleteDialog({
               onConfirm();
             }}
           >
-            Delete
+            {t.actions.delete}
           </Button>
         </DialogFooter>
       </DialogContent>

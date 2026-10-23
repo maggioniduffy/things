@@ -5,6 +5,7 @@ import { useState } from "react";
 import { GoogleButton } from "@/components/account/google-button";
 import { GuestStartButton } from "@/components/account/guest-start-button";
 import { OtpForm } from "@/components/account/otp-form";
+import { useLocale, useT } from "@/i18n/client";
 import { Separator } from "@/components/ui/separator";
 import { AUTH_MESSAGES, mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -15,16 +16,16 @@ type LoginPanelProps = {
   callbackError: "generic" | "account_exists" | null;
 };
 
-const CALLBACK_FAILED_MESSAGE = "We couldn't finish signing you in. Try again.";
-
 export function LoginPanel({ next, callbackError }: LoginPanelProps) {
   const router = useRouter();
+  const { login } = useT().auth;
+  const locale = useLocale();
   const [googlePending, setGooglePending] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(
     callbackError === "account_exists"
       ? AUTH_MESSAGES.accountExists
       : callbackError
-        ? CALLBACK_FAILED_MESSAGE
+        ? AUTH_MESSAGES.callbackFailed
         : null,
   );
   // Referenced literally so Next inlines it; unset locally so no broken button shows.
@@ -43,7 +44,7 @@ export function LoginPanel({ next, callbackError }: LoginPanelProps) {
       if (next) callback.searchParams.set("next", next);
       const { error } = await createClient().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: callback.toString() },
+        options: { redirectTo: callback.toString(), queryParams: { hl: locale } },
       });
       if (error) {
         setGoogleError(mapAuthError(error));
@@ -69,12 +70,12 @@ export function LoginPanel({ next, callbackError }: LoginPanelProps) {
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3" aria-hidden="true">
           <Separator className="flex-1" />
-          <span className="text-meta text-ink-subtle">or</span>
+          <span className="text-meta text-ink-subtle">{login.or}</span>
           <Separator className="flex-1" />
         </div>
         {googleEnabled ? (
           <GoogleButton onClick={continueWithGoogle} pending={googlePending}>
-            Continue with Google
+            {login.continueWithGoogle}
           </GoogleButton>
         ) : null}
         <GuestStartButton variant="ghost" className="w-full" />

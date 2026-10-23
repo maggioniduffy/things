@@ -5,6 +5,7 @@ import { GuestBanner } from "@/components/account/guest-banner";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ViewerProvider } from "@/components/providers/viewer-provider";
+import { getT } from "@/i18n/server";
 import { makeQueryClient } from "@/lib/query-client";
 import {
   collectionsQueryOptions,
@@ -14,10 +15,10 @@ import {
 } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = {
-  title: "Thingteca",
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { meta } = await getT();
+  return { title: meta.app.title, robots: { index: false } };
+}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Re-evaluated on router.refresh(), so the banner leaves as soon as a guest upgrades.

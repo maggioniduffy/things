@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
 import type { ViewSpec } from "@/lib/views";
@@ -26,6 +27,7 @@ type ItemActionBarProps = {
 
 /** Favorite, archive, trash / restore, and (only in the Trash view) delete forever. */
 export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarProps) {
+  const t = useT().items.drawer;
   const [confirming, setConfirming] = useState(false);
   const trashed = item.deleted_at !== null;
   const archived = item.archived_at !== null;
@@ -45,19 +47,19 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
         onClick={() => void actions.toggleFavorite(item)}
       >
         <StarIcon className={item.is_favorite ? "fill-current" : undefined} />
-        {item.is_favorite ? "Unfavorite" : "Favorite"}
+        {item.is_favorite ? t.unfavorite : t.favorite}
       </Button>
 
       {!trashed ? (
         archived ? (
           <Button variant="secondary" size="sm" onClick={() => leave(actions.unarchive(item))}>
             <ArchiveRestoreIcon />
-            Unarchive
+            {t.unarchive}
           </Button>
         ) : (
           <Button variant="secondary" size="sm" onClick={() => leave(actions.archive(item))}>
             <ArchiveIcon />
-            Archive
+            {t.archive}
           </Button>
         )
       ) : null}
@@ -65,32 +67,31 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
       {trashed ? (
         <Button variant="secondary" size="sm" onClick={() => leave(actions.restore(item))}>
           <Undo2Icon />
-          Restore
+          {t.restore}
         </Button>
       ) : (
         <Button variant="destructive" size="sm" onClick={() => leave(actions.trash(item))}>
           <Trash2Icon />
-          Move to trash
+          {t.moveToTrash}
         </Button>
       )}
 
       {trashed && view.type === "trash" ? (
         <>
           <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
-            Delete forever
+            {t.deleteForever}
           </Button>
           <Dialog open={confirming} onOpenChange={setConfirming}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Delete forever?</DialogTitle>
+                <DialogTitle>{t.deleteForeverTitle}</DialogTitle>
                 <DialogDescription>
-                  &ldquo;{itemDisplayTitle(item)}&rdquo; and its file will be permanently deleted.
-                  This can&apos;t be undone.
+                  {t.deleteForeverBody(itemDisplayTitle(item))}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
                 <Button variant="secondary" onClick={() => setConfirming(false)}>
-                  Cancel
+                  {t.cancel}
                 </Button>
                 <Button
                   variant="destructive"
@@ -99,7 +100,7 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
                     leave(actions.deleteForever(item));
                   }}
                 >
-                  Delete forever
+                  {t.deleteForever}
                 </Button>
               </DialogFooter>
             </DialogContent>

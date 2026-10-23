@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { itemTagsQueryKey } from "@/lib/items/item-query";
 import type { SidebarTag } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,8 @@ const TAGS_KEY = ["tags"] as const;
 const TAG_COLUMNS = "id,name,color";
 const UNIQUE_VIOLATION = "23505";
 
-export const DUPLICATE_TAG_COPY = "You already have a tag with that name.";
+/** Shown when a tag name is already taken (read at call time, so it follows the locale). */
+export const duplicateTagCopy = () => getActiveMessages().shell.toasts.tagDuplicate;
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -159,7 +161,7 @@ export async function attachTagNames(
       tags.map((tag) => tag.id),
     );
   } catch {
-    toast.error("Couldn't add those tags.");
+    toast.error(getActiveMessages().shell.toasts.tagsAddFailed);
   } finally {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: itemTagsQueryKey(itemId) }),
@@ -219,7 +221,7 @@ export function useTagManager(): TagManager {
     },
     onError: (_error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(TAGS_KEY, snapshot.tags);
-      toast.error("Couldn't create that tag.");
+      toast.error(getActiveMessages().shell.toasts.tagCreateFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: TAGS_KEY }),
   });
@@ -243,7 +245,11 @@ export function useTagManager(): TagManager {
     },
     onError: (error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(TAGS_KEY, snapshot.tags);
-      toast.error(isUniqueViolation(error) ? DUPLICATE_TAG_COPY : "Couldn't rename that tag.");
+      toast.error(
+        isUniqueViolation(error)
+          ? duplicateTagCopy()
+          : getActiveMessages().shell.toasts.tagRenameFailed,
+      );
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: TAGS_KEY }),
   });
@@ -279,7 +285,7 @@ export function useTagManager(): TagManager {
         queryClient.setQueryData(TAGS_KEY, context.tags);
         for (const [key, ids] of context.itemTags) queryClient.setQueryData(key, ids);
       }
-      toast.error("Couldn't delete that tag.");
+      toast.error(getActiveMessages().shell.toasts.tagDeleteFailed);
     },
     onSuccess: (_data, { id }) => {
       if (pathnameRef.current === viewHref({ type: "tag", tagId: id })) router.push("/app");
@@ -315,7 +321,7 @@ export function useTagManager(): TagManager {
         const current = cachedTags(queryClient).find((tag) => tag.id === id);
         if (!isValidTagName(name) || current?.name === name) return false;
         if (findTagByName(cachedTags(queryClient), name, id)) {
-          toast.error(DUPLICATE_TAG_COPY);
+          toast.error(duplicateTagCopy());
           return false;
         }
         try {

@@ -4,6 +4,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { patchInPages } from "@/lib/items/cache";
 import type { BoardItem, ItemsPage } from "@/lib/items/queries";
 import { getSupabaseEnv } from "@/lib/supabase/env";
@@ -17,7 +18,7 @@ export type CanvasRect = { id: string; x: number; y: number; w: number; h: numbe
 export type CanvasRestore = { id: string; rect: CanvasRect | null };
 
 export const LAYOUT_DEBOUNCE_MS = 400;
-export const LAYOUT_SAVE_ERROR = "Couldn't save the canvas layout.";
+export const layoutSaveError = (): string => getActiveMessages().items.toasts.errLayout;
 
 /** Positions and sizes are stored as `real`; 0.1 px is far below anything visible and keeps the payload small. */
 function round(value: number): number {
@@ -263,7 +264,7 @@ export function useCanvasLayoutSaver(
       })),
     );
     if (rollback.length > 0) onRollback(rollback);
-    toast.error(LAYOUT_SAVE_ERROR);
+    toast.error(layoutSaveError());
   }
 
   const [saver] = useState(() => {

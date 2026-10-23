@@ -51,6 +51,7 @@ import {
   useViewportSaver,
   type CanvasViewport,
 } from "@/lib/canvas/viewport";
+import { useT } from "@/i18n/client";
 import { bringToFront, sendToBack } from "@/lib/canvas/z-order";
 import { buildClipboard, type CopiedCard } from "@/lib/items/copy";
 import type { NoteColor } from "@/lib/items/note-colors";
@@ -101,6 +102,7 @@ type CanvasInnerProps = Omit<CanvasViewProps, "persist"> & {
 };
 
 function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInnerProps) {
+  const t = useT().items.canvas;
   const [nodes, setNodes] = useState<ItemFlowNode[]>(() => itemsToNodes(items));
   const [initialViewport] = useState(() => persistence?.initialViewport ?? null);
   const nodesRef = useRef(nodes);
@@ -549,7 +551,7 @@ function CanvasInner({ items, onOpen, onRetry, persistence, actions }: CanvasInn
           proOptions={PRO_OPTIONS}
         >
           <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} />
-          {minimap ? <MiniMap pannable zoomable ariaLabel="Minimap" /> : null}
+          {minimap ? <MiniMap pannable zoomable ariaLabel={t.minimap} /> : null}
           <CanvasControls />
         </ReactFlow>
       </CanvasMenu>
@@ -603,10 +605,11 @@ function PersistedCanvas({
 
 /** The infinite board of an Inbox or collection. Fills its parent; give that parent a height. */
 export function CanvasView({ persist, ...props }: CanvasViewProps) {
+  const t = useT().items.canvas;
   return (
     <div
       role="region"
-      aria-label="Canvas"
+      aria-label={t.canvas}
       data-view-mode="canvas"
       className="relative min-h-96 flex-1"
     >

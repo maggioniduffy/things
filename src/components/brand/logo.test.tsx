@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { I18nProvider } from "@/i18n/client";
 import { Logo } from "./logo";
 
 describe("Logo", () => {
@@ -41,5 +42,16 @@ describe("Logo", () => {
     expect(screen.getByText("teca")).toHaveClass("bg-clip-text", "text-transparent");
     rerender(<Logo variant="mono" />);
     expect(screen.getByText("teca")).toHaveClass("font-light");
+  });
+
+  it("is named 'Cosateca' inside the Spanish provider", () => {
+    render(
+      <I18nProvider locale="es">
+        <h1>
+          <Logo />
+        </h1>
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Cosateca" })).toBeInTheDocument();
   });
 });

@@ -95,29 +95,43 @@ const icon = (tone, radius) => {
 };
 
 /** Wordmark: "teca" takes the mark's gradient on paper, a light weight when `color` is flat (on aurora). */
-const wordmark = (size, color, flat = false) => {
+const wordmark = (size, color, flat = false, stem = "Thing") => {
   const suffix = flat
     ? `<span style="font-weight:300;opacity:0.85">teca</span>`
     : `<span style="background:linear-gradient(90deg,${C.blue},${C.violet},${C.pink});-webkit-background-clip:text;background-clip:text;color:transparent">teca</span>`;
-  return `<span style="font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;line-height:1;font-size:${size}px;color:${color}">Thing${suffix}</span>`;
+  return `<span style="font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;line-height:1;font-size:${size}px;color:${color}">${stem}${suffix}</span>`;
+};
+
+/** Open Graph copy and wordmark stem per locale. */
+const OG_COPY = {
+  en: {
+    stem: "Thing",
+    headline: "Save anything.<br>Find it again.",
+    sub: "Links, files and notes, sorted by format.",
+  },
+  es: {
+    stem: "Cosa",
+    headline: "Guardá lo que quieras.<br>Encontralo de nuevo.",
+    sub: "Enlaces, archivos y notas, ordenados por formato.",
+  },
 };
 
 const og = {
-  default: () => `
+  default: (l) => `
 <div id="root" style="position:relative;width:1200px;height:630px;overflow:hidden;background:${C.paper}">
   <div style="position:absolute;left:0;right:0;bottom:0;height:320px">${aurora()}</div>
-  <div style="position:absolute;left:72px;top:64px;display:inline-flex;align-items:center;gap:12px">${mark(40)}${wordmark(36, C.ink)}</div>
+  <div style="position:absolute;left:72px;top:64px;display:inline-flex;align-items:center;gap:12px">${mark(40)}${wordmark(36, C.ink, false, OG_COPY[l].stem)}</div>
   <div style="position:absolute;left:72px;right:72px;top:168px;display:flex;flex-direction:column;gap:20px">
-    <h3 style="margin:0;font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;font-size:88px;line-height:1.04;color:${C.ink}">Save anything.<br>Find it again.</h3>
-    <p style="margin:0;font-family:Inter,sans-serif;font-size:26px;line-height:36px;color:${C.inkMuted};white-space:nowrap">Links, files and notes, sorted by format.</p>
+    <h3 style="margin:0;font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;font-size:${l === "es" ? 80 : 88}px;line-height:1.04;color:${C.ink}">${OG_COPY[l].headline}</h3>
+    <p style="margin:0;font-family:Inter,sans-serif;font-size:26px;line-height:36px;color:${C.inkMuted};white-space:nowrap">${OG_COPY[l].sub}</p>
   </div>
   ${grain()}
 </div>`,
-  brand: () => `
+  brand: (l) => `
 <div id="root" style="position:relative;width:1200px;height:630px;overflow:hidden;background:${C.paper}">
   <div style="position:absolute;left:0;right:0;bottom:0;height:560px">${aurora()}</div>
   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-bottom:40px">
-    <div style="display:inline-flex;align-items:center;gap:26px">${mark(112, "#ffffff")}${wordmark(101, "#ffffff", true)}</div>
+    <div style="display:inline-flex;align-items:center;gap:26px">${mark(112, "#ffffff")}${wordmark(101, "#ffffff", true, OG_COPY[l].stem)}</div>
   </div>
   ${grain()}
 </div>`,
@@ -186,10 +200,10 @@ const frames = [];
 for (const size of sizes) frames.push({ size, png: await render(icon("glyph", 114), 512, size) });
 await save("src/app/favicon.ico", ico(frames));
 
-// Open Graph.
-const ogDefault = await render(og.default(), 1200, 1200);
-await save("src/app/opengraph-image.png", ogDefault);
-await save("src/app/twitter-image.png", ogDefault);
-await save("public/brand/og-brand.png", await render(og.brand(), 1200, 1200));
+// Open Graph, one pair per locale (the root layout picks by locale).
+for (const l of ["en", "es"]) {
+  await save(`public/brand/og-${l}.png`, await render(og.default(l), 1200, 1200));
+  await save(`public/brand/og-brand-${l}.png`, await render(og.brand(l), 1200, 1200));
+}
 
 await browser.close();

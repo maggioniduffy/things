@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/i18n/client";
 import { normalizeCollectionName, parseEmoji } from "@/lib/collections/fields";
 import { cleanRules, MAX_SAVED_WITHIN_DAYS, parseDomainList, type Rules } from "@/lib/filters";
 import { kindPluralLabel } from "@/lib/kinds";
@@ -165,6 +166,8 @@ function Field({
 
 /** The form; mounted only while open, so it starts from the view (or empty) every time. */
 function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; close: () => void }) {
+  const t = useT().shell;
+  const d = t.smartViewDialog;
   const client = createClient();
   const { data: collections } = useQuery(collectionsQueryOptions(client));
   const { data: tags } = useQuery(tagsQueryOptions(client));
@@ -237,7 +240,7 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
       }}
     >
       <div className="grid grid-cols-[1fr_auto] gap-3">
-        <Field label="Name" htmlFor={nameId}>
+        <Field label={t.actions.name} htmlFor={nameId}>
           <Input
             id={nameId}
             value={name}
@@ -249,7 +252,7 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
         </Field>
         <div className="grid content-start gap-1.5">
           <label htmlFor={emojiId} className="text-meta text-ink-muted font-medium">
-            Emoji (optional)
+            {d.emoji}
           </label>
           <Input
             id={emojiId}
@@ -266,46 +269,46 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
           />
           {emojiInvalid ? (
             <p id={emojiErrorId} role="alert" className="text-meta text-destructive">
-              Use a single emoji.
+              {d.emojiInvalid}
             </p>
           ) : null}
         </div>
       </div>
 
       <ChipGroup
-        legend="Kinds"
-        hint="any of"
+        legend={d.kinds}
+        hint={d.anyOf}
         options={ITEM_KINDS.map((kind) => ({ value: kind, label: kindPluralLabel(kind) }))}
         selected={kinds}
         onToggle={(kind) => setKinds((current) => toggled(current, kind))}
       />
 
       <ChipGroup
-        legend="Collections"
-        hint="any of"
+        legend={d.collections}
+        hint={d.anyOf}
         options={(collections ?? []).map((collection) => ({
           value: collection.id,
           label: collection.emoji ? `${collection.emoji} ${collection.name}` : collection.name,
         }))}
         selected={collectionIds}
         onToggle={(id) => setCollectionIds((current) => toggled(current, id))}
-        empty="No collections yet."
+        empty={d.noCollections}
       />
 
       <ChipGroup
-        legend="Tags"
-        hint="must have all"
+        legend={d.tags}
+        hint={d.mustHaveAll}
         options={(tags ?? []).map((tag) => ({ value: tag.id, label: `#${tag.name}` }))}
         selected={tagIds}
         onToggle={(id) => setTagIds((current) => toggled(current, id))}
-        empty="No tags yet."
+        empty={d.noTags}
       />
 
-      <Field label="Domains (optional, separated by commas)" htmlFor={domainsId}>
+      <Field label={d.domains} htmlFor={domainsId}>
         <Input
           id={domainsId}
           value={domains}
-          placeholder="example.com, news.site"
+          placeholder={d.domainsPlaceholder}
           autoComplete="off"
           onChange={(event) => setDomains(event.target.value)}
         />
@@ -313,21 +316,21 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Segmented
-          legend="Read status"
+          legend={d.readStatus}
           options={[
-            { value: "any", label: "Any" },
-            { value: "no", label: "Unread" },
-            { value: "yes", label: "Read" },
+            { value: "any", label: d.any },
+            { value: "no", label: d.unread },
+            { value: "yes", label: d.read },
           ]}
           value={read}
           onChange={setRead}
         />
         <Segmented
-          legend="Favorite"
+          legend={d.favorite}
           options={[
-            { value: "any", label: "Any" },
-            { value: "yes", label: "Favorites" },
-            { value: "no", label: "Not favorites" },
+            { value: "any", label: d.any },
+            { value: "yes", label: d.favorites },
+            { value: "no", label: d.notFavorites },
           ]}
           value={favorite}
           onChange={setFavorite}
@@ -335,7 +338,7 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Saved within the last (days)" htmlFor={daysId}>
+        <Field label={d.savedWithin} htmlFor={daysId}>
           <Input
             id={daysId}
             type="number"
@@ -344,12 +347,12 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
             max={MAX_SAVED_WITHIN_DAYS}
             step={1}
             value={days}
-            placeholder="Any time"
+            placeholder={d.anyTime}
             aria-invalid={daysInvalid || undefined}
             onChange={(event) => setDays(event.target.value)}
           />
         </Field>
-        <Field label="Contains text" htmlFor={queryId}>
+        <Field label={d.containsText} htmlFor={queryId}>
           <Input
             id={queryId}
             value={query}
@@ -362,10 +365,10 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
 
       <DialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
-          Cancel
+          {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={trimmedName === "" || daysInvalid}>
-          {editing ? "Save" : "Create"}
+          {editing ? t.actions.save : t.actions.create}
         </Button>
       </DialogFooter>
     </form>
@@ -374,14 +377,13 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
 
 /** Create (no `smartView`) or edit a smart view: name, emoji and the filter rules. */
 export function SmartViewDialog({ open, onOpenChange, smartView }: SmartViewDialogProps) {
+  const d = useT().shell.smartViewDialog;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{smartView ? "Edit smart view" : "New smart view"}</DialogTitle>
-          <DialogDescription className="text-meta">
-            A smart view is a saved filter. It shows every item that matches all the rules you set.
-          </DialogDescription>
+          <DialogTitle>{smartView ? d.editTitle : d.newTitle}</DialogTitle>
+          <DialogDescription className="text-meta">{d.description}</DialogDescription>
         </DialogHeader>
         <SmartViewForm smartView={smartView} close={() => onOpenChange(false)} />
       </DialogContent>

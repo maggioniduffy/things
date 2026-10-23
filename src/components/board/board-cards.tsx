@@ -11,6 +11,7 @@ import { CardChromeContext } from "@/components/cards/card-shell";
 import { ItemCard } from "@/components/cards/item-card";
 import type { CardVariant } from "@/components/cards/types";
 import { useBoardDnd, type CardDragData } from "@/components/dnd/board-dnd-provider";
+import { useT } from "@/i18n/client";
 import { focusRing } from "@/components/ui/focus-ring";
 import type { BoardItem } from "@/lib/items/queries";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ type BoardCardProps = {
 
 type FrameProps = BoardCardProps & {
   /** Reorder (manual sort) or just move to the sidebar. Names the handle; absent = no drag. */
-  handleLabel?: string;
+  handleLabel?: (title: string) => string;
   /** dnd-kit wiring; all absent for a card that cannot be dragged. */
   setNodeRef?: Ref<HTMLDivElement>;
   setActivatorNodeRef?: (node: HTMLElement | null) => void;
@@ -64,6 +65,7 @@ function CardFrame({
   dragStyle,
   isDragging,
 }: FrameProps) {
+  const t = useT().shell.board;
   const ui = useBoardDnd();
   const reduced = useReducedMotion() ?? false;
   const selected = useUiStore((state) => state.selectedIds.includes(item.id));
@@ -87,7 +89,7 @@ function CardFrame({
           ref={setActivatorNodeRef}
           type="button"
           {...attributes}
-          aria-label={`${handleLabel} ${itemDisplayTitle(item).replace(/\s+/g, " ")}`}
+          aria-label={handleLabel(itemDisplayTitle(item).replace(/\s+/g, " "))}
           className={cn(
             "text-ink-muted hover:bg-accent hover:text-ink rounded-control relative z-20 flex size-6 shrink-0 cursor-grab items-center justify-center",
             "opacity-0 transition-opacity duration-(--duration-fast) group-hover:opacity-100 focus-visible:opacity-100",
@@ -126,7 +128,7 @@ function CardFrame({
               onRetry={onRetry}
             />
           </CardChromeContext.Provider>
-          {selected ? <span className="sr-only">Selected</span> : null}
+          {selected ? <span className="sr-only">{t.selected}</span> : null}
         </div>
       </div>
     </motion.li>
@@ -142,6 +144,7 @@ function useDragData(item: BoardItem, variant: CardVariant, thumbnailUrl?: strin
 
 /** A card the user can reorder (manual sort) and drop on the sidebar. */
 export const SortableCard = memo(function SortableCard(props: BoardCardProps) {
+  const t = useT().shell.board;
   const { item, variant, thumbnailUrl } = props;
   const reduced = useReducedMotion() ?? false;
   const data = useDragData(item, variant, thumbnailUrl);
@@ -164,7 +167,7 @@ export const SortableCard = memo(function SortableCard(props: BoardCardProps) {
   return (
     <CardFrame
       {...props}
-      handleLabel="Reorder"
+      handleLabel={t.reorder}
       setNodeRef={setNodeRef}
       setActivatorNodeRef={setActivatorNodeRef}
       listeners={listeners}
@@ -177,6 +180,7 @@ export const SortableCard = memo(function SortableCard(props: BoardCardProps) {
 
 /** A card that can only be dropped on the sidebar (any sort other than manual). */
 export const DraggableCard = memo(function DraggableCard(props: BoardCardProps) {
+  const t = useT().shell.board;
   const { item, variant, thumbnailUrl } = props;
   const data = useDragData(item, variant, thumbnailUrl);
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
@@ -186,7 +190,7 @@ export const DraggableCard = memo(function DraggableCard(props: BoardCardProps) 
   return (
     <CardFrame
       {...props}
-      handleLabel="Move"
+      handleLabel={t.move}
       setNodeRef={setNodeRef}
       setActivatorNodeRef={setActivatorNodeRef}
       listeners={listeners}

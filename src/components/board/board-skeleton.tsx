@@ -1,3 +1,4 @@
+import { useT } from "@/i18n/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /** Same footprint as the toolbar: use while the real one cannot render yet. */
@@ -21,11 +22,12 @@ const TILE_COUNT = 8;
 
 /** Tile placeholders in the grid layout. */
 export function BoardSkeleton() {
+  const t = useT().shell.board;
   return (
     <div
       role="status"
       aria-busy="true"
-      aria-label="Loading your things"
+      aria-label={t.loadingLabel}
       className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 px-4 pb-8 sm:px-6"
     >
       {Array.from({ length: TILE_COUNT }, (_, index) => (

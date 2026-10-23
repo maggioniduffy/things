@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
+import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
@@ -29,21 +30,23 @@ function useUploadState(item: BoardItem): "ready" | "uploading" | "unfinished" |
 }
 
 function UploadNotice({ item, state }: { item: BoardItem; state: "uploading" | "unfinished" }) {
+  const t = useT().items.drawer;
   return (
     <div
       role="status"
       className={`${FRAME} text-ink-muted text-body grid min-h-40 place-items-center gap-2 p-6 text-center`}
     >
       <KindIcon kind={item.kind} className="text-ink-subtle size-6" />
-      <p>{state === "uploading" ? "Uploading…" : "Upload didn't finish"}</p>
+      <p>{state === "uploading" ? t.uploading : t.uploadUnfinished}</p>
       {state === "unfinished" ? (
-        <p className="text-meta text-ink-subtle">Move it to trash to clear it.</p>
+        <p className="text-meta text-ink-subtle">{t.uploadUnfinishedHint}</p>
       ) : null}
     </div>
   );
 }
 
 function ImagePreview({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const [open, setOpen] = useState(false);
   const urls = useSignedUrls([item.file_path]);
   const src = item.file_path ? urls.get(item.file_path) : item.image_url;
@@ -62,7 +65,7 @@ function ImagePreview({ item }: { item: BoardItem }) {
     <>
       <button
         type="button"
-        aria-label="View full size"
+        aria-label={t.viewFullSize}
         onClick={() => setOpen(true)}
         className={`${FRAME} focus-visible:outline-ring block cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-2`}
       >
@@ -78,7 +81,7 @@ function ImagePreview({ item }: { item: BoardItem }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-5xl">
           <DialogTitle className="sr-only">{title}</DialogTitle>
-          <DialogDescription className="sr-only">Full size image</DialogDescription>
+          <DialogDescription className="sr-only">{t.fullSizeImage}</DialogDescription>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
@@ -93,15 +96,17 @@ function ImagePreview({ item }: { item: BoardItem }) {
 }
 
 function PdfPreview({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const urls = useSignedUrls([item.file_path]);
   const src = item.file_path ? urls.get(item.file_path) : undefined;
   if (!src) return <Skeleton className="h-[60vh] w-full" />;
   return (
-    <iframe src={src} title={`PDF: ${itemDisplayTitle(item)}`} className={`${FRAME} h-[60vh]`} />
+    <iframe src={src} title={t.pdfTitle(itemDisplayTitle(item))} className={`${FRAME} h-[60vh]`} />
   );
 }
 
 function VideoPreview({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const embed = parseVideoEmbed(item.url);
   const urls = useSignedUrls([embed ? null : item.file_path]);
   const fileSrc = item.file_path ? urls.get(item.file_path) : undefined;
@@ -110,7 +115,7 @@ function VideoPreview({ item }: { item: BoardItem }) {
     return (
       <iframe
         src={embed.src}
-        title={`Video: ${itemDisplayTitle(item)}`}
+        title={t.videoTitle(itemDisplayTitle(item))}
         allow="fullscreen; picture-in-picture; encrypted-media"
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
@@ -143,6 +148,7 @@ function SourceLink({ href, className, children, ...props }: ComponentProps<"a">
 }
 
 function LinkPreview({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const href = safeHttpUrl(item.url);
   const site = item.site_name ?? item.domain;
   const title = itemDisplayTitle(item);
@@ -196,7 +202,7 @@ function LinkPreview({ item }: { item: BoardItem }) {
           <Button asChild size="sm" className="mt-1 w-fit">
             <SourceLink href={href}>
               <ExternalLinkIcon />
-              {item.kind === "article" ? "Read article" : "Open link"}
+              {item.kind === "article" ? t.readArticle : t.openLink}
             </SourceLink>
           </Button>
         ) : null}
@@ -206,6 +212,7 @@ function LinkPreview({ item }: { item: BoardItem }) {
 }
 
 function FilePreview({ item }: { item: BoardItem }) {
+  const t = useT().items.drawer;
   const [busy, setBusy] = useState(false);
   const size = formatBytes(item.file_size);
 
@@ -225,7 +232,7 @@ function FilePreview({ item }: { item: BoardItem }) {
       link.click();
       link.remove();
     } catch {
-      toast.error("Couldn't download that file.");
+      toast.error(t.downloadFailed);
     } finally {
       setBusy(false);
     }
@@ -243,7 +250,7 @@ function FilePreview({ item }: { item: BoardItem }) {
       {item.file_path ? (
         <Button variant="secondary" size="sm" disabled={busy} onClick={() => void download()}>
           <DownloadIcon />
-          Download
+          {t.download}
         </Button>
       ) : null}
     </div>

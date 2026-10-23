@@ -8,7 +8,7 @@ import { makeItem, makeTestQueryClient } from "@/test/fixtures";
 import {
   CanvasLayoutSaver,
   keepaliveFetch,
-  LAYOUT_SAVE_ERROR,
+  layoutSaveError,
   nodeToCanvasRect,
   normalizeRect,
   useCanvasLayoutSaver,
@@ -296,7 +296,7 @@ describe("useCanvasLayoutSaver", () => {
       { id: ITEM_ID, x: 5, y: 6, w: 280, h: 240, z: item.canvas_z },
     ]);
     expect(cached()).toMatchObject({ canvas_x: 5, canvas_y: 6, canvas_w: 280, canvas_h: 240 });
-    expect(mocks.toast.error).toHaveBeenCalledWith(LAYOUT_SAVE_ERROR);
+    expect(mocks.toast.error).toHaveBeenCalledWith(layoutSaveError());
   });
 
   it("flushes on unmount", async () => {

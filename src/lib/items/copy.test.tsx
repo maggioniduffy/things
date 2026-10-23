@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeItem, makeTestQueryClient } from "@/test/fixtures";
-import { GUEST_QUOTA_COPY, resetCaptureStateForTests } from "./mutations";
+import { guestQuotaCopy, resetCaptureStateForTests } from "./mutations";
 import { itemsQueryKey, type BoardItem, type ItemsPage } from "./queries";
 import { usePasteCopies } from "./copy";
 
@@ -95,7 +95,7 @@ beforeEach(() => {
   resetCaptureStateForTests();
 });
 
-const request = { placements: [{ id: "orig", x: 1, y: 2 }], z: 3, verb: "Pasted" as const };
+const request = { placements: [{ id: "orig", x: 1, y: 2 }], z: 3, verb: "pasted" as const };
 
 describe("usePasteCopies", () => {
   it("inserts one batch, copies tags, selects via onCreated and offers Undo", async () => {
@@ -150,7 +150,7 @@ describe("usePasteCopies", () => {
     });
 
     expect(cachedIds(queryClient)).toEqual([]);
-    expect(mocks.toast.error).toHaveBeenCalledWith(GUEST_QUOTA_COPY);
+    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy());
   });
 
   it("says nothing to paste when every source is gone", async () => {

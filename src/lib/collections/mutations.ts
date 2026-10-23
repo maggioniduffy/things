@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { keyAfter } from "@/lib/order";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -76,7 +77,7 @@ export function useCollectionActions(): CollectionActions {
     },
     onError: (_error, _row, snapshot) => {
       if (snapshot) queryClient.setQueryData(COLLECTIONS_KEY, snapshot.collections);
-      toast.error("Couldn't create that collection.");
+      toast.error(getActiveMessages().shell.toasts.collectionCreateFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY }),
   });
@@ -99,7 +100,7 @@ export function useCollectionActions(): CollectionActions {
     },
     onError: (_error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(COLLECTIONS_KEY, snapshot.collections);
-      toast.error("Couldn't save your changes.");
+      toast.error(getActiveMessages().shell.toasts.collectionSaveFailed);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY }),
   });
@@ -120,7 +121,7 @@ export function useCollectionActions(): CollectionActions {
     },
     onError: (_error, _vars, snapshot) => {
       if (snapshot) queryClient.setQueryData(COLLECTIONS_KEY, snapshot.collections);
-      toast.error("Couldn't delete that collection.");
+      toast.error(getActiveMessages().shell.toasts.collectionDeleteFailed);
     },
     onSuccess: (_data, { id }) => {
       if (pathnameRef.current === viewHref({ type: "collection", collectionId: id })) {

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { I18nProvider } from "@/i18n/client";
 import { useUiStore } from "@/stores/ui-store";
 import type { ViewSpec } from "@/lib/views";
 import { QuickAdd } from "./quick-add";
@@ -219,5 +220,21 @@ describe("QuickAdd", () => {
       await waitFor(() => expect(opener).toHaveFocus());
       opener.remove();
     });
+  });
+
+  it("renders in Spanish inside an es provider", () => {
+    useUiStore.setState({ quickAddOpen: true });
+    render(
+      <I18nProvider locale="es">
+        <QuickAdd view={VIEW} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("dialog", { name: "Agregar" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Enlace o nota" })).toHaveAttribute(
+      "placeholder",
+      "Pegá un enlace o escribí una nota",
+    );
+    expect(screen.getByRole("button", { name: "Elegir archivos" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
   });
 });

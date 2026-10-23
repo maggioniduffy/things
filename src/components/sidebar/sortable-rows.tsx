@@ -20,6 +20,7 @@ import {
   type SidebarSortSection,
 } from "@/components/dnd/targets";
 import { focusRing } from "@/components/ui/focus-ring";
+import { useT } from "@/i18n/client";
 import { moveRow, type OrderedRow } from "@/lib/order";
 import { useSidebarReorder } from "@/lib/sidebar/reorder";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,7 @@ export function useSortableRow(
   id: string,
   label: string,
 ): SortableRow {
+  const t = useT().shell;
   const reduced = useReducedMotion() ?? false;
   const cardDragging = useBoardDnd()?.draggingIds != null;
   const data = useMemo<SidebarSortData>(
@@ -135,7 +137,7 @@ export function useSortableRow(
       type="button"
       {...attributes}
       {...listeners}
-      aria-label={`Drag to reorder ${label}`}
+      aria-label={t.sidebar.dragToReorder(label)}
       className={cn(
         "text-ink-muted hover:bg-accent hover:text-ink rounded-control absolute top-1/2 right-9 flex size-6 -translate-y-1/2 cursor-grab touch-none items-center justify-center",
         "opacity-0 transition-opacity duration-(--duration-fast) group-focus-within/row:opacity-100 group-hover/row:opacity-100 focus-visible:opacity-100",

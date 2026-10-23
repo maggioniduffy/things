@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { BoardDndProvider } from "@/components/dnd/board-dnd-provider";
 import { Sidebar } from "@/components/sidebar/sidebar";
+import { useT } from "@/i18n/client";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { useRehydrateUiStore, useUiStore } from "@/stores/ui-store";
@@ -18,6 +19,7 @@ type AppShellProps = {
  * Mobile: the same sidebar inside a drawer opened from the toolbar's menu button.
  */
 export function AppShell({ email, children }: AppShellProps) {
+  const t = useT().shell;
   useRehydrateUiStore();
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const mobileOpen = useUiStore((state) => state.mobileSidebarOpen);
@@ -38,7 +40,7 @@ export function AppShell({ email, children }: AppShellProps) {
 
         <Drawer direction="left" open={mobileOpen} onOpenChange={setMobileOpen}>
           <DrawerContent aria-describedby={undefined} className="bg-paper md:hidden">
-            <DrawerTitle className="sr-only">Navigation</DrawerTitle>
+            <DrawerTitle className="sr-only">{t.sidebar.drawerTitle}</DrawerTitle>
             <Sidebar email={email} onNavigate={() => setMobileOpen(false)} />
           </DrawerContent>
         </Drawer>

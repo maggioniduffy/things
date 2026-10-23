@@ -9,6 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useT } from "@/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import { collectionsQueryOptions, type SidebarCollection } from "@/lib/sidebar/queries";
 
@@ -16,10 +17,6 @@ import { collectionsQueryOptions, type SidebarCollection } from "@/lib/sidebar/q
 export function useCollectionList(): SidebarCollection[] {
   const { data } = useQuery(collectionsQueryOptions(createClient()));
   return data ?? [];
-}
-
-export function movePrompt(count: number): string {
-  return `Move ${count} ${count === 1 ? "item" : "items"} to…`;
 }
 
 type MoveDialogProps = {
@@ -39,6 +36,7 @@ export function MoveDialog({
   currentCollectionId,
   onPick,
 }: MoveDialogProps) {
+  const t = useT().items;
   const collections = useCollectionList();
   const pick = (id: string | null, label: string) => {
     onOpenChange(false);
@@ -48,19 +46,19 @@ export function MoveDialog({
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={movePrompt(count)}
-      description="Choose where to move the selected items."
+      title={t.canvas.movePrompt(count)}
+      description={t.canvas.moveDescription}
     >
-      <CommandInput placeholder="Find a collection" />
+      <CommandInput placeholder={t.canvas.findCollection} />
       <CommandList>
-        <CommandEmpty>No collection found.</CommandEmpty>
+        <CommandEmpty>{t.canvas.noCollection}</CommandEmpty>
         <CommandItem
-          value="Inbox"
+          value={t.inbox}
           disabled={currentCollectionId === null}
-          onSelect={() => pick(null, "Inbox")}
+          onSelect={() => pick(null, t.inbox)}
         >
           <InboxIcon aria-hidden="true" />
-          Inbox
+          {t.inbox}
         </CommandItem>
         {collections.map((collection) => (
           <CommandItem

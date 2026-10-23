@@ -10,6 +10,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui
 import { IconButton } from "@/components/ui/icon-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 import { itemQueryOptions } from "@/lib/items/item-query";
 import { useItemActions } from "@/lib/items/state-mutations";
 import { kindSingularLabel } from "@/lib/kinds";
@@ -23,9 +24,10 @@ import { ItemPreview } from "./previews";
 import { safeHttpUrl } from "./urls";
 
 function DrawerLoading() {
+  const t = useT().items.drawer;
   return (
     <div className="grid gap-4 p-4" aria-busy="true">
-      <DrawerTitle className="sr-only">Loading item</DrawerTitle>
+      <DrawerTitle className="sr-only">{t.loading}</DrawerTitle>
       <Skeleton className="aspect-[4/3] w-full" />
       <Skeleton className="h-10 w-full" />
       <Skeleton className="h-4 w-2/3" />
@@ -34,14 +36,13 @@ function DrawerLoading() {
 }
 
 function Unavailable({ onClose }: { onClose: () => void }) {
+  const t = useT().items.drawer;
   return (
     <div className="grid justify-items-start gap-3 p-4">
-      <DrawerTitle>This item isn&apos;t available</DrawerTitle>
-      <p className="text-body text-ink-muted">
-        It may have been deleted, or it isn&apos;t in your account.
-      </p>
+      <DrawerTitle>{t.unavailableTitle}</DrawerTitle>
+      <p className="text-body text-ink-muted">{t.unavailableBody}</p>
       <Button variant="secondary" onClick={onClose}>
-        Close
+        {t.close}
       </Button>
     </div>
   );
@@ -49,6 +50,7 @@ function Unavailable({ onClose }: { onClose: () => void }) {
 
 /** Contents of the open drawer: loads the item by id and renders preview, fields and actions. */
 function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose: () => void }) {
+  const t = useT().items.drawer;
   const query = useQuery(itemQueryOptions(createClient(), id));
   const actions = useItemActions();
   const item = query.data;
@@ -75,14 +77,14 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
         <Badge>{kindSingularLabel(item.kind)}</Badge>
         <span className="flex-1" />
         {sourceHref ? (
-          <IconButton asChild variant="ghost" size="sm" label="Open in new tab">
+          <IconButton asChild variant="ghost" size="sm" label={t.openInNewTab}>
             <a href={sourceHref} target="_blank" rel="noopener noreferrer">
               <ExternalLinkIcon />
             </a>
           </IconButton>
         ) : null}
         <DrawerClose asChild>
-          <IconButton variant="ghost" size="sm" label="Close" tooltip={false}>
+          <IconButton variant="ghost" size="sm" label={t.close} tooltip={false}>
             <XIcon />
           </IconButton>
         </DrawerClose>

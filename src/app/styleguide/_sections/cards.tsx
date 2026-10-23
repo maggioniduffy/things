@@ -14,7 +14,7 @@ const STATES: { state: State; title: string }[] = [
 ];
 
 /** Local brand art stands in for a fetched preview image, so the styleguide needs no network. */
-const DEMO_IMAGE = "/brand/og-brand.png";
+const DEMO_IMAGE = "/brand/og-brand-en.png";
 const DEMO_ICON = "/brand/icon-192.png";
 
 /** Pending demos never go stale (a real pending item turns into "failed" after two minutes). */

@@ -1,5 +1,7 @@
 <!doctype html>
-<html lang="en">
+{{ $es := false }}{{ with .Data }}{{ if eq (printf "%v" .locale) "es" }}{{ $es = true }}{{ end }}{{ end }}
+<!-- Locale from user_metadata.locale (set by the app); English when missing. -->
+<html lang="{{ if $es }}es{{ else }}en{{ end }}">
   <body
     style="
       margin: 0;
@@ -25,17 +27,17 @@
       <tr>
         <td style="padding: 32px">
           <p style="margin: 0 0 24px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em">
-            Thing<span style="font-weight: 300; color: #4a4a52">teca</span>
+            {{ if $es }}Cosa{{ else }}Thing{{ end }}<span style="font-weight: 300; color: #4a4a52">teca</span>
           </p>
-          <p style="margin: 0 0 8px; font-size: 17px; font-weight: 500">Your sign-in code</p>
+          <p style="margin: 0 0 8px; font-size: 17px; font-weight: 500">{{ if $es }}Tu código para ingresar{{ else }}Your sign-in code{{ end }}</p>
           <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.5; color: #4a4a52">
-            Enter this code in Thingteca to finish creating your account.
+            {{ if $es }}Ingresá este código en Cosateca para terminar de crear tu cuenta.{{ else }}Enter this code in Thingteca to finish creating your account.{{ end }}
           </p>
           <p style="margin: 0 0 20px; font-size: 32px; font-weight: 600; letter-spacing: 0.18em">
             {{ .Token }}
           </p>
           <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #8b8b94">
-            The code expires in 10 minutes. If you didn't ask for it, you can ignore this email.
+            {{ if $es }}El código vence en 10 minutos. Si no lo pediste, podés ignorar este email.{{ else }}The code expires in 10 minutes. If you didn't ask for it, you can ignore this email.{{ end }}
           </p>
         </td>
       </tr>

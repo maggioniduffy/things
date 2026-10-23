@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setActiveLocale } from "@/i18n/active";
 import type { Database } from "@/types/supabase";
 import {
   EMPTY_RULES,
@@ -308,6 +309,26 @@ describe("describeRules", () => {
       "Saved in the last 7 days",
       'Matching "cats"',
     ]);
+  });
+
+  describe("in Spanish", () => {
+    afterEach(() => setActiveLocale("en"));
+
+    it("names the rules in the active language", () => {
+      setActiveLocale("es");
+      expect(
+        describeRules(
+          { kinds: ["pdf"], isRead: false, isFavorite: false, savedWithinDays: 7, query: "gatos" },
+          lookups,
+        ),
+      ).toEqual([
+        "Formato: PDFs",
+        "Sin abrir",
+        "No favoritos",
+        "Guardadas en los últimos 7 días",
+        'Que contienen "gatos"',
+      ]);
+    });
   });
 
   it("uses the singular for one day", () => {

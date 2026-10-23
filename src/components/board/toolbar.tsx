@@ -22,6 +22,8 @@ import {
 import { IconButton } from "@/components/ui/icon-button";
 import { SearchField } from "@/components/ui/search-field";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useT } from "@/i18n/client";
+import { getActiveMessages } from "@/i18n/active";
 import { describeRules, parseRules } from "@/lib/filters";
 import { effectiveSort } from "@/lib/items/queries";
 import { kindPluralLabel } from "@/lib/kinds";
@@ -31,24 +33,8 @@ import {
   tagsQueryOptions,
 } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
-import { SORT_MODES, type SortMode, type SystemView, type ViewSpec } from "@/lib/views";
+import { SORT_MODES, type SortMode, type ViewSpec } from "@/lib/views";
 import { useUiStore, type ViewMode } from "@/stores/ui-store";
-
-const SYSTEM_TITLES: Record<SystemView, string> = {
-  inbox: "Inbox",
-  all: "All",
-  unread: "Unread",
-  favorites: "Favorites",
-  archive: "Archive",
-  trash: "Trash",
-};
-
-const SORT_LABELS: Record<SortMode, string> = {
-  manual: "Manual",
-  newest: "Newest",
-  oldest: "Oldest",
-  title: "Title",
-};
 
 export type ViewInfo = {
   /** Heading text. */
@@ -71,7 +57,7 @@ function summarize(
     collections: collections ?? [],
     tags: tags ?? [],
   });
-  return parts.length > 0 ? parts.join(" · ") : "No rules: shows everything that isn't archived.";
+  return parts.length > 0 ? parts.join(" · ") : getActiveMessages().shell.rules.none;
 }
 
 /**
@@ -79,6 +65,7 @@ function summarize(
  * (usually already hydrated); until they load, `title` is a generic word and `unknown` is false.
  */
 export function useViewInfo(view: ViewSpec): ViewInfo {
+  const t = useT().shell;
   const client = createClient();
   const collections = useQuery({
     ...collectionsQueryOptions(client),
@@ -97,9 +84,9 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
     case "kind":
       return { title: kindPluralLabel(view.kind), name: null, unknown: false };
     case "collection": {
-      if (!collections.data) return { title: "Collection", name: null, unknown: false };
+      if (!collections.data) return { title: t.toolbar.collection, name: null, unknown: false };
       const found = collections.data.find((collection) => collection.id === view.collectionId);
-      if (!found) return { title: "Not found", name: null, unknown: true };
+      if (!found) return { title: t.toolbar.notFound, name: null, unknown: true };
       return {
         title: found.emoji ? `${found.emoji} ${found.name}` : found.name,
         name: found.name,
@@ -107,26 +94,26 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
       };
     }
     case "tag": {
-      if (!tags.data) return { title: "Tag", name: null, unknown: false };
+      if (!tags.data) return { title: t.toolbar.tag, name: null, unknown: false };
       const found = tags.data.find((tag) => tag.id === view.tagId);
-      if (!found) return { title: "Not found", name: null, unknown: true };
+      if (!found) return { title: t.toolbar.notFound, name: null, unknown: true };
       return { title: `#${found.name}`, name: found.name, unknown: false };
     }
     case "smart": {
-      if (!smartViews.data) return { title: "Smart view", name: null, unknown: false };
+      if (!smartViews.data) return { title: t.toolbar.smartView, name: null, unknown: false };
       const found = smartViews.data.find((smartView) => smartView.id === view.viewId);
-      if (!found) return { title: "Not found", name: null, unknown: true };
+      if (!found) return { title: t.toolbar.notFound, name: null, unknown: true };
       return {
         title: found.icon ? `${found.icon} ${found.name}` : found.name,
         name: found.name,
         unknown: false,
         summary: found.invalidRules
-          ? "These rules couldn't be read. Edit the smart view to fix them."
+          ? t.rules.unreadable
           : summarize(found.rules, collections.data, tags.data),
       };
     }
     default:
-      return { title: SYSTEM_TITLES[view.type], name: null, unknown: false };
+      return { title: t.views[view.type], name: null, unknown: false };
   }
 }
 
@@ -152,6 +139,8 @@ type ToolbarProps = { view: ViewSpec; sort: SortMode };
 
 /** Reads `useSearchParams`, so render it inside a Suspense boundary. */
 export function Toolbar({ view, sort }: ToolbarProps) {
+  const t = useT().shell;
+  const tb = t.toolbar;
   const { title, summary } = useViewInfo(view);
   const shownSort = effectiveSort(view, sort);
   const router = useRouter();
@@ -180,7 +169,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
       <IconButton
         variant="ghost"
         size="sm"
-        label="Open sidebar"
+        label={tb.openSidebar}
         className="md:hidden"
         onClick={() => setMobileSidebarOpen(true)}
       >
@@ -189,7 +178,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
       <IconButton
         variant="ghost"
         size="sm"
-        label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+        label={sidebarCollapsed ? tb.showSidebar : tb.hideSidebar}
         className="hidden md:inline-flex"
         onClick={toggleSidebar}
       >
@@ -210,16 +199,16 @@ export function Toolbar({ view, sort }: ToolbarProps) {
       <SearchField
         disabled
         hint={null}
-        placeholder="Search"
-        aria-label="Search"
+        placeholder={tb.search}
+        aria-label={tb.search}
         className="hidden w-56 sm:block"
       />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="sm" aria-label={`Sort: ${SORT_LABELS[shownSort]}`}>
+          <Button variant="secondary" size="sm" aria-label={tb.sortBy(tb.sort[shownSort])}>
             <ArrowUpDownIcon />
-            <span className="hidden sm:inline">{SORT_LABELS[shownSort]}</span>
+            <span className="hidden sm:inline">{tb.sort[shownSort]}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -227,18 +216,18 @@ export function Toolbar({ view, sort }: ToolbarProps) {
             {/* Smart views are filters, not places: nothing to order by hand. */}
             {SORT_MODES.filter((mode) => mode !== "manual" || view.type !== "smart").map((mode) => (
               <DropdownMenuRadioItem key={mode} value={mode}>
-                {SORT_LABELS[mode]}
+                {tb.sort[mode]}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div role="group" aria-label="View" className="flex items-center gap-1">
+      <div role="group" aria-label={tb.viewGroup} className="flex items-center gap-1">
         <IconButton
           variant={viewMode === "grid" ? "outline" : "ghost"}
           size="sm"
-          label="Grid view"
+          label={tb.gridView}
           aria-pressed={viewMode === "grid"}
           onClick={() => setViewMode("grid")}
         >
@@ -247,7 +236,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         <IconButton
           variant={viewMode === "list" ? "outline" : "ghost"}
           size="sm"
-          label="List view"
+          label={tb.listView}
           aria-pressed={viewMode === "list"}
           onClick={() => setViewMode("list")}
         >
@@ -260,7 +249,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
             <IconButton
               variant={viewMode === "canvas" ? "outline" : "ghost"}
               size="sm"
-              label="Canvas view"
+              label={tb.canvasView}
               tooltip={false}
               aria-pressed={canvasAvailable ? viewMode === "canvas" : undefined}
               aria-disabled={canvasAvailable ? undefined : "true"}
@@ -273,15 +262,13 @@ export function Toolbar({ view, sort }: ToolbarProps) {
               <FrameIcon />
             </IconButton>
           </TooltipTrigger>
-          <TooltipContent>
-            {canvasAvailable ? "Canvas view" : "Canvas is for the Inbox and collections"}
-          </TooltipContent>
+          <TooltipContent>{canvasAvailable ? tb.canvasView : tb.canvasUnavailable}</TooltipContent>
         </Tooltip>
       </div>
 
-      <Button size="sm" aria-label="Add" onClick={() => setQuickAddOpen(true)}>
+      <Button size="sm" aria-label={tb.add} onClick={() => setQuickAddOpen(true)}>
         <PlusIcon />
-        <span className="hidden sm:inline">Add</span>
+        <span className="hidden sm:inline">{tb.add}</span>
       </Button>
     </div>
   );

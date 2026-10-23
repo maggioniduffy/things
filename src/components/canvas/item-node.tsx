@@ -4,6 +4,7 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { memo, useCallback, useContext, useRef, type PointerEvent, type MouseEvent } from "react";
 import type { BoardItem } from "@/lib/items/queries";
+import { useT } from "@/i18n/client";
 import { ItemCard } from "@/components/cards/item-card";
 import { cn } from "@/lib/utils";
 import type { ItemFlowNode } from "@/lib/canvas/layout";
@@ -21,6 +22,7 @@ export const MIN_NODE_HEIGHT = 120;
  * and drag. A click only selects; a double-click, the hover button or Enter on the card opens it.
  */
 export const ItemNode = memo(function ItemNode({ data, selected }: NodeProps<ItemFlowNode>) {
+  const t = useT().items.canvas;
   const { thumbnails, onOpen, onRetry } = useContext(CanvasContext);
   const { item } = data;
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -93,7 +95,7 @@ export const ItemNode = memo(function ItemNode({ data, selected }: NodeProps<Ite
           type="button"
           aria-hidden="true"
           tabIndex={-1}
-          title="Open"
+          title={t.open}
           onClick={() => onOpen(item)}
           className={cn(
             "bg-surface border-line text-ink-muted shadow-card hover:text-ink",

@@ -20,8 +20,10 @@ import {
   TRASH_TARGET,
 } from "@/components/dnd/targets";
 import { KindIcon } from "@/components/kind-icon";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
+import { useT } from "@/i18n/client";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -80,6 +82,7 @@ function Section({
 }
 
 export function Sidebar({ email, onNavigate }: SidebarProps) {
+  const t = useT().shell;
   const client = createClient();
   const { data: counts } = useQuery(countsQueryOptions(client));
   const { data: collections } = useQuery(collectionsQueryOptions(client));
@@ -97,15 +100,15 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       </div>
 
       <nav
-        aria-label="Sidebar"
+        aria-label={t.sidebar.navLabel}
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-2 pb-3"
       >
-        <Section label="Views" heading={false}>
+        <Section label={t.sidebar.views} heading={false}>
           <li>
             <NavItem
               href={viewHref({ type: "inbox" })}
               icon={<InboxIcon />}
-              label="Inbox"
+              label={t.views.inbox}
               count={counts?.inbox}
               drop={INBOX_TARGET}
               onNavigate={onNavigate}
@@ -115,7 +118,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
             <NavItem
               href={viewHref({ type: "all" })}
               icon={<LayersIcon />}
-              label="All"
+              label={t.views.all}
               count={counts?.all}
               onNavigate={onNavigate}
             />
@@ -124,7 +127,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
             <NavItem
               href={viewHref({ type: "unread" })}
               icon={<CircleDotIcon />}
-              label="Unread"
+              label={t.views.unread}
               count={counts?.unread}
               onNavigate={onNavigate}
             />
@@ -133,7 +136,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
             <NavItem
               href={viewHref({ type: "favorites" })}
               icon={<StarIcon />}
-              label="Favorites"
+              label={t.views.favorites}
               count={counts?.favorites}
               drop={FAVORITES_TARGET}
               onNavigate={onNavigate}
@@ -144,7 +147,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
         {kindsWithItems.length > 0 ? (
           <>
             <Separator />
-            <Section label="Formats">
+            <Section label={t.sidebar.formats}>
               {kindsWithItems.map((kind) => (
                 <li key={kind}>
                   <NavItem
@@ -162,12 +165,12 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
 
         <Separator />
         <Section
-          label="Collections"
+          label={t.sidebar.collections}
           action={
             <IconButton
               variant="ghost"
               size="sm"
-              label="New collection"
+              label={t.sidebar.newCollection}
               className="size-6"
               onClick={() => setCreatingCollection(true)}
             >
@@ -189,14 +192,14 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               }
             </SortableRows>
           ) : (
-            <li className="text-meta text-ink-subtle px-2.5 py-1">No collections yet</li>
+            <li className="text-meta text-ink-subtle px-2.5 py-1">{t.sidebar.noCollections}</li>
           )}
         </Section>
 
         {tags && tags.length > 0 ? (
           <>
             <Separator />
-            <Section label="Tags">
+            <Section label={t.sidebar.tags}>
               {tags.map((tag) => (
                 <TagRow key={tag.id} tag={tag} onNavigate={onNavigate} />
               ))}
@@ -206,12 +209,12 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
 
         <Separator />
         <Section
-          label="Smart views"
+          label={t.sidebar.smartViews}
           action={
             <IconButton
               variant="ghost"
               size="sm"
-              label="New smart view"
+              label={t.sidebar.newSmartView}
               className="size-6"
               onClick={() => setCreatingSmartView(true)}
             >
@@ -228,17 +231,17 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               }
             </SortableRows>
           ) : (
-            <li className="text-meta text-ink-subtle px-2.5 py-1">No smart views yet</li>
+            <li className="text-meta text-ink-subtle px-2.5 py-1">{t.sidebar.noSmartViews}</li>
           )}
         </Section>
 
         <Separator />
-        <Section label="Archive and trash" heading={false}>
+        <Section label={t.sidebar.archiveAndTrash} heading={false}>
           <li>
             <NavItem
               href={viewHref({ type: "archive" })}
               icon={<ArchiveIcon />}
-              label="Archive"
+              label={t.views.archive}
               count={counts?.archive}
               drop={ARCHIVE_TARGET}
               onNavigate={onNavigate}
@@ -248,7 +251,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
             <NavItem
               href={viewHref({ type: "trash" })}
               icon={<Trash2Icon />}
-              label="Trash"
+              label={t.views.trash}
               count={counts?.trash}
               drop={TRASH_TARGET}
               onNavigate={onNavigate}
@@ -261,10 +264,15 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       <SmartViewDialog open={creatingSmartView} onOpenChange={setCreatingSmartView} />
 
       <Separator />
-      <div role="group" aria-label="Account" className="flex shrink-0 items-center gap-2 p-3">
+      <div
+        role="group"
+        aria-label={t.sidebar.account}
+        className="flex shrink-0 items-center gap-2 p-3"
+      >
         <p className="text-meta text-ink-muted min-w-0 flex-1 truncate" title={email ?? undefined}>
-          {email ?? "Guest"}
+          {email ?? t.sidebar.guest}
         </p>
+        <LanguageSwitcher />
         <SignOutButton />
       </div>
     </div>

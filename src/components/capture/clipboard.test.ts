@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  CAPPED_COPY,
+  cappedCopy,
   MAX_CAPTURES,
   isExternalDrag,
   itemsFromDataTransfer,
@@ -232,7 +232,7 @@ describe("saveRequests", () => {
   it("toasts when the cap cut something off", () => {
     const { capture } = fakeCapture();
     saveRequests(capture, { requests: [{ type: "note", text: "n" }], capped: true });
-    expect(toast).toHaveBeenCalledWith(CAPPED_COPY);
-    expect(CAPPED_COPY).toBe("Saved the first 20 items.");
+    expect(toast).toHaveBeenCalledWith(cappedCopy());
+    expect(cappedCopy()).toBe("Saved the first 20 items.");
   });
 });

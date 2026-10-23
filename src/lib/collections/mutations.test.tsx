@@ -1,7 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setActiveLocale } from "@/i18n/active";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
 import { makeCounts, makeTestQueryClient } from "@/test/fixtures";
 import { useCollectionActions } from "./mutations";
@@ -262,5 +263,19 @@ describe("remove", () => {
       await actions().remove(A.id);
     });
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  describe("in Spanish", () => {
+    afterEach(() => setActiveLocale("en"));
+
+    it("toasts the failure in the active language", async () => {
+      setActiveLocale("es");
+      const { actions, state } = setup();
+      state.result = () => ({ error: { code: "42501" } });
+      await act(async () => {
+        await actions().create({ name: "Ideas" });
+      });
+      expect(mocks.toast.error).toHaveBeenCalledWith("No pudimos crear esa colección.");
+    });
   });
 });

@@ -23,6 +23,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useT } from "@/i18n/client";
 import type { CanvasTarget } from "@/lib/canvas/layout";
 import {
   DEFAULT_NOTE_STYLE,
@@ -96,6 +97,7 @@ export function CanvasMenu({
   onPaste,
   canPaste = false,
 }: CanvasMenuProps) {
+  const t = useT().items;
   const [target, setTarget] = useState<MenuTarget | null>(null);
   const collections = useCollectionList();
 
@@ -123,22 +125,22 @@ export function CanvasMenu({
             {onOpen ? (
               <ContextMenuItem onSelect={() => onOpen(target.id)}>
                 <SquareArrowOutUpRightIcon aria-hidden="true" />
-                Open
+                {t.canvas.open}
               </ContextMenuItem>
             ) : null}
             {onMoveTo ? (
               <ContextMenuSub>
                 <ContextMenuSubTrigger>
                   <FolderInputIcon aria-hidden="true" />
-                  Move to…
+                  {t.canvas.moveTo}
                 </ContextMenuSubTrigger>
                 <ContextMenuSubContent className="max-h-72 w-52 overflow-y-auto">
                   <ContextMenuItem
                     disabled={collectionId === null}
-                    onSelect={() => onMoveTo(null, "Inbox")}
+                    onSelect={() => onMoveTo(null, t.inbox)}
                   >
                     <InboxIcon aria-hidden="true" />
-                    Inbox
+                    {t.inbox}
                   </ContextMenuItem>
                   {collections.map((collection) => (
                     <ContextMenuItem
@@ -159,17 +161,17 @@ export function CanvasMenu({
               <ContextMenuSub>
                 <ContextMenuSubTrigger>
                   <PaletteIcon aria-hidden="true" />
-                  Color
+                  {t.canvas.color}
                 </ContextMenuSubTrigger>
                 <ContextMenuSubContent className="w-44">
                   <ContextMenuItem onSelect={() => onColor(null)}>
                     <ColorDot className={DEFAULT_SWATCH} />
-                    Default
+                    {t.noteColors.default}
                   </ContextMenuItem>
                   {NOTE_COLORS.map((color) => (
                     <ContextMenuItem key={color} onSelect={() => onColor(color)}>
                       <ColorDot className={NOTE_COLOR_STYLES[color].swatchClassName} />
-                      {NOTE_COLOR_STYLES[color].label}
+                      {t.noteColors[color]}
                     </ContextMenuItem>
                   ))}
                 </ContextMenuSubContent>
@@ -178,37 +180,37 @@ export function CanvasMenu({
             {onCopy ? (
               <ContextMenuItem onSelect={onCopy}>
                 <CopyIcon aria-hidden="true" />
-                Copy
+                {t.canvas.copy}
                 <ContextMenuShortcut>⌘C</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             {onDuplicate ? (
               <ContextMenuItem onSelect={onDuplicate}>
                 <CopyPlusIcon aria-hidden="true" />
-                Duplicate
+                {t.canvas.duplicate}
                 <ContextMenuShortcut>⌘D</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             {onPaste ? (
               <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste()}>
                 <ClipboardPasteIcon aria-hidden="true" />
-                Paste
+                {t.canvas.paste}
                 <ContextMenuShortcut>⌘V</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             <ContextMenuItem onSelect={onBringToFront}>
               <ArrowUpToLineIcon aria-hidden="true" />
-              Bring to front
+              {t.canvas.bringToFront}
               <ContextMenuShortcut>]</ContextMenuShortcut>
             </ContextMenuItem>
             <ContextMenuItem onSelect={onSendToBack}>
               <ArrowDownToLineIcon aria-hidden="true" />
-              Send to back
+              {t.canvas.sendToBack}
               <ContextMenuShortcut>[</ContextMenuShortcut>
             </ContextMenuItem>
             {selectionSize > 1 ? (
               <p className="text-meta text-ink-subtle px-2 py-1.5" aria-hidden="true">
-                Applies to {selectionSize} selected items
+                {t.canvas.appliesTo(selectionSize)}
               </p>
             ) : null}
           </>
@@ -216,12 +218,12 @@ export function CanvasMenu({
           <>
             <ContextMenuItem onSelect={() => onNewNote(target.point)}>
               <PlusIcon aria-hidden="true" />
-              New note here
+              {t.canvas.newNoteHere}
             </ContextMenuItem>
             {onPaste ? (
               <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste(target.point)}>
                 <ClipboardPasteIcon aria-hidden="true" />
-                Paste
+                {t.canvas.paste}
                 <ContextMenuShortcut>⌘V</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}

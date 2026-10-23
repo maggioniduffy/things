@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { needsUnloadedPosition, planMove, type PositionUpdate } from "@/lib/order";
 import { createClient } from "@/lib/supabase/client";
 import type { SortMode, ViewSpec } from "@/lib/views";
@@ -129,7 +130,7 @@ export function useReorderItem(): (request: ReorderRequest) => Promise<void> {
           if (detail !== undefined) queryClient.setQueryData(itemQueryKey(id), detail);
         }
       }
-      toast.error("Couldn't move that.");
+      toast.error(getActiveMessages().items.toasts.errMove);
     },
     onSettled: async () => {
       // Only the last of overlapping reorders refetches, or it would flash older data.
@@ -156,7 +157,7 @@ export function useReorderItem(): (request: ReorderRequest) => Promise<void> {
           const page = await fetchItemsPage(createClient(), view, "manual", cursor, 1);
           unloaded = page.items[0]?.position ?? null;
         } catch {
-          toast.error("Couldn't move that.");
+          toast.error(getActiveMessages().items.toasts.errMove);
           return;
         }
       }
@@ -165,7 +166,7 @@ export function useReorderItem(): (request: ReorderRequest) => Promise<void> {
         updates = planMove(items, movedId, toIndex, unloaded);
       } catch {
         // fractional-indexing throws on a malformed stored key.
-        toast.error("Couldn't move that.");
+        toast.error(getActiveMessages().items.toasts.errMove);
         return;
       }
       if (updates.length === 0) return;

@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 type RowMenuProps = {
@@ -23,13 +24,14 @@ type RowMenuProps = {
  * row is hovered or focused (always there on small screens, where there is no hover).
  */
 export function RowMenu({ name, editLabel, onEdit, onDelete }: RowMenuProps) {
+  const t = useT().shell;
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <IconButton
           variant="ghost"
           size="sm"
-          label={`${name} options`}
+          label={t.sidebar.rowOptions(name)}
           tooltip={false}
           className={cn(
             "bg-accent absolute top-1/2 right-1 size-7 -translate-y-1/2",
@@ -47,7 +49,7 @@ export function RowMenu({ name, editLabel, onEdit, onDelete }: RowMenuProps) {
         </DropdownMenuItem>
         <DropdownMenuItem variant="destructive" onSelect={onDelete}>
           <Trash2Icon />
-          Delete
+          {t.actions.delete}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

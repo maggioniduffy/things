@@ -10,11 +10,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/i18n/client";
 import { useTagManager, normalizeTagName } from "@/lib/tags/mutations";
 import { MAX_TAG_LENGTH } from "@/lib/tags/parse";
 import type { SidebarTag } from "@/lib/sidebar/queries";
 
 function RenameForm({ tag, close }: { tag: SidebarTag; close: () => void }) {
+  const t = useT().shell;
   const { rename } = useTagManager();
   const id = useId();
   const [name, setName] = useState(tag.name);
@@ -33,7 +35,7 @@ function RenameForm({ tag, close }: { tag: SidebarTag; close: () => void }) {
     >
       <div className="grid gap-1.5">
         <label htmlFor={id} className="text-meta text-ink-muted font-medium">
-          Name
+          {t.actions.name}
         </label>
         <Input
           id={id}
@@ -46,10 +48,10 @@ function RenameForm({ tag, close }: { tag: SidebarTag; close: () => void }) {
       </div>
       <DialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
-          Cancel
+          {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={empty}>
-          Save
+          {t.actions.save}
         </Button>
       </DialogFooter>
     </form>
@@ -66,11 +68,12 @@ export function TagRenameDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT().shell;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rename tag</DialogTitle>
+          <DialogTitle>{t.tagDialog.renameTitle}</DialogTitle>
         </DialogHeader>
         <RenameForm tag={tag} close={() => onOpenChange(false)} />
       </DialogContent>

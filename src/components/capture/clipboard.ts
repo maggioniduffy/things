@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { getActiveMessages } from "@/i18n/active";
 import { parseUrlInput } from "@/lib/items/detect-kind";
 import { cascadePoint, type CanvasTarget } from "@/lib/canvas/layout";
 import type { NoteOptions } from "@/lib/items/mutations";
@@ -11,7 +12,8 @@ export type CaptureRequest =
 
 /** Most things saved by one gesture; the rest are dropped with a toast. */
 export const MAX_CAPTURES = 20;
-export const CAPPED_COPY = `Saved the first ${MAX_CAPTURES} items.`;
+/** Toast copy for a capped gesture, in the active language. */
+export const cappedCopy = (): string => getActiveMessages().items.capture.capped(MAX_CAPTURES);
 
 /** The part of `useCapture` that saving requests needs. */
 export type Capture = {
@@ -126,7 +128,7 @@ export function saveRequests(
   { requests, capped }: { requests: CaptureRequest[]; capped: boolean },
   { canvasAt }: { canvasAt?: CanvasTarget } = {},
 ): void {
-  if (capped) toast(CAPPED_COPY);
+  if (capped) toast(cappedCopy());
   for (let index = requests.length - 1; index >= 0; index -= 1) {
     const request = requests[index];
     if (!request) continue;

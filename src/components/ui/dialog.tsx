@@ -3,6 +3,7 @@
 import * as React from "react";
 import { XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { IconButton } from "./icon-button";
@@ -47,6 +48,7 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 }) {
+  const t = useT().shell;
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -65,7 +67,7 @@ function DialogContent({
             <IconButton
               variant="ghost"
               size="sm"
-              label="Close"
+              label={t.ui.close}
               tooltip={false}
               className="absolute top-3 right-3"
             >
@@ -96,6 +98,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
 }) {
+  const t = useT().shell;
   return (
     <div
       data-slot="dialog-footer"
@@ -105,7 +108,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="secondary">Close</Button>
+          <Button variant="secondary">{t.ui.close}</Button>
         </DialogPrimitive.Close>
       )}
     </div>
