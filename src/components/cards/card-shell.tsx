@@ -149,8 +149,9 @@ export function CardShell({
   onOpen,
 }: CardShellProps) {
   const t = useT().shell.card;
+  const kinds = useT().shell.kinds;
   const { as: Root, dragHandle } = useContext(CardChromeContext);
-  const displayTitle = itemDisplayTitle(item);
+  const displayTitle = itemDisplayTitle(item, t);
   const { pending, failed, failedCopy, retry } = status;
   // One accessible name per card; collapse line breaks of note titles.
   const openLabel = t.open(displayTitle.replace(/\s+/g, " "));
@@ -180,7 +181,7 @@ export function CardShell({
           </span>
         ) : null}
         <CardMarkers item={item} inverse={inverse} />
-        <Badge>{kindSingularLabel(item.kind)}</Badge>
+        <Badge>{kindSingularLabel(kinds, item.kind)}</Badge>
         <button
           type="button"
           aria-label={openLabel}
@@ -215,7 +216,7 @@ export function CardShell({
             inverse ? "bg-ink-inverse/10 text-ink-inverse-muted border-ink-inverse/25" : undefined
           }
         >
-          {kindSingularLabel(item.kind)}
+          {kindSingularLabel(kinds, item.kind)}
         </Badge>
         <CardMarkers item={item} inverse={inverse} />
       </div>

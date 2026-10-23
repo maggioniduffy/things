@@ -66,7 +66,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
 
 function UpgradeFlow({ onClose }: { onClose: () => void }) {
   const router = useRouter();
-  const { login, upgrade } = useT().auth;
+  const { login, upgrade, errors } = useT().auth;
   const locale = useLocale();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
@@ -237,7 +237,7 @@ function UpgradeFlow({ onClose }: { onClose: () => void }) {
       role="alert"
       className="border-line bg-paper rounded-control text-meta text-ink flex flex-col items-start gap-2 border p-3"
     >
-      <p>{AUTH_MESSAGES.accountExists}</p>
+      <p>{errors.accountExists}</p>
       <Button
         type="button"
         variant="secondary"

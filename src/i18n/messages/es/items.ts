@@ -108,7 +108,8 @@ export const items: Messages["items"] = {
     paste: "Pegar",
     bringToFront: "Traer al frente",
     sendToBack: "Enviar al fondo",
-    appliesTo: (n) => (n === 1 ? "Se aplica a 1 cosa seleccionada" : `Se aplica a ${n} cosas seleccionadas`),
+    appliesTo: (n) =>
+      n === 1 ? "Se aplica a 1 cosa seleccionada" : `Se aplica a ${n} cosas seleccionadas`,
     newNoteHere: "Nota nueva acá",
     movePrompt: (n) => `Mover ${n === 1 ? "1 cosa" : `${n} cosas`} a…`,
     moveDescription: "Elegí adónde mover las cosas seleccionadas.",
@@ -136,15 +137,13 @@ export const items: Messages["items"] = {
     batchMoved: (count, destination) =>
       `${count === 1 ? "Se movió 1 cosa" : `Se movieron ${count} cosas`} a ${destination}`,
     theCollection: "la colección",
-    batchTagged: (count, tag) =>
-      `Se agregó #${tag} a ${count === 1 ? "1 cosa" : `${count} cosas`}`,
+    batchTagged: (count, tag) => `Se agregó #${tag} a ${count === 1 ? "1 cosa" : `${count} cosas`}`,
     tagFallback: "etiqueta",
     batchColored: (count) =>
       count === 1 ? "Se cambió el color de 1 nota" : `Se cambió el color de ${count} notas`,
     batchFavorited: (count) =>
       count === 1 ? "Se agregó 1 cosa a Favoritos" : `Se agregaron ${count} cosas a Favoritos`,
-    batchArchived: (count) =>
-      count === 1 ? "Se archivó 1 cosa" : `Se archivaron ${count} cosas`,
+    batchArchived: (count) => (count === 1 ? "Se archivó 1 cosa" : `Se archivaron ${count} cosas`),
     batchTrashed: (count) =>
       count === 1 ? "Se movió 1 cosa a la papelera" : `Se movieron ${count} cosas a la papelera`,
     batchUnarchived: (count) =>
@@ -160,8 +159,7 @@ export const items: Messages["items"] = {
     errBatchTrash: "No se pudieron mover las cosas a la papelera.",
     errBatchRestore: "No se pudieron restaurar las cosas.",
     pasted: (count) => (count === 1 ? "Se pegó 1 cosa" : `Se pegaron ${count} cosas`),
-    duplicated: (count) =>
-      count === 1 ? "Se duplicó 1 cosa" : `Se duplicaron ${count} cosas`,
+    duplicated: (count) => (count === 1 ? "Se duplicó 1 cosa" : `Se duplicaron ${count} cosas`),
     nothingToPaste: "No hay nada para pegar.",
     errPaste: "No se pudieron pegar las cosas.",
     errUndo: "No se pudo deshacer.",

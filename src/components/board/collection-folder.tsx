@@ -135,7 +135,9 @@ function StackTile({
           {items.slice(0, PREVIEW_COUNT).map((item) => (
             <li key={item.id} className="flex min-w-0 items-center gap-1.5">
               <KindIcon kind={item.kind} className="text-ink-subtle size-3.5 shrink-0" />
-              <span className="truncate">{itemDisplayTitle(item).replace(/\s+/g, " ")}</span>
+              <span className="truncate">
+                {itemDisplayTitle(item, t.card).replace(/\s+/g, " ")}
+              </span>
             </li>
           ))}
         </ul>

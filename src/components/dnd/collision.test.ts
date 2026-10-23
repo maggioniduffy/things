@@ -1,7 +1,8 @@
 import type { Collision, CollisionDescriptor, DroppableContainer } from "@dnd-kit/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { messages } from "@/i18n/messages";
 import { boardCollisionDetection, SIDEBAR_ZONE_ATTRIBUTE } from "./collision";
-import { dropData, INBOX_TARGET, type SidebarSortData } from "./targets";
+import { dropData, inboxTarget, type SidebarSortData } from "./targets";
 
 type Rect = {
   top: number;
@@ -30,7 +31,10 @@ function container(id: string, data: unknown): DroppableContainer {
   } as unknown as DroppableContainer;
 }
 
-const target = container(INBOX_TARGET.id, dropData(INBOX_TARGET));
+const target = container(
+  inboxTarget(messages.en.shell.views).id,
+  dropData(inboxTarget(messages.en.shell.views)),
+);
 const cardA = container("a", { sortable: {} });
 const cardB = container("b", { sortable: {} });
 const rects = new Map<string | number, Rect>([

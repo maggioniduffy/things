@@ -66,6 +66,7 @@ function CardFrame({
   isDragging,
 }: FrameProps) {
   const t = useT().shell.board;
+  const card = useT().shell.card;
   const ui = useBoardDnd();
   const reduced = useReducedMotion() ?? false;
   const selected = useUiStore((state) => state.selectedIds.includes(item.id));
@@ -89,7 +90,7 @@ function CardFrame({
           ref={setActivatorNodeRef}
           type="button"
           {...attributes}
-          aria-label={handleLabel(itemDisplayTitle(item).replace(/\s+/g, " "))}
+          aria-label={handleLabel(itemDisplayTitle(item, card).replace(/\s+/g, " "))}
           className={cn(
             "text-ink-muted hover:bg-accent hover:text-ink rounded-control relative z-20 flex size-6 shrink-0 cursor-grab items-center justify-center",
             "opacity-0 transition-opacity duration-(--duration-fast) group-hover:opacity-100 focus-visible:opacity-100",
@@ -101,7 +102,7 @@ function CardFrame({
         </button>
       ) : undefined,
     }),
-    [handleLabel, setActivatorNodeRef, attributes, item, variant],
+    [handleLabel, setActivatorNodeRef, attributes, item, variant, card],
   );
 
   return (

@@ -7,7 +7,7 @@ import { GuestStartButton } from "@/components/account/guest-start-button";
 import { OtpForm } from "@/components/account/otp-form";
 import { useLocale, useT } from "@/i18n/client";
 import { Separator } from "@/components/ui/separator";
-import { AUTH_MESSAGES, mapAuthError } from "@/lib/auth";
+import { mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 
 type LoginPanelProps = {
@@ -18,16 +18,19 @@ type LoginPanelProps = {
 
 export function LoginPanel({ next, callbackError }: LoginPanelProps) {
   const router = useRouter();
-  const { login } = useT().auth;
+  const { login, errors } = useT().auth;
   const locale = useLocale();
   const [googlePending, setGooglePending] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(
-    callbackError === "account_exists"
-      ? AUTH_MESSAGES.accountExists
-      : callbackError
-        ? AUTH_MESSAGES.callbackFailed
-        : null,
-  );
+  // The callback error is kept as a kind and turned into text at render, so it follows the locale.
+  const [callbackKind, setCallbackKind] = useState(callbackError);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const shownError =
+    googleError ??
+    (callbackKind === "account_exists"
+      ? errors.accountExists
+      : callbackKind
+        ? errors.callbackFailed
+        : null);
   // Referenced literally so Next inlines it; unset locally so no broken button shows.
   const googleEnabled = process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED === "true";
 
@@ -39,6 +42,7 @@ export function LoginPanel({ next, callbackError }: LoginPanelProps) {
   async function continueWithGoogle() {
     setGooglePending(true);
     setGoogleError(null);
+    setCallbackKind(null);
     try {
       const callback = new URL("/auth/callback", window.location.origin);
       if (next) callback.searchParams.set("next", next);
@@ -59,9 +63,9 @@ export function LoginPanel({ next, callbackError }: LoginPanelProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {googleError ? (
+      {shownError ? (
         <p role="alert" className="text-meta text-ink">
-          {googleError}
+          {shownError}
         </p>
       ) : null}
 

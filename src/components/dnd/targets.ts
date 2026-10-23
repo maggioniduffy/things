@@ -1,4 +1,4 @@
-import { getActiveMessages } from "@/i18n/active";
+import type { Messages } from "@/i18n/messages";
 import type { BatchAction } from "@/lib/items/batch-mutations";
 
 /** `data` of a sidebar droppable: what dropping cards on it does. */
@@ -24,38 +24,29 @@ export function dropData(target: DropTarget): SidebarDropData {
   return { type: "sidebar-target", action: target.action, label: target.label };
 }
 
-export const INBOX_TARGET: DropTarget = {
+/** The `shell.views` copy of one locale: `useT().shell.views` in components. */
+type Views = Messages["shell"]["views"];
+
+export const inboxTarget = (views: Views): DropTarget => ({
   id: "target:inbox",
   action: { type: "collection", id: null },
-  // Read when used, so it follows the active language.
-  get label() {
-    return getActiveMessages().shell.views.inbox;
-  },
-};
-export const FAVORITES_TARGET: DropTarget = {
+  label: views.inbox,
+});
+export const favoritesTarget = (views: Views): DropTarget => ({
   id: "target:favorites",
   action: { type: "favorite" },
-  // Read when used, so it follows the active language.
-  get label() {
-    return getActiveMessages().shell.views.favorites;
-  },
-};
-export const ARCHIVE_TARGET: DropTarget = {
+  label: views.favorites,
+});
+export const archiveTarget = (views: Views): DropTarget => ({
   id: "target:archive",
   action: { type: "archive" },
-  // Read when used, so it follows the active language.
-  get label() {
-    return getActiveMessages().shell.views.archive;
-  },
-};
-export const TRASH_TARGET: DropTarget = {
+  label: views.archive,
+});
+export const trashTarget = (views: Views): DropTarget => ({
   id: "target:trash",
   action: { type: "trash" },
-  // Read when used, so it follows the active language.
-  get label() {
-    return getActiveMessages().shell.views.trash;
-  },
-};
+  label: views.trash,
+});
 
 export function collectionTarget(id: string, name: string): DropTarget {
   return { id: `target:collection:${id}`, action: { type: "collection", id }, label: name };

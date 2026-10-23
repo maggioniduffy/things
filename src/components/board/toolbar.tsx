@@ -23,7 +23,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { SearchField } from "@/components/ui/search-field";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useT } from "@/i18n/client";
-import { getActiveMessages } from "@/i18n/active";
+import type { Messages } from "@/i18n/messages";
 import { describeRules, parseRules } from "@/lib/filters";
 import { effectiveSort } from "@/lib/items/queries";
 import { kindPluralLabel } from "@/lib/kinds";
@@ -52,12 +52,14 @@ function summarize(
   rules: Parameters<typeof describeRules>[0] | undefined,
   collections: readonly { id: string; name: string }[] | undefined,
   tags: readonly { id: string; name: string }[] | undefined,
+  shell: Messages["shell"],
 ): string {
-  const parts = describeRules(parseRules(rules ?? {}).rules, {
-    collections: collections ?? [],
-    tags: tags ?? [],
-  });
-  return parts.length > 0 ? parts.join(" · ") : getActiveMessages().shell.rules.none;
+  const parts = describeRules(
+    parseRules(rules ?? {}).rules,
+    { collections: collections ?? [], tags: tags ?? [] },
+    shell,
+  );
+  return parts.length > 0 ? parts.join(" · ") : shell.rules.none;
 }
 
 /**
@@ -82,7 +84,7 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
 
   switch (view.type) {
     case "kind":
-      return { title: kindPluralLabel(view.kind), name: null, unknown: false };
+      return { title: kindPluralLabel(t.kinds, view.kind), name: null, unknown: false };
     case "collection": {
       if (!collections.data) return { title: t.toolbar.collection, name: null, unknown: false };
       const found = collections.data.find((collection) => collection.id === view.collectionId);
@@ -109,7 +111,7 @@ export function useViewInfo(view: ViewSpec): ViewInfo {
         unknown: false,
         summary: found.invalidRules
           ? t.rules.unreadable
-          : summarize(found.rules, collections.data, tags.data),
+          : summarize(found.rules, collections.data, tags.data, t),
       };
     }
     default:

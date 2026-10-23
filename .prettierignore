@@ -11,3 +11,5 @@ docs
 .claude
 CLAUDE.md
 CHANGELOG.md
+# Go templates (Supabase Auth): Prettier splits {{ }} actions across lines.
+supabase/templates/

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@/i18n/messages";
 import {
   auroraColorLabel,
   auroraColorVar,
@@ -31,7 +32,7 @@ describe("aurora colors", () => {
   });
 
   it("labels a token in sentence case", () => {
-    expect(auroraColorLabel("olive")).toBe("Olive");
+    expect(auroraColorLabel("olive", messages.en.shell.colors)).toBe("Olive");
   });
 });
 

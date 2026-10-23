@@ -87,12 +87,7 @@ export function CanvasControls() {
       >
         <ZoomOutIcon />
       </IconButton>
-      <IconButton
-        size="sm"
-        label={t.fitAll}
-        aria-keyshortcuts="Shift+1"
-        onClick={viewport.fitAll}
-      >
+      <IconButton size="sm" label={t.fitAll} aria-keyshortcuts="Shift+1" onClick={viewport.fitAll}>
         <MaximizeIcon />
       </IconButton>
       <IconButton

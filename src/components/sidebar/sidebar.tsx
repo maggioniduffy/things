@@ -13,12 +13,7 @@ import {
 import { useId, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand";
 import { SIDEBAR_ZONE_ATTRIBUTE } from "@/components/dnd/collision";
-import {
-  ARCHIVE_TARGET,
-  FAVORITES_TARGET,
-  INBOX_TARGET,
-  TRASH_TARGET,
-} from "@/components/dnd/targets";
+import { archiveTarget, favoritesTarget, inboxTarget, trashTarget } from "@/components/dnd/targets";
 import { KindIcon } from "@/components/kind-icon";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { IconButton } from "@/components/ui/icon-button";
@@ -110,7 +105,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<InboxIcon />}
               label={t.views.inbox}
               count={counts?.inbox}
-              drop={INBOX_TARGET}
+              drop={inboxTarget(t.views)}
               onNavigate={onNavigate}
             />
           </li>
@@ -138,7 +133,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<StarIcon />}
               label={t.views.favorites}
               count={counts?.favorites}
-              drop={FAVORITES_TARGET}
+              drop={favoritesTarget(t.views)}
               onNavigate={onNavigate}
             />
           </li>
@@ -153,7 +148,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
                   <NavItem
                     href={viewHref({ type: "kind", kind })}
                     icon={<KindIcon kind={kind} />}
-                    label={kindPluralLabel(kind)}
+                    label={kindPluralLabel(t.kinds, kind)}
                     count={counts?.kinds[kind]}
                     onNavigate={onNavigate}
                   />
@@ -243,7 +238,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<ArchiveIcon />}
               label={t.views.archive}
               count={counts?.archive}
-              drop={ARCHIVE_TARGET}
+              drop={archiveTarget(t.views)}
               onNavigate={onNavigate}
             />
           </li>
@@ -253,7 +248,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
               icon={<Trash2Icon />}
               label={t.views.trash}
               count={counts?.trash}
-              drop={TRASH_TARGET}
+              drop={trashTarget(t.views)}
               onNavigate={onNavigate}
             />
           </li>
@@ -264,11 +259,7 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       <SmartViewDialog open={creatingSmartView} onOpenChange={setCreatingSmartView} />
 
       <Separator />
-      <div
-        role="group"
-        aria-label={t.sidebar.account}
-        className="flex shrink-0 flex-col gap-2 p-3"
-      >
+      <div role="group" aria-label={t.sidebar.account} className="flex shrink-0 flex-col gap-2 p-3">
         <p className="text-meta text-ink-muted min-w-0 truncate" title={email ?? undefined}>
           {email ?? t.sidebar.guest}
         </p>

@@ -3,13 +3,14 @@
 import { CardMedia } from "./card-media";
 import { CardShell } from "./card-shell";
 import { useCardStatus } from "./card-status";
+import { useLocale } from "@/i18n/client";
 import { formatBytes } from "./format-bytes";
 import type { CardProps } from "./types";
 
 /** PDF: page-1 thumbnail, title and size. The kind badge reads "PDF". */
 export function PdfCard({ item, variant, thumbnailUrl, onOpen, onRetry }: CardProps) {
   const status = useCardStatus(item, onRetry);
-  const size = formatBytes(item.file_size);
+  const size = formatBytes(item.file_size, useLocale());
   return (
     <CardShell
       card="pdf"

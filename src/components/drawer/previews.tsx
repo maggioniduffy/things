@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
-import { useT } from "@/i18n/client";
+import { useLocale, useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
@@ -47,10 +47,11 @@ function UploadNotice({ item, state }: { item: BoardItem; state: "uploading" | "
 
 function ImagePreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
   const [open, setOpen] = useState(false);
   const urls = useSignedUrls([item.file_path]);
   const src = item.file_path ? urls.get(item.file_path) : item.image_url;
-  const title = itemDisplayTitle(item);
+  const title = itemDisplayTitle(item, card);
 
   if (!src) {
     return item.file_path ? (
@@ -97,16 +98,22 @@ function ImagePreview({ item }: { item: BoardItem }) {
 
 function PdfPreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
   const urls = useSignedUrls([item.file_path]);
   const src = item.file_path ? urls.get(item.file_path) : undefined;
   if (!src) return <Skeleton className="h-[60vh] w-full" />;
   return (
-    <iframe src={src} title={t.pdfTitle(itemDisplayTitle(item))} className={`${FRAME} h-[60vh]`} />
+    <iframe
+      src={src}
+      title={t.pdfTitle(itemDisplayTitle(item, card))}
+      className={`${FRAME} h-[60vh]`}
+    />
   );
 }
 
 function VideoPreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
   const embed = parseVideoEmbed(item.url);
   const urls = useSignedUrls([embed ? null : item.file_path]);
   const fileSrc = item.file_path ? urls.get(item.file_path) : undefined;
@@ -115,7 +122,7 @@ function VideoPreview({ item }: { item: BoardItem }) {
     return (
       <iframe
         src={embed.src}
-        title={t.videoTitle(itemDisplayTitle(item))}
+        title={t.videoTitle(itemDisplayTitle(item, card))}
         allow="fullscreen; picture-in-picture; encrypted-media"
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
@@ -130,7 +137,7 @@ function VideoPreview({ item }: { item: BoardItem }) {
         src={fileSrc}
         controls
         preload="metadata"
-        aria-label={itemDisplayTitle(item)}
+        aria-label={itemDisplayTitle(item, card)}
         className={`${FRAME} bg-ink aspect-video`}
       />
     );
@@ -149,9 +156,10 @@ function SourceLink({ href, className, children, ...props }: ComponentProps<"a">
 
 function LinkPreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
   const href = safeHttpUrl(item.url);
   const site = item.site_name ?? item.domain;
-  const title = itemDisplayTitle(item);
+  const title = itemDisplayTitle(item, card);
   const image = item.image_url ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -213,8 +221,10 @@ function LinkPreview({ item }: { item: BoardItem }) {
 
 function FilePreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
+  const locale = useLocale();
   const [busy, setBusy] = useState(false);
-  const size = formatBytes(item.file_size);
+  const size = formatBytes(item.file_size, locale);
 
   async function download() {
     if (!item.file_path) return;
@@ -243,7 +253,7 @@ function FilePreview({ item }: { item: BoardItem }) {
       <KindIcon kind={item.kind} className="text-ink-subtle size-8 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-body text-ink truncate font-medium">
-          {item.file_name ?? itemDisplayTitle(item)}
+          {item.file_name ?? itemDisplayTitle(item, card)}
         </p>
         {size ? <p className="text-meta text-ink-subtle">{size}</p> : null}
       </div>

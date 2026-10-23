@@ -137,7 +137,7 @@ function CollectionForm({
               key={token}
               group={colorName}
               value={token}
-              label={auroraColorLabel(token)}
+              label={auroraColorLabel(token, t.colors)}
               checked={color === token}
               onSelect={() => setColor(token)}
             />

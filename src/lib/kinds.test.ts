@@ -1,20 +1,21 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { setActiveLocale } from "@/i18n/active";
+import { describe, expect, it } from "vitest";
+import { messages } from "@/i18n/messages";
 import { ITEM_KINDS } from "@/lib/views";
-import { kindLabels, kindPluralLabel, kindPluralLowercase, kindSingularLabel } from "./kinds";
+import { kindPluralLabel, kindPluralLowercase, kindSingularLabel } from "./kinds";
+
+const en = messages.en.shell.kinds;
+const es = messages.es.shell.kinds;
 
 describe("kinds", () => {
-  afterEach(() => setActiveLocale("en"));
-
   it("labels every item kind", () => {
     for (const kind of ITEM_KINDS) {
-      expect(kindLabels()[kind].singular).not.toBe("");
-      expect(kindLabels()[kind].plural).not.toBe("");
+      expect(en[kind].singular).not.toBe("");
+      expect(en[kind].plural).not.toBe("");
     }
   });
 
   it("uses the plural labels from the sidebar spec", () => {
-    expect(ITEM_KINDS.map(kindPluralLabel)).toEqual([
+    expect(ITEM_KINDS.map((kind) => kindPluralLabel(en, kind))).toEqual([
       "Links",
       "Articles",
       "Videos",
@@ -29,20 +30,19 @@ describe("kinds", () => {
   });
 
   it("has singular labels", () => {
-    expect(kindSingularLabel("pdf")).toBe("PDF");
-    expect(kindSingularLabel("note")).toBe("Note");
+    expect(kindSingularLabel(en, "pdf")).toBe("PDF");
+    expect(kindSingularLabel(en, "note")).toBe("Note");
   });
 
   it("lower-cases plurals except PDFs", () => {
-    expect(kindPluralLowercase("link")).toBe("links");
-    expect(kindPluralLowercase("pdf")).toBe("PDFs");
+    expect(kindPluralLowercase(en, "link")).toBe("links");
+    expect(kindPluralLowercase(en, "pdf")).toBe("PDFs");
   });
 
   it("speaks Spanish in the es locale", () => {
-    setActiveLocale("es");
-    expect(kindPluralLabel("image")).toBe("Imágenes");
-    expect(kindSingularLabel("link")).toBe("Enlace");
-    expect(kindPluralLowercase("note")).toBe("notas");
-    expect(kindPluralLowercase("pdf")).toBe("PDFs");
+    expect(kindPluralLabel(es, "image")).toBe("Imágenes");
+    expect(kindSingularLabel(es, "link")).toBe("Enlace");
+    expect(kindPluralLowercase(es, "note")).toBe("notas");
+    expect(kindPluralLowercase(es, "pdf")).toBe("PDFs");
   });
 });
