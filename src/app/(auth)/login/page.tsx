@@ -3,7 +3,7 @@ import { safeNextPath } from "@/lib/supabase/proxy";
 import { LoginPanel } from "./login-panel";
 
 export const metadata: Metadata = {
-  title: "Sign in — Things",
+  title: "Sign in — Thingteca",
   robots: { index: false },
 };
 

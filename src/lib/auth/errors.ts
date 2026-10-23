@@ -2,10 +2,10 @@ export const AUTH_MESSAGES = {
   invalidCode: "That code didn't work. Check it or send a new one.",
   rateLimit: "Too many attempts. Wait a minute, then try again.",
   captcha: "We couldn't verify that you're a person. Refresh the page and try again.",
-  network: "Can't reach Things. Check your connection and try again.",
+  network: "Can't reach Thingteca. Check your connection and try again.",
   invalidEmail: "That email address doesn't look right. Check it and try again.",
   accountExists:
-    "That email already has a Things account. Sign in to it instead — items saved as a guest won't move over yet.",
+    "That email already has a Thingteca account. Sign in to it instead — items saved as a guest won't move over yet.",
   unknown: "Something went wrong. Try again.",
 } as const;
 

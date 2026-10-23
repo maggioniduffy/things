@@ -15,7 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Things",
+  title: "Thingteca",
   robots: { index: false },
 };
 

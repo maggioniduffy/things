@@ -94,8 +94,13 @@ const icon = (tone, radius) => {
   }
 };
 
-const wordmark = (size, color) =>
-  `<span style="font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;line-height:1;font-size:${size}px;color:${color}">Things</span>`;
+/** Wordmark: "teca" takes the mark's gradient on paper, a light weight when `color` is flat (on aurora). */
+const wordmark = (size, color, flat = false) => {
+  const suffix = flat
+    ? `<span style="font-weight:300;opacity:0.85">teca</span>`
+    : `<span style="background:linear-gradient(90deg,${C.blue},${C.violet},${C.pink});-webkit-background-clip:text;background-clip:text;color:transparent">teca</span>`;
+  return `<span style="font-family:'Inter Tight',Inter,sans-serif;font-weight:600;letter-spacing:-0.02em;line-height:1;font-size:${size}px;color:${color}">Thing${suffix}</span>`;
+};
 
 const og = {
   default: () => `
@@ -112,7 +117,7 @@ const og = {
 <div id="root" style="position:relative;width:1200px;height:630px;overflow:hidden;background:${C.paper}">
   <div style="position:absolute;left:0;right:0;bottom:0;height:560px">${aurora()}</div>
   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-bottom:40px">
-    <div style="display:inline-flex;align-items:center;gap:26px">${mark(112, "#ffffff")}${wordmark(101, "#ffffff")}</div>
+    <div style="display:inline-flex;align-items:center;gap:26px">${mark(112, "#ffffff")}${wordmark(101, "#ffffff", true)}</div>
   </div>
   ${grain()}
 </div>`,
@@ -120,7 +125,7 @@ const og = {
 
 const page = (body) => `<!doctype html><html><head><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@300;600&display=swap" rel="stylesheet">
 <style>html,body{margin:0;background:transparent;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased}</style>
 </head><body>${body}</body></html>`;
 

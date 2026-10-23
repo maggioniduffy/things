@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type MarkVariant = "color" | "duo" | "mono";
@@ -67,12 +68,15 @@ function Mark({
   );
 }
 
-/** Things logo: two-card mark + "Things" wordmark. Accessible name is always "Things". */
+/**
+ * Two-card mark + wordmark. The "teca" suffix takes the mark's gradient ("color", "duo") or a
+ * light weight ("mono"). Accessible name is always the full product name.
+ */
 export function Logo({ size = 24, showWordmark = true, variant = "color", className }: LogoProps) {
   if (!showWordmark) {
     return (
       <span className={cn("text-ink inline-flex shrink-0", className)}>
-        <Mark size={size} variant={variant} role="img" aria-label="Things" />
+        <Mark size={size} variant={variant} role="img" aria-label={BRAND.name} />
       </span>
     );
   }
@@ -87,7 +91,16 @@ export function Logo({ size = 24, showWordmark = true, variant = "color", classN
         className="font-heading tracking-heading leading-none font-semibold"
         style={{ fontSize: Math.round(size * 0.9) }}
       >
-        Things
+        {BRAND.stem}
+        <span
+          className={
+            variant === "mono"
+              ? "font-light opacity-75"
+              : "from-aurora-blue via-aurora-violet to-aurora-pink bg-linear-to-r bg-clip-text text-transparent"
+          }
+        >
+          {BRAND.suffix}
+        </span>
       </span>
     </span>
   );

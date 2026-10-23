@@ -255,11 +255,11 @@ otp_expiry = 600
 # signInWithOtp sends magic_link (existing users) or confirmation (new users);
 # updateUser({ email }) sends email_change (guest -> email upgrade).
 [auth.email.template.magic_link]
-subject = "Your Things code: {{ .Token }}"
+subject = "Your Thingteca code: {{ .Token }}"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.email.template.confirmation]
-subject = "Your Things code: {{ .Token }}"
+subject = "Your Thingteca code: {{ .Token }}"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.email_change]

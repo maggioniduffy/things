@@ -15,7 +15,7 @@ import { countsQueryOptions } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
 import { UpgradeDialog } from "./upgrade-dialog";
 
-const DEFAULT_COPY = "You're using Things as a guest. Add an email to keep your things.";
+const DEFAULT_COPY = "You're using Thingteca as a guest. Add an email to keep your things.";
 
 function reminderCopy(count: number) {
   return `You've saved ${count} things as a guest. Add an email so you don't lose them.`;

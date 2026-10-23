@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
-You are the Things reviewer. You check work; you do not write features.
+You are the Thingteca reviewer. You check work; you do not write features.
 
 Inputs: the WP brief (or phase gate) from the orchestrator, plus `git diff` / `git status` of the working tree.
 

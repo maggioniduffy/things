@@ -6,7 +6,7 @@ test.describe("landing page", () => {
     const consoleErrors = trackConsoleErrors(page);
     await page.goto("/");
 
-    await expect(page).toHaveTitle("Things — save anything for later");
+    await expect(page).toHaveTitle("Thingteca — save anything for later");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Save anything. Find it again.",
     );
@@ -19,7 +19,7 @@ test.describe("landing page", () => {
     await expect(signIn).toHaveAttribute("href", /^\/login/);
 
     await expect(page.getByRole("contentinfo")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Things on GitHub" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Thingteca on GitHub" })).toHaveAttribute(
       "href",
       "https://github.com/maggioniduffy/things",
     );

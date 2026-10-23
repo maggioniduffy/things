@@ -34,7 +34,7 @@ describe("GuestBanner", () => {
     renderWithQuery(<GuestBanner />);
     const region = await screen.findByRole("region", { name: "Guest account" });
     expect(region).toHaveTextContent(
-      "You're using Things as a guest. Add an email to keep your things.",
+      "You're using Thingteca as a guest. Add an email to keep your things.",
     );
     expect(screen.getByRole("button", { name: "Keep my things" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dismiss for now" })).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("GuestBanner", () => {
     const client = makeTestQueryClient();
     client.setQueryData(["counts"], makeCounts({ all: 9 }));
     renderWithQuery(<GuestBanner />, client);
-    expect(await screen.findByText(/You're using Things as a guest/)).toBeInTheDocument();
+    expect(await screen.findByText(/You're using Thingteca as a guest/)).toBeInTheDocument();
 
     act(() => client.setQueryData(["counts"], makeCounts({ all: 10 })));
     expect(
@@ -70,7 +70,7 @@ describe("GuestBanner", () => {
   it("keeps the default copy when the count query fails", async () => {
     countsQuery.result = { data: null, error: { message: "boom" } };
     renderWithQuery(<GuestBanner />);
-    expect(await screen.findByText(/You're using Things as a guest/)).toBeInTheDocument();
+    expect(await screen.findByText(/You're using Thingteca as a guest/)).toBeInTheDocument();
   });
 
   it("hides on dismiss and remembers it for the tab session", async () => {

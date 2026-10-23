@@ -116,7 +116,7 @@ describe("UpgradeDialog", () => {
 
     expect(
       await screen.findByText(
-        "That email already has a Things account. Sign in to it instead — items saved as a guest won't move over yet.",
+        "That email already has a Thingteca account. Sign in to it instead — items saved as a guest won't move over yet.",
       ),
     ).toBeInTheDocument();
 

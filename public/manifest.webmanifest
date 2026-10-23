@@ -1,6 +1,6 @@
 {
-  "name": "Things",
-  "short_name": "Things",
+  "name": "Thingteca",
+  "short_name": "Thingteca",
   "description": "Save anything for later.",
   "start_url": "/app",
   "display": "standalone",
