@@ -97,7 +97,7 @@ export function Footer() {
       <div className="border-line border-t">
         <p className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
           © {new Date().getFullYear()} Things - <a href="https://cafecito.app/maggioniduffy" target="_blank">
-         Buy me a coffe! 
+         <b> Buy me a coffe! </b>
         </a>
         </p>
       </div>
