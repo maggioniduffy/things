@@ -18,7 +18,7 @@ Thingteca (English) / Cosateca (Spanish), formerly Things, is a personal "save f
 | 7 Search & palette | [phase-7.md](phase-7.md) | | |
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 | 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | Phase 9 PR |
-| 10 UI corrections | [UI-corrections.md](UI-corrections.md) | gate in progress: unit 1517/1517; e2e, Lighthouse and device checks pending | |
+| 10 UI corrections | [UI-corrections.md](UI-corrections.md) | gate in progress: unit 1517/1517; e2e (owner, local), aurora fade, Lighthouse and device checks pending | |
 
 Update this table when a WP or gate lands.
 
