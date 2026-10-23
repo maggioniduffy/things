@@ -40,6 +40,40 @@ export const marketing = {
       },
     ],
   },
+  install: {
+    eyebrow: "Install",
+    title: "Install the app",
+    lead: `${brand} runs in your browser. Add it to your home screen or desktop to open it like any other app.`,
+    tabsLabel: "Choose your device",
+    installButton: "Install",
+    installedNote: "Installed. Open it from your home screen or app list.",
+    platforms: {
+      android: {
+        tab: "Android",
+        title: "Android, in Chrome",
+        steps: [
+          "Open the menu (three dots) in the top corner of Chrome.",
+          "Tap Add to home screen, or Install app.",
+          "Confirm with Install.",
+        ],
+      },
+      ios: {
+        tab: "iPhone and iPad",
+        title: "iPhone and iPad, in Safari",
+        steps: ["Tap the Share button.", "Scroll down and tap Add to Home Screen.", "Tap Add."],
+        note: "On iOS this works from Safari. Other browsers can do it too from iOS 16.4 onwards, through their Share menu.",
+      },
+      desktop: {
+        tab: "Desktop",
+        title: "Desktop, in Chrome or Edge",
+        steps: [
+          "Click the install icon at the right end of the address bar.",
+          "Or open the menu, then Cast, save and share, then Install page as app.",
+          "Confirm with Install.",
+        ],
+      },
+    },
+  },
   features: {
     eyebrow: "Features",
     title: "Organized before you think about it",

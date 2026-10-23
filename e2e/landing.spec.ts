@@ -32,6 +32,7 @@ test.describe("landing page", () => {
     const main = page.getByRole("main");
     for (const name of [
       "How it works",
+      "Install the app",
       "Organized before you think about it",
       "Try it without an account",
       "Questions, answered",
@@ -39,7 +40,7 @@ test.describe("landing page", () => {
     ]) {
       await expect(main.getByRole("region", { name })).toBeVisible();
     }
-    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(5);
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(6);
     await expect(main.getByRole("list", { name: "Formats" }).getByRole("listitem")).toHaveCount(8);
 
     await page

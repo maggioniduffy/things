@@ -41,6 +41,40 @@ export const marketing: Messages["marketing"] = {
       },
     ],
   },
+  install: {
+    eyebrow: "Instalar",
+    title: "Instalá la app",
+    lead: `${brand} funciona en el navegador. Agregala a tu pantalla de inicio o al escritorio y abrila como cualquier otra app.`,
+    tabsLabel: "Elegí tu dispositivo",
+    installButton: "Instalar",
+    installedNote: "Instalada. Abrila desde tu pantalla de inicio o la lista de apps.",
+    platforms: {
+      android: {
+        tab: "Android",
+        title: "Android, en Chrome",
+        steps: [
+          "Abrí el menú (tres puntos) en la esquina de Chrome.",
+          "Tocá Agregar a la pantalla principal, o Instalar app.",
+          "Confirmá con Instalar.",
+        ],
+      },
+      ios: {
+        tab: "iPhone y iPad",
+        title: "iPhone y iPad, en Safari",
+        steps: ["Tocá el botón Compartir.", "Bajá y tocá Agregar a inicio.", "Tocá Agregar."],
+        note: "En iOS funciona desde Safari. Otros navegadores también pueden hacerlo desde iOS 16.4, con su menú Compartir.",
+      },
+      desktop: {
+        tab: "Escritorio",
+        title: "Escritorio, en Chrome o Edge",
+        steps: [
+          "Hacé clic en el ícono de instalar, al final de la barra de direcciones.",
+          "O abrí el menú, luego Transmitir, guardar y compartir, y después Instalar página como app.",
+          "Confirmá con Instalar.",
+        ],
+      },
+    },
+  },
   features: {
     eyebrow: "Funciones",
     title: "Ordenado antes de que lo pienses",
