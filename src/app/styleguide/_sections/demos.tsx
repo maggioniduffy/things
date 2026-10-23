@@ -52,7 +52,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { SearchField } from "@/components/ui/search-field";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { toast, undoToast } from "@/components/ui/sonner";
+import { EmptyState } from "@/components/board/empty-state";
 
 export function DialogDemo() {
   return (
@@ -76,6 +85,43 @@ export function DialogDemo() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** A dialog at sm and up, a bottom sheet below. Resize the window to see both. */
+export function ResponsiveDialogDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        Open responsive dialog
+      </Button>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>New collection</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>
+              A bottom sheet on phones, a dialog on wider screens.
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <Input aria-label="Collection name" defaultValue="Recipes" />
+          <ResponsiveDialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setOpen(false)}>Create</Button>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+    </>
+  );
+}
+
+export function EmptyStateDemo() {
+  return (
+    <div className="border-line rounded-card flex w-full overflow-hidden border">
+      <EmptyState view={{ type: "inbox" }} />
+    </div>
   );
 }
 
