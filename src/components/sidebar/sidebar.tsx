@@ -6,6 +6,7 @@ import {
   CircleDotIcon,
   InboxIcon,
   LayersIcon,
+  PanelLeftIcon,
   PlusIcon,
   StarIcon,
   Trash2Icon,
@@ -39,6 +40,8 @@ type SidebarProps = {
   /** Signed-in email, or null for a guest. */
   email: string | null;
   onNavigate?: () => void;
+  /** Hides the sidebar (collapses it on desktop, closes the drawer on mobile). */
+  onClose?: () => void;
 };
 
 function Section({
@@ -76,7 +79,7 @@ function Section({
   );
 }
 
-export function Sidebar({ email, onNavigate }: SidebarProps) {
+export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
   const t = useT().shell;
   const client = createClient();
   const { data: counts } = useQuery(countsQueryOptions(client));
@@ -90,8 +93,20 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col" {...{ [SIDEBAR_ZONE_ATTRIBUTE]: "" }}>
-      <div className="flex h-14 shrink-0 items-center px-4">
-        <Logo />
+      <div className="flex h-14 shrink-0 items-center justify-between gap-2 pr-2 pl-4">
+        {onClose ? (
+          // A pointer shortcut; the icon button next to it is the labelled, focusable control.
+          <button type="button" tabIndex={-1} onClick={onClose} className="cursor-pointer">
+            <Logo />
+          </button>
+        ) : (
+          <Logo />
+        )}
+        {onClose ? (
+          <IconButton variant="ghost" size="sm" label={t.toolbar.hideSidebar} onClick={onClose}>
+            <PanelLeftIcon />
+          </IconButton>
+        ) : null}
       </div>
 
       <nav

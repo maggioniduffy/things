@@ -181,15 +181,18 @@ export function Toolbar({ view, sort }: ToolbarProps) {
       >
         <MenuIcon />
       </IconButton>
-      <IconButton
-        variant="ghost"
-        size="sm"
-        label={sidebarCollapsed ? tb.showSidebar : tb.hideSidebar}
-        className="hidden md:inline-flex"
-        onClick={toggleSidebar}
-      >
-        <PanelLeftIcon />
-      </IconButton>
+      {/* While the sidebar is open, its own header holds the hide button. */}
+      {sidebarCollapsed ? (
+        <IconButton
+          variant="ghost"
+          size="sm"
+          label={tb.showSidebar}
+          className="hidden md:inline-flex"
+          onClick={toggleSidebar}
+        >
+          <PanelLeftIcon />
+        </IconButton>
+      ) : null}
 
       <div className="min-w-0 flex-1">
         <h1 className="font-heading text-section tracking-heading truncate font-semibold">
