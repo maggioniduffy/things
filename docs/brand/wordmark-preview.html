@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wordmark preview</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:ital,wght@0,300;0,600;0,700;1,600&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+  :root {
+    --paper: #f3f4f6; --ink: #0f0f12; --ink-muted: #4a4a52; --ink-subtle: #6b6b74;
+    --blue: #4f63de; --violet: #8e6cf0; --pink: #ee5bc4; --red: #ef4a30; --coral: #f6a79c;
+    --line: rgb(15 15 18 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, sans-serif; }
+  main { width: 1600px; padding: 56px 64px 64px; }
+  h1 { font-family: "Inter Tight"; font-weight: 600; letter-spacing: -0.02em; font-size: 28px; margin: 0 0 6px; }
+  .intro { color: var(--ink-muted); font-size: 15px; margin: 0 0 36px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .opt { background: rgb(255 255 255 / 0.65); border: 1px solid var(--line); border-radius: 14px; padding: 28px 32px 30px; }
+  .tag { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-muted); margin-bottom: 22px; }
+  .tag b { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 44px; flex-wrap: wrap; }
+  .lockup { display: inline-flex; align-items: center; gap: 14px; }
+  .wm { font-family: "Inter Tight"; font-weight: 600; letter-spacing: -0.02em; line-height: 1; font-size: 50px; color: var(--ink); white-space: nowrap; }
+  .small { margin-top: 24px; display: flex; gap: 14px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 10px; }
+  .chip .wm { font-size: 22px; }
+  .chip.light { background: #fff; border: 1px solid var(--line); }
+  .chip.dark { background: var(--ink); }
+  .chip.dark .wm { color: #f6f6f8; }
+  .note { margin: 18px 0 0; font-size: 13px; color: var(--ink-subtle); }
+
+  /* A: gradient "teca", same aurora as the mark */
+  .a .t { background: linear-gradient(100deg, var(--blue), var(--violet) 45%, var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .chip.dark .a .t, .a.dark .t { background: linear-gradient(100deg, #8a98ff, var(--violet) 40%, var(--pink)); -webkit-background-clip: text; background-clip: text; }
+  /* B: weight contrast, "teca" light and muted */
+  .b .t { font-weight: 300; color: var(--ink-muted); }
+  .chip.dark .b .t { color: #c9c9d2; }
+  /* C: italic serif "teca" in violet */
+  .c .t { font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; font-size: 1.12em; letter-spacing: 0; color: var(--violet); padding-left: 1px; }
+  .chip.dark .c .t { color: #b7a3ff; }
+  /* D: warm gradient "teca", echoes the right card of the mark */
+  .d .t { background: linear-gradient(100deg, var(--pink), var(--red)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cosateca / Thingteca — wordmark</h1>
+  <p class="intro">Cuatro maneras de separar "teca" del resto. Misma marca de dos tarjetas, colores y fuentes de la app (Inter Tight; C suma Instrument Serif).</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+  const mark = (s, n) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" stroke-width="2" stroke-linejoin="round" style="display:block;overflow:visible">
+    <defs><linearGradient id="a${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f63de"/><stop offset="0.55" stop-color="#8e6cf0"/><stop offset="1" stop-color="#ee5bc4"/></linearGradient>
+    <linearGradient id="b${n}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6a79c"/><stop offset="0.5" stop-color="#ee5bc4"/><stop offset="1" stop-color="#ef4a30"/></linearGradient></defs>
+    <path d="M1.85 4.2 10.5 9.2V22.8L1.85 17.8z" fill="url(#a${n})" stroke="url(#a${n})"/>
+    <path d="M13.5 1.2 22.15 6.2V19.8L13.5 14.8z" fill="url(#b${n})" stroke="url(#b${n})"/></svg>`;
+  const opts = [
+    ["A", "a", "Color: \"teca\" con el degradado azul → violeta → rosa de la marca", "Mi favorita: liga la palabra al ícono y se lee bien en chico."],
+    ["B", "b", "Peso: \"teca\" light y gris, sin color", "La más sobria; funciona en monocromo y en mails."],
+    ["C", "c", "Fuente: \"teca\" en serif itálica, violeta", "Más editorial; agrega una fuente nueva (Instrument Serif)."],
+    ["D", "d", "Color cálido: \"teca\" en rosa → rojo, como la tarjeta derecha", "Más llamativa; el rojo compite con los errores de la UI."],
+  ];
+  let n = 0;
+  const wm = (cls, base) => `<span class="wm ${cls}">${base}<span class="t">teca</span></span>`;
+  document.getElementById("grid").innerHTML = opts.map(([L, cls, title, note]) => `
+    <section class="opt">
+      <div class="tag"><b>${L}</b>${title}</div>
+      <div class="row">
+        <span class="lockup">${mark(50, n++)}${wm(cls, "Cosa")}</span>
+        <span class="lockup">${mark(50, n++)}${wm(cls, "Thing")}</span>
+      </div>
+      <div class="small">
+        <span class="chip light">${mark(22, n++)}${wm(cls, "Cosa")}</span>
+        <span class="chip dark">${mark(22, n++)}${wm(cls, "Thing")}</span>
+      </div>
+      <p class="note">${note}</p>
+    </section>`).join("");
+</script>
+</body>
+</html>
