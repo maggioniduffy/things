@@ -163,7 +163,7 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
     <div className="flex flex-col gap-6">
       {step === "email" ? (
         <div className="flex flex-col gap-1.5">
-          <h1 className="font-heading text-page tracking-heading text-ink">Sign in to Things</h1>
+          <h1 className="font-heading text-page tracking-heading text-ink">Sign in to Thingteca</h1>
           <p className="text-body text-ink-muted">
             We&apos;ll email you a 6-digit code. New here? That creates your account.
           </p>

@@ -50,7 +50,7 @@ export function Footer() {
         <div className="flex max-w-xs flex-col gap-4">
           <Link
             href="/"
-            aria-label="Things, home"
+            aria-label="Thingteca, home"
             className={cn("rounded-control w-fit", focusRing)}
           >
             <Logo />
@@ -59,7 +59,7 @@ export function Footer() {
             A calm place to keep links, files and notes for later.
           </p>
           <div className="flex gap-2">
-            <IconButton asChild label="Things on GitHub">
+            <IconButton asChild label="Thingteca on GitHub">
               <a href={GITHUB_URL} target="_blank" rel="noreferrer noopener">
                 <GitHubMark />
               </a>
@@ -96,7 +96,7 @@ export function Footer() {
       </div>
       <div className="border-line border-t">
         <p className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-          © {new Date().getFullYear()} Things - <a href="https://cafecito.app/maggioniduffy" target="_blank">
+          © {new Date().getFullYear()} Thingteca - <a href="https://cafecito.app/maggioniduffy" target="_blank">
          <b> Buy me a coffe! </b>
         </a>
         </p>

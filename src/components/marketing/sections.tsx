@@ -86,7 +86,7 @@ const FEATURES: { icon: LucideIcon; title: string; body: string }[] = [
   },
 ];
 
-/** What Things does: automatic formats first, then the feature grid. */
+/** What Thingteca does: automatic formats first, then the feature grid. */
 export function Features() {
   return (
     <section id="features" aria-labelledby="features-title" className={sectionClass}>
@@ -99,7 +99,7 @@ export function Features() {
             Organized before you think about it
           </h2>
           <p className={leadClass}>
-            Things looks at every save and files it by format, so your board already makes sense.
+            Thingteca looks at every save and files it by format, so your board already makes sense.
             Collections, tags and smart views are there when you want more.
           </p>
         </header>
@@ -159,7 +159,7 @@ export function GuestMode() {
             Try it without an account
           </h2>
           <p className={leadClass}>
-            One click gives you a private board. Make an account only once Things has earned it.
+            One click gives you a private board. Make an account only once Thingteca has earned it.
           </p>
         </header>
         <dl className="divide-line border-line divide-y border-y">

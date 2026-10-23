@@ -1,6 +1,6 @@
-# Things
+# Thingteca · Cosateca
 
-Things is a save-for-later app for links, files and notes, with one user per account. Save anything, organise it into collections, and find it again with fast search. It is built on Next.js 16, Supabase and Tailwind CSS v4.
+Thingteca (English, https://thing.teca.plus) and Cosateca (Spanish, https://cosa.teca.plus) are one save-for-later app for links, files and notes, with one user per account. Save anything, organise it into collections, and find it again with fast search. It is built on Next.js 16, Supabase and Tailwind CSS v4.
 
 ## Requirements
 

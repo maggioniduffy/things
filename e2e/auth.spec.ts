@@ -22,7 +22,9 @@ test.describe("email code sign-in", () => {
     const email = uniqueEmail();
 
     await page.goto("/login");
-    await expect(page.getByRole("heading", { level: 1, name: "Sign in to Things" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sign in to Thingteca" }),
+    ).toBeVisible();
     await signInWithEmail(page, email);
 
     await expect(page).toHaveURL(/\/app$/);
@@ -106,7 +108,9 @@ test.describe("guest and redirects", () => {
     // A guest may still open /login to sign in to a real account.
     await page.goto("/login");
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Sign in to Things" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sign in to Thingteca" }),
+    ).toBeVisible();
 
     // And "Try without an account" with an existing session just goes back to the app.
     await page.getByRole("button", { name: "Try without an account" }).click();
@@ -157,7 +161,7 @@ test.describe("guest and redirects", () => {
     );
     await expect(page).toHaveURL(/\/login\?error=callback&reason=account_exists$/);
     await expect(
-      page.getByRole("alert").filter({ hasText: "already has a Things account" }),
+      page.getByRole("alert").filter({ hasText: "already has a Thingteca account" }),
     ).toBeVisible();
   });
 

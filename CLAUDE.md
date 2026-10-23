@@ -1,6 +1,6 @@
-# Things
+# Thingteca · Cosateca
 
-Save-for-later app: links, files, notes. Single user per account.
+Save-for-later app: links, files, notes. Single user per account. Thingteca in English (thing.teca.plus), Cosateca in Spanish (cosa.teca.plus); "Teca" for both (email sender).
 Plan: docs/plan/README.md (progress, roles, loop, brief template, owner actions, architecture) + docs/plan/phase-N.md (spec, WPs, gate, open findings for one phase).
 Read only the current phase's file; data-model.md and design.md only when the work needs them; archive.md is history.
 Verified API facts (supersede memory and the spec where they differ): docs/research-notes.md.

@@ -31,6 +31,6 @@ The reference is a light, near-white page with a fine film grain, dark grotesk t
 - **Aurora hills.** `<Aurora />` = 4–6 large blurred radial/elliptical gradients in the stops above, masked to a wavy horizon, with the grain on top so the noise reads stronger on color (as in the image). Slow drift: 20–40s keyframes on `transform` only. Static when `prefers-reduced-motion`. CSS only, no WebGL in v1.
 - **Outlined icon buttons.** 40×40, 1px `--color-line` border, 8px radius, white surface, ink icon at 18px (the social buttons in the reference). Used for toolbar actions and card quick actions.
 - **Hairline dividers.** Full-width 1px lines separate sidebar sections and the list view rows.
-- **Wordmark.** "Things" in the heading font next to a geometric mark built from stacked chevrons/slashes in the spirit of the reference logo — an original mark, not a copy.
+- **Wordmark.** "Thingteca" / "Cosateca" in the heading font; the "teca" suffix takes the mark gradient (color) or a light weight (mono, emails, flat grounds), next to a geometric mark built from stacked chevrons/slashes in the spirit of the reference logo — an original mark, not a copy.
 
 **Components (shadcn/ui base, restyled to tokens):** Button (primary ink-filled, secondary outlined, ghost), IconButton, Input, SearchField, Dialog, Drawer (vaul on mobile), DropdownMenu, ContextMenu, Tooltip, Kbd, Badge (outlined, kind-colored dot), Toast (sonner), Command (cmdk), Skeleton with shimmer.

@@ -11,9 +11,9 @@ import {
 } from "./helpers/session";
 import { getOtpCode, uniqueEmail } from "./mailpit";
 
-const BANNER_COPY = "You're using Things as a guest. Add an email to keep your things.";
+const BANNER_COPY = "You're using Thingteca as a guest. Add an email to keep your things.";
 const CONFLICT_COPY =
-  "That email already has a Things account. Sign in to it instead — items saved as a guest won't move over yet.";
+  "That email already has a Thingteca account. Sign in to it instead — items saved as a guest won't move over yet.";
 
 /** Opens the upgrade dialog from the banner and requests a code for `email`. */
 async function requestUpgradeCode(page: Page, email: string) {
@@ -131,7 +131,9 @@ test.describe("guest banner and upgrade", () => {
     // "Sign in instead" leaves the guest session and opens the login page.
     await dialog.getByRole("button", { name: "Sign in instead" }).click();
     await expect(page).toHaveURL(/\/login\?next=\/app$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Sign in to Things" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Sign in to Thingteca" }),
+    ).toBeVisible();
   });
 
   test("a guest with 10 items sees the stronger reminder", async ({ page, context }) => {

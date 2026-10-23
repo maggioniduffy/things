@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="relative flex min-h-dvh flex-1 flex-col overflow-hidden">
       <Aurora variant="hero" className="h-[min(52vh,520px)]" />
       <header className="relative z-10 mx-auto flex h-16 w-full max-w-6xl items-center px-4 sm:px-6">
-        <Link href="/" aria-label="Things, home" className={cn("rounded-control", focusRing)}>
+        <Link href="/" aria-label="Thingteca, home" className={cn("rounded-control", focusRing)}>
           <Logo />
         </Link>
       </header>

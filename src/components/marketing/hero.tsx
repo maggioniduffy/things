@@ -15,7 +15,7 @@ const NAV_LINKS = [
 export function SiteHeader() {
   return (
     <header className="relative z-10 mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-      <Link href="/" aria-label="Things, home" className={cn("rounded-control", focusRing)}>
+      <Link href="/" aria-label="Thingteca, home" className={cn("rounded-control", focusRing)}>
         <Logo />
       </Link>
       <div className="flex items-center gap-2 sm:gap-4">
@@ -67,7 +67,7 @@ export function Hero() {
         Save anything. Find it again.
       </h1>
       <p className="text-body text-ink-muted mt-5 max-w-[46ch] text-pretty sm:text-[length:var(--text-section)] sm:leading-[var(--text-section--line-height)]">
-        Drop in links, files and notes. Things sorts them by format and keeps them easy to find.
+        Drop in links, files and notes. Thingteca sorts them by format and keeps them easy to find.
       </p>
       <HeroActions />
     </section>

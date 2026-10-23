@@ -1,6 +1,6 @@
-# Things — Plan
+# Thingteca · Cosateca — Plan
 
-Things is a personal "save for later" web app: drop in any link, file or note, and it is auto-classified by format, filed by topic, and easy to find again. Usable without an account (guest mode), one user per account, Next.js + Supabase, no separate backend.
+Thingteca (English) / Cosateca (Spanish), formerly Things, is a personal "save for later" web app: drop in any link, file or note, and it is auto-classified by format, filed by topic, and easy to find again. Usable without an account (guest mode), one user per account, Next.js + Supabase, no separate backend.
 
 **Read order for a session:** `CLAUDE.md` → this file → the current `phase-N.md` → `docs/research-notes.md` (wins over the spec where they differ). [data-model.md](data-model.md) and [design.md](design.md) only when the work touches schema or UI. [archive.md](archive.md) is history.
 

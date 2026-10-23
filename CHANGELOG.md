@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Rename — Thingteca / Cosateca
+
+#### Changed
+
+- Things is now Thingteca (English, thing.teca.plus) and Cosateca (Spanish, cosa.teca.plus). Name updated in the UI, page titles, Open Graph and Twitter images, manifest, auth emails and docs.
+- Wordmark sets the "teca" suffix apart: the mark's blue-violet-pink gradient in color, a light weight in mono, emails and on aurora. Name lives in `src/lib/brand.ts` for the Spanish phase to switch.
+
 ### Phase 9 — Notes & board feedback
 
 #### Added

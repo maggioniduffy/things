@@ -14,7 +14,7 @@ const interTight = Inter_Tight({
 });
 
 export const metadata: Metadata = {
-  title: "Things",
+  title: "Thingteca",
   description: "Save anything for later.",
   manifest: "/manifest.webmanifest",
 };
