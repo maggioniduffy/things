@@ -103,7 +103,7 @@ export const shell: Messages["shell"] = {
     description:
       "Una vista inteligente es un filtro guardado. Muestra todas las cosas que cumplen todas las reglas que definas.",
     deleteTitle: (name) => `¿Eliminar ${name}?`,
-    deleteDescription: "Solo se borra el filtro guardado. Tus cosas quedan donde están.",
+    deleteDescription: "Solo se elimina el filtro guardado. Tus cosas quedan donde están.",
     emoji: "Emoji (opcional)",
     emojiInvalid: "Usá un solo emoji.",
     kinds: "Formatos",
@@ -115,7 +115,7 @@ export const shell: Messages["shell"] = {
     noTags: "Todavía no hay etiquetas.",
     domains: "Dominios (opcional, separados por comas)",
     domainsPlaceholder: "ejemplo.com, noticias.site",
-    readStatus: "Estado",
+    readStatus: "Abierta o sin abrir",
     favorite: "Favorito",
     any: "Cualquiera",
     unread: "Sin abrir",
@@ -157,7 +157,7 @@ export const shell: Messages["shell"] = {
     tagCreateFailed: "No pudimos crear esa etiqueta.",
     tagRenameFailed: "No pudimos renombrar esa etiqueta.",
     tagDeleteFailed: "No pudimos eliminar esa etiqueta.",
-    moveFailed: "No pudimos moverlo.",
+    moveFailed: "No pudimos mover eso.",
   },
 
   toolbar: {
@@ -201,8 +201,8 @@ export const shell: Messages["shell"] = {
     defaultName: "Colección",
     openCollection: "Abrir colección",
     collapse: "Contraer",
-    openFolder: (name, count) => `Abrir carpeta ${name}, ${count}`,
-    collapseFolder: (name) => `Contraer carpeta ${name}`,
+    openFolder: (name, count) => `Abrir colección ${name}, ${count}`,
+    collapseFolder: (name) => `Contraer colección ${name}`,
   },
 
   empty: {
@@ -218,7 +218,7 @@ export const shell: Messages["shell"] = {
     archiveHeading: "No hay nada archivado.",
     archiveBody: "Archivá lo que ya terminaste para mantener tu bandeja de entrada tranquila.",
     trashHeading: "La papelera está vacía.",
-    trashBody: "Las cosas de la papelera se borran a los 30 días.",
+    trashBody: "Las cosas de la papelera se eliminan a los 30 días.",
     kindHeading: (plural) => `Todavía no hay ${plural}.`,
     kindOtherHeading: "Todavía no hay otras cosas.",
     kindBody: "Van a aparecer acá cuando guardes algo.",
@@ -238,13 +238,13 @@ export const shell: Messages["shell"] = {
     open: (title) => `Abrir ${title}`,
     emptyNote: "Nota vacía",
     untitled: "Sin título",
-    uploadIncomplete: "No se terminó de subir",
-    fetchFailed: "No pudimos obtener los detalles",
+    uploadIncomplete: "La subida no terminó",
+    fetchFailed: "No se pudieron obtener los detalles",
   },
 
   dnd: {
     instructions:
-      "Para mover una tarjeta, apretá espacio o enter en su asa, usá las flechas para elegir un lugar en la lista o un elemento de la barra lateral y volvé a apretar espacio o enter para soltarla. Las colecciones y vistas inteligentes de la barra lateral se reordenan igual. Apretá escape para cancelar.",
+      "Para mover una tarjeta, apretá espacio o enter en su agarre, usá las flechas para elegir un lugar en la lista o un destino de la barra lateral y volvé a apretar espacio o enter para soltarla. Las colecciones y vistas inteligentes de la barra lateral se reordenan igual. Apretá escape para cancelar.",
     position: (index, total) => `posición ${index} de ${total}`,
     pickedUp: (what) => `Levantaste ${what}.`,
     over: (what, target) => `${what} sobre ${target}.`,

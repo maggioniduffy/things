@@ -80,7 +80,7 @@ export const marketing: Messages["marketing"] = {
       },
       safety: {
         title: "Nada se pierde por accidente",
-        body: "Marcá cosas como leídas, favoritas o archivalas. Lo eliminado espera 30 días en la Papelera, y toda acción destructiva se puede deshacer.",
+        body: "Marcá cosas como abiertas o favoritas, o archivalas. Lo eliminado espera 30 días en la Papelera, y toda acción destructiva se puede deshacer.",
       },
     },
   },
@@ -138,7 +138,7 @@ export const marketing: Messages["marketing"] = {
     ],
   },
   cta: {
-    title: "Tu próxima cosa está a un pegado de distancia",
+    title: "Tu próxima cosa está a un pegado",
     lead: "Empezá como invitado y conservá todo cuando te registres.",
   },
 };
