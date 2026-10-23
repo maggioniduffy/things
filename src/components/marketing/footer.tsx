@@ -98,6 +98,9 @@ export function Footer() {
         <p className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
           © {new Date().getFullYear()} Things
         </p>
+        <a href="https://cafecito.app/maggioniduffy" target="_blank">
+         Buy me a coffe! 
+        </a>
       </div>
     </footer>
   );
