@@ -49,6 +49,7 @@ function useAutoGrow(value: string) {
 
 /** The dialog body; mounted only while open, so the draft starts empty every time. */
 function QuickAddForm({ capture, close }: { capture: Capture; close: () => void }) {
+  const defaultTags = useUiStore((state) => state.quickAddDefaults?.tagNames);
   const t = useT().items.capture;
   const [text, setText] = useState("");
   const textareaRef = useAutoGrow(text);
@@ -61,13 +62,13 @@ function QuickAddForm({ capture, close }: { capture: Capture; close: () => void 
     const requests = requestsFromText(text).map((request) =>
       request.type === "note" ? { ...request, ...noteTagging(request.text) } : request,
     );
-    saveRequests(capture, capRequests(requests));
+    saveRequests(capture, capRequests(requests), { tagNames: defaultTags });
     close();
   }
 
   function saveFiles(requests: CaptureRequest[]) {
     if (requests.length === 0) return;
-    saveRequests(capture, capRequests(requests));
+    saveRequests(capture, capRequests(requests), { tagNames: defaultTags });
     close();
   }
 

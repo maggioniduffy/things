@@ -169,7 +169,7 @@ export type NoteOptions = {
 };
 
 /** Where a link or file lands on a canvas. */
-export type CanvasCaptureOptions = { canvasAt?: CanvasTarget };
+export type CanvasCaptureOptions = { canvasAt?: CanvasTarget; tagNames?: string[] };
 
 /** `row` positioned at `canvasAt` when given, otherwise as is. */
 function atCanvasPoint(row: BoardItem, canvasAt: CanvasTarget | undefined): BoardItem {
@@ -716,7 +716,12 @@ export function useCapture(view: ViewSpec): {
     async function captureLink(url: string, options?: CanvasCaptureOptions): Promise<void> {
       const deps = makeDeps();
       const row = atCanvasPoint(buildLinkRow(baseFor(), url), options?.canvasAt);
-      await run(deps, row, () => enrichLink(deps, { id: row.id, url, kind: row.kind }));
+      await run(
+        deps,
+        row,
+        () => enrichLink(deps, { id: row.id, url, kind: row.kind }),
+        options?.tagNames ?? [],
+      );
     }
 
     async function captureNote(text: string, options?: NoteOptions): Promise<BoardItem | null> {
@@ -744,7 +749,7 @@ export function useCapture(view: ViewSpec): {
         deps,
         row,
         () => enrichFile(deps, row, file, () => void captureFile(file, options)),
-        [],
+        options?.tagNames ?? [],
         position,
       );
     }

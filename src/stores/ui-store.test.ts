@@ -132,6 +132,16 @@ describe("quick add", () => {
     useUiStore.getState().setQuickAddOpen(false);
     expect(useUiStore.getState().quickAddOpen).toBe(false);
   });
+
+  it("keeps the opener's defaults until it closes", () => {
+    useUiStore.getState().setQuickAddOpen(true, { tagNames: ["thesis"] });
+    expect(useUiStore.getState().quickAddDefaults).toEqual({ tagNames: ["thesis"] });
+    useUiStore.getState().setQuickAddOpen(false);
+    expect(useUiStore.getState().quickAddDefaults).toBeNull();
+    useUiStore.getState().setQuickAddOpen(true);
+    expect(useUiStore.getState().quickAddDefaults).toBeNull();
+    useUiStore.getState().setQuickAddOpen(false);
+  });
 });
 
 describe("persistence", () => {

@@ -40,4 +40,16 @@ describe("EmptyState in Spanish", () => {
     );
     expect(screen.getByText("Todavía no hay imágenes.")).toBeInTheDocument();
   });
+
+  it("translates the add card", () => {
+    render(
+      <I18nProvider locale="es">
+        <EmptyState view={{ type: "inbox" }} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("button", { name: /Agregar algo/ })).toBeInTheDocument();
+    expect(
+      screen.getByText("Pegá un enlace, soltá un archivo o escribí una nota"),
+    ).toBeInTheDocument();
+  });
 });
