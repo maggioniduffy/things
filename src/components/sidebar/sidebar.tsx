@@ -267,13 +267,16 @@ export function Sidebar({ email, onNavigate }: SidebarProps) {
       <div
         role="group"
         aria-label={t.sidebar.account}
-        className="flex shrink-0 items-center gap-2 p-3"
+        className="flex shrink-0 flex-col gap-2 p-3"
       >
-        <p className="text-meta text-ink-muted min-w-0 flex-1 truncate" title={email ?? undefined}>
+        <p className="text-meta text-ink-muted min-w-0 truncate" title={email ?? undefined}>
           {email ?? t.sidebar.guest}
         </p>
-        <LanguageSwitcher />
-        <SignOutButton />
+        {/* Own row: the switcher plus "Cerrar sesión" don't fit beside the email at sidebar width. */}
+        <div className="flex items-center justify-between gap-2">
+          <LanguageSwitcher className="h-8" />
+          <SignOutButton />
+        </div>
       </div>
     </div>
   );
