@@ -77,6 +77,10 @@ export const items = {
     openLink: "Open link",
     download: "Download",
     downloadFailed: "Couldn't download that file.",
+    openFullView: "Open full view",
+    openFileInNewTab: "Open in new tab",
+    fullViewDescription: "Full view of the file",
+    viewerFailed: "Couldn't load that file.",
   },
 
   capture: {
