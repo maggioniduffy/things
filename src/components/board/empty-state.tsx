@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Aurora } from "@/components/brand";
 import { Button } from "@/components/ui/button";
-import { getActiveMessages } from "@/i18n/active";
 import { useT } from "@/i18n/client";
+import type { Messages } from "@/i18n/messages";
 import { kindPluralLowercase } from "@/lib/kinds";
 import type { ViewSpec } from "@/lib/views";
 
@@ -10,10 +10,15 @@ export type EmptyCopy = { heading: string; body: string | null };
 
 /**
  * Copy for an empty view. `name` is the tag, collection or smart view name when known.
- * `unknown` means the collection, tag or smart view does not exist. Reads the active language.
+ * `unknown` means the collection, tag or smart view does not exist.
  */
-export function emptyCopy(view: ViewSpec, name?: string | null, unknown = false): EmptyCopy {
-  const t = getActiveMessages().shell.empty;
+export function emptyCopy(
+  view: ViewSpec,
+  shell: Messages["shell"],
+  name?: string | null,
+  unknown = false,
+): EmptyCopy {
+  const t = shell.empty;
   if (unknown) return { heading: t.unknown, body: null };
 
   switch (view.type) {
@@ -35,7 +40,7 @@ export function emptyCopy(view: ViewSpec, name?: string | null, unknown = false)
         heading:
           view.kind === "other"
             ? t.kindOtherHeading
-            : t.kindHeading(kindPluralLowercase(view.kind)),
+            : t.kindHeading(kindPluralLowercase(shell.kinds, view.kind)),
         body: t.kindBody,
       };
     case "collection":
@@ -57,7 +62,7 @@ export function EmptyState({
   unknown?: boolean;
 }) {
   const t = useT().shell;
-  const { heading, body } = emptyCopy(view, name, unknown);
+  const { heading, body } = emptyCopy(view, t, name, unknown);
 
   return (
     <div

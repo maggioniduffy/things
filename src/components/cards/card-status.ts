@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getActiveMessages } from "@/i18n/active";
 import { useT } from "@/i18n/client";
+import type { Messages } from "@/i18n/messages";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUploadStore } from "@/stores/upload-store";
 import type { CardProps } from "./types";
 
 const NOTE_TITLE_MAX = 140;
 
-export function itemDisplayTitle(item: BoardItem): string {
+/** `t` is `useT().shell.card` (or the same slice of any locale's messages). */
+export function itemDisplayTitle(item: BoardItem, t: Messages["shell"]["card"]): string {
   const note = item.note?.trim() ?? "";
-  const t = getActiveMessages().shell.card;
   const noteTitle =
     note.length > NOTE_TITLE_MAX ? `${note.slice(0, NOTE_TITLE_MAX).trimEnd()}…` : note;
   return (

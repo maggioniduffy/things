@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getActiveMessages } from "@/i18n/active";
+import type { Messages } from "@/i18n/messages";
 import { kindPluralLabel } from "@/lib/kinds";
 import { ITEM_KINDS } from "@/lib/views";
 
@@ -195,11 +195,16 @@ function listOf(parts: readonly string[]): string {
 }
 
 /** Short pieces of a plain-language summary, e.g. `["PDFs and links", "unread", "last 7 days"]`. */
-export function describeRules(rules: Rules, lookups: RuleLookups): string[] {
-  const t = getActiveMessages().shell.rules;
+export function describeRules(
+  rules: Rules,
+  lookups: RuleLookups,
+  shell: Messages["shell"],
+): string[] {
+  const t = shell.rules;
   const clean = cleanRules(rules);
   const parts: string[] = [];
-  if (clean.kinds) parts.push(t.kind(listOf(clean.kinds.map(kindPluralLabel))));
+  if (clean.kinds)
+    parts.push(t.kind(listOf(clean.kinds.map((kind) => kindPluralLabel(shell.kinds, kind)))));
   if (clean.collectionIds) {
     const names = clean.collectionIds.map(
       (id) => lookups.collections.find((collection) => collection.id === id)?.name ?? t.unknown,

@@ -30,6 +30,7 @@ import { CardChromeContext } from "@/components/cards/card-shell";
 import { ItemCard } from "@/components/cards/item-card";
 import type { CardVariant } from "@/components/cards/types";
 import { getActiveMessages } from "@/i18n/active";
+import { useT } from "@/i18n/client";
 import { useBatchMove } from "@/lib/items/batch-mutations";
 import type { BoardItem } from "@/lib/items/queries";
 import { useUiStore } from "@/stores/ui-store";
@@ -134,6 +135,7 @@ function DragPreview({ drag }: { drag: ActiveDrag }) {
  * batch mutation for the card, or for the whole selection when the card is part of it.
  */
 export function BoardDndProvider({ children }: { children: ReactNode }) {
+  const dndCopy = useT().shell.dnd;
   const move = useBatchMove();
   const reduced = useReducedMotion() ?? false;
   const [active, setActive] = useState<ActiveDrag | null>(null);
@@ -244,13 +246,15 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
   }
 
   const announcements = useMemo<Announcements>(() => {
-    // Read per announcement, so a language switch applies without remounting the provider.
+    // Event-time: read per announcement, so a language switch applies without remounting.
     const t = () => getActiveMessages().shell.dnd;
     const subject = (data: unknown, id: unknown): string => {
       const count = activeRef.current?.ids.length ?? 1;
       if (count > 1) return plural(count);
       if (isSidebarSortData(data)) return data.label;
-      return isCardDragData(data) ? itemDisplayTitle(data.item).replace(/\s+/g, " ") : String(id);
+      return isCardDragData(data)
+        ? itemDisplayTitle(data.item, getActiveMessages().shell.card).replace(/\s+/g, " ")
+        : String(id);
     };
     const place = (over: DragOverEvent["over"]): string | null => {
       const sortable = (over?.data.current as { sortable?: { index: number; items: unknown[] } })
@@ -313,7 +317,7 @@ export function BoardDndProvider({ children }: { children: ReactNode }) {
       collisionDetection={boardCollisionDetection}
       accessibility={{
         announcements,
-        screenReaderInstructions: { draggable: getActiveMessages().shell.dnd.instructions },
+        screenReaderInstructions: { draggable: dndCopy.instructions },
       }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}

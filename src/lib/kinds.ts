@@ -1,21 +1,19 @@
-import { getActiveMessages } from "@/i18n/active";
+import type { Messages } from "@/i18n/messages";
 import type { ItemKind } from "@/types/supabase";
 
-/** Kind labels in the active language. Read at call time, so they follow the locale. */
-export function kindLabels(): Record<ItemKind, { singular: string; plural: string }> {
-  return getActiveMessages().shell.kinds;
+/** The kind labels of one locale: `useT().shell.kinds` in components. */
+export type KindLabels = Messages["shell"]["kinds"];
+
+export function kindSingularLabel(kinds: KindLabels, kind: ItemKind): string {
+  return kinds[kind].singular;
 }
 
-export function kindSingularLabel(kind: ItemKind): string {
-  return kindLabels()[kind].singular;
-}
-
-export function kindPluralLabel(kind: ItemKind): string {
-  return kindLabels()[kind].plural;
+export function kindPluralLabel(kinds: KindLabels, kind: ItemKind): string {
+  return kinds[kind].plural;
 }
 
 /** Plural label for running text: lower case, except the PDFs acronym. */
-export function kindPluralLowercase(kind: ItemKind): string {
-  const plural = kindLabels()[kind].plural;
+export function kindPluralLowercase(kinds: KindLabels, kind: ItemKind): string {
+  const plural = kinds[kind].plural;
   return kind === "pdf" ? plural : plural.toLowerCase();
 }

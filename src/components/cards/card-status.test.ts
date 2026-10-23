@@ -1,28 +1,37 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@/i18n/messages";
 import { makeItem } from "@/test/fixtures";
 import { isStalePending, itemDisplayTitle } from "./card-status";
 
+const card = messages.en.shell.card;
+
 describe("itemDisplayTitle", () => {
   it("falls back from title to url to file name to Untitled", () => {
-    expect(itemDisplayTitle(makeItem({ title: "Hello", url: "https://a.example" }))).toBe("Hello");
-    expect(itemDisplayTitle(makeItem({ title: null, url: "https://a.example" }))).toBe(
+    expect(itemDisplayTitle(makeItem({ title: "Hello", url: "https://a.example" }), card)).toBe(
+      "Hello",
+    );
+    expect(itemDisplayTitle(makeItem({ title: null, url: "https://a.example" }), card)).toBe(
       "https://a.example",
     );
-    expect(itemDisplayTitle(makeItem({ title: null, file_name: "thesis.pdf" }))).toBe("thesis.pdf");
+    expect(itemDisplayTitle(makeItem({ title: null, file_name: "thesis.pdf" }), card)).toBe(
+      "thesis.pdf",
+    );
     expect(
-      itemDisplayTitle(makeItem({ kind: "link", title: "", url: null, file_name: null })),
+      itemDisplayTitle(makeItem({ kind: "link", title: "", url: null, file_name: null }), card),
     ).toBe("Untitled");
-    expect(itemDisplayTitle(makeItem({ kind: "note", title: "", note: "  " }))).toBe("Empty note");
+    expect(itemDisplayTitle(makeItem({ kind: "note", title: "", note: "  " }), card)).toBe(
+      "Empty note",
+    );
   });
 
   it("uses the trimmed note text when there is no title, cut at about 140 characters", () => {
-    expect(itemDisplayTitle(makeItem({ title: null, note: "  Buy milk\nand eggs  " }))).toBe(
+    expect(itemDisplayTitle(makeItem({ title: null, note: "  Buy milk\nand eggs  " }), card)).toBe(
       "Buy milk\nand eggs",
     );
-    const long = itemDisplayTitle(makeItem({ title: null, note: "word ".repeat(100) }));
+    const long = itemDisplayTitle(makeItem({ title: null, note: "word ".repeat(100) }), card);
     expect(long.length).toBeLessThanOrEqual(141);
     expect(long.endsWith("…")).toBe(true);
-    expect(itemDisplayTitle(makeItem({ title: "Named", note: "body" }))).toBe("Named");
+    expect(itemDisplayTitle(makeItem({ title: "Named", note: "body" }), card)).toBe("Named");
   });
 });
 

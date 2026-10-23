@@ -1,4 +1,4 @@
-import { getActiveMessages } from "@/i18n/active";
+import type { Messages } from "@/i18n/messages";
 
 /**
  * Collection colors as stored in `collections.color` (the DB check allows exactly these).
@@ -18,8 +18,8 @@ export function auroraColorVar(color: string | null | undefined): string | undef
 }
 
 /** "violet" -> "Violet" (or "Violeta"), for labels in the active language. */
-export function auroraColorLabel(color: AuroraColor): string {
-  return getActiveMessages().shell.colors[color];
+export function auroraColorLabel(color: AuroraColor, colors: Messages["shell"]["colors"]): string {
+  return colors[color];
 }
 
 export const MAX_COLLECTION_NAME_LENGTH = 60;

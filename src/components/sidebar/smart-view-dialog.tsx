@@ -278,7 +278,7 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
       <ChipGroup
         legend={d.kinds}
         hint={d.anyOf}
-        options={ITEM_KINDS.map((kind) => ({ value: kind, label: kindPluralLabel(kind) }))}
+        options={ITEM_KINDS.map((kind) => ({ value: kind, label: kindPluralLabel(t.kinds, kind) }))}
         selected={kinds}
         onToggle={(kind) => setKinds((current) => toggled(current, kind))}
       />

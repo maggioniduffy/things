@@ -6,7 +6,6 @@ import { kindSingularLabel } from "@/lib/kinds";
 import type { BoardItem } from "@/lib/items/queries";
 import { safeHttpUrl } from "./urls";
 
-
 /** One line for where the item stands: trash, archive, capture state, then read state. */
 export function itemStatusLabel(item: BoardItem, t: Messages["items"]["drawer"]): string {
   if (item.deleted_at) return t.statusInTrash;
@@ -16,7 +15,8 @@ export function itemStatusLabel(item: BoardItem, t: Messages["items"]["drawer"])
     if (item.enrich_status === "failed") {
       return item.file_path ? t.statusUploadFailed : t.statusFetchFailed;
     }
-    if (item.enrich_status === "pending") return item.file_path ? t.statusUploading : t.statusFetching;
+    if (item.enrich_status === "pending")
+      return item.file_path ? t.statusUploading : t.statusFetching;
   }
   return item.is_read ? t.statusRead : t.statusUnread;
 }
@@ -34,12 +34,13 @@ type Row = { label: string; value: React.ReactNode };
 
 export function ItemMetadata({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
+  const kinds = useT().shell.kinds;
   const locale = useLocale();
   const href = safeHttpUrl(item.url);
-  const size = formatBytes(item.file_size);
+  const size = formatBytes(item.file_size, locale);
 
   const rows: Row[] = [
-    { label: t.kind, value: kindSingularLabel(item.kind) },
+    { label: t.kind, value: kindSingularLabel(kinds, item.kind) },
     { label: t.saved, value: formatSavedDate(item.created_at, locale, t.unknownDate) },
   ];
   if (item.url) {

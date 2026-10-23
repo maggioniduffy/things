@@ -51,6 +51,8 @@ function Unavailable({ onClose }: { onClose: () => void }) {
 /** Contents of the open drawer: loads the item by id and renders preview, fields and actions. */
 function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose: () => void }) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
+  const kinds = useT().shell.kinds;
   const query = useQuery(itemQueryOptions(createClient(), id));
   const actions = useItemActions();
   const item = query.data;
@@ -74,7 +76,7 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
   return (
     <>
       <div className="border-line flex items-center gap-2 border-b py-3 pr-3 pl-4">
-        <Badge>{kindSingularLabel(item.kind)}</Badge>
+        <Badge>{kindSingularLabel(kinds, item.kind)}</Badge>
         <span className="flex-1" />
         {sourceHref ? (
           <IconButton asChild variant="ghost" size="sm" label={t.openInNewTab}>
@@ -89,7 +91,7 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
           </IconButton>
         </DrawerClose>
       </div>
-      <DrawerTitle className="sr-only">{itemDisplayTitle(item)}</DrawerTitle>
+      <DrawerTitle className="sr-only">{itemDisplayTitle(item, card)}</DrawerTitle>
 
       {/* No dragging inside: the drawer closes with Esc, the Close button or the overlay. */}
       <div

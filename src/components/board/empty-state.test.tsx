@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { messages } from "@/i18n/messages";
 import type { ViewSpec } from "@/lib/views";
 import { EmptyState, emptyCopy } from "./empty-state";
 
+const shell = messages.en.shell;
 const ID = "33333333-3333-4333-8333-333333333333";
 
 const CASES: [string, ViewSpec, string, string | null][] = [
@@ -55,23 +57,23 @@ const CASES: [string, ViewSpec, string, string | null][] = [
 
 describe("emptyCopy", () => {
   it.each(CASES)("%s", (_name, view, heading, body) => {
-    const copy = emptyCopy(view);
+    const copy = emptyCopy(view, shell);
     expect(copy.heading).toBe(heading);
     if (body !== null) expect(copy.body).toBe(body);
   });
 
   it("names the tag", () => {
-    expect(emptyCopy({ type: "tag", tagId: ID }, "thesis").heading).toBe(
+    expect(emptyCopy({ type: "tag", tagId: ID }, shell, "thesis").heading).toBe(
       "Nothing tagged #thesis yet.",
     );
   });
 
   it("reads naturally for the Other format", () => {
-    expect(emptyCopy({ type: "kind", kind: "other" }).heading).toBe("No other things yet.");
+    expect(emptyCopy({ type: "kind", kind: "other" }, shell).heading).toBe("No other things yet.");
   });
 
   it("says the page does not exist for an unknown collection, tag or smart view", () => {
-    expect(emptyCopy({ type: "collection", collectionId: ID }, null, true)).toEqual({
+    expect(emptyCopy({ type: "collection", collectionId: ID }, shell, null, true)).toEqual({
       heading: "This page doesn't exist.",
       body: null,
     });

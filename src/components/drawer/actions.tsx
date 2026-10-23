@@ -28,6 +28,7 @@ type ItemActionBarProps = {
 /** Favorite, archive, trash / restore, and (only in the Trash view) delete forever. */
 export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarProps) {
   const t = useT().items.drawer;
+  const card = useT().shell.card;
   const [confirming, setConfirming] = useState(false);
   const trashed = item.deleted_at !== null;
   const archived = item.archived_at !== null;
@@ -86,7 +87,7 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
               <DialogHeader>
                 <DialogTitle>{t.deleteForeverTitle}</DialogTitle>
                 <DialogDescription>
-                  {t.deleteForeverBody(itemDisplayTitle(item))}
+                  {t.deleteForeverBody(itemDisplayTitle(item, card))}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { afterEach, describe, expect, it } from "vitest";
-import { setActiveLocale } from "@/i18n/active";
+import { describe, expect, it } from "vitest";
+import { messages } from "@/i18n/messages";
 import type { Database } from "@/types/supabase";
 import {
   EMPTY_RULES,
@@ -281,7 +281,7 @@ describe("describeRules", () => {
   };
 
   it("is empty for no rules", () => {
-    expect(describeRules({}, lookups)).toEqual([]);
+    expect(describeRules({}, lookups, messages.en.shell)).toEqual([]);
   });
 
   it("names every rule", () => {
@@ -298,6 +298,7 @@ describe("describeRules", () => {
           query: "cats",
         },
         lookups,
+        messages.en.shell,
       ),
     ).toEqual([
       "Kind: PDFs",
@@ -312,14 +313,12 @@ describe("describeRules", () => {
   });
 
   describe("in Spanish", () => {
-    afterEach(() => setActiveLocale("en"));
-
     it("names the rules in the active language", () => {
-      setActiveLocale("es");
       expect(
         describeRules(
           { kinds: ["pdf"], isRead: false, isFavorite: false, savedWithinDays: 7, query: "gatos" },
           lookups,
+          messages.es.shell,
         ),
       ).toEqual([
         "Formato: PDFs",
@@ -332,7 +331,9 @@ describe("describeRules", () => {
   });
 
   it("uses the singular for one day", () => {
-    expect(describeRules({ savedWithinDays: 1 }, lookups)).toEqual(["Saved in the last day"]);
+    expect(describeRules({ savedWithinDays: 1 }, lookups, messages.en.shell)).toEqual([
+      "Saved in the last day",
+    ]);
   });
 });
 
