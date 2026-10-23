@@ -94,11 +94,11 @@ export function Footer() {
           ))}
         </nav>
       </div>
-      <div className="border-line border-t">
+      <div className="border-line border-t flex">
         <p className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
           © {new Date().getFullYear()} Things
         </p>
-        <a href="https://cafecito.app/maggioniduffy" target="_blank">
+        <a href="https://cafecito.app/maggioniduffy" target="_blank" className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
          Buy me a coffe! 
         </a>
       </div>
