@@ -15,7 +15,7 @@ describe("EmptyState in Spanish", () => {
     );
     expect(screen.getByRole("heading", { name: "La papelera está vacía." })).toBeInTheDocument();
     expect(
-      screen.getByText("Las cosas de la papelera se borran a los 30 días."),
+      screen.getByText("Las cosas de la papelera se eliminan a los 30 días."),
     ).toBeInTheDocument();
   });
 

@@ -11,7 +11,7 @@ export const auth: Messages["auth"] = {
     captcha: "No pudimos verificar que sos una persona. Recargá la página y probá de nuevo.",
     network: `No podemos conectar con ${brand}. Revisá tu conexión y probá de nuevo.`,
     invalidEmail: "Ese email no parece correcto. Revisalo y probá de nuevo.",
-    accountExists: `Ese email ya tiene una cuenta de ${brand}. Ingresá con ella — por ahora las cosas guardadas como invitado no se pasan.`,
+    accountExists: `Ese email ya tiene una cuenta de ${brand}. Ingresá con ella. Por ahora, las cosas que guardaste como invitado no se transfieren.`,
     server: `${brand} no pudo hacerlo en este momento. Probá de nuevo en unos minutos.`,
     unknown: "Algo salió mal. Probá de nuevo.",
     callbackFailed: "No pudimos terminar de ingresarte. Probá de nuevo.",
@@ -25,7 +25,7 @@ export const auth: Messages["auth"] = {
     sending: "Enviando…",
     checkEmailTitle: "Revisá tu email",
     checkEmailBody:
-      "Los códigos vencen a los 10 minutos. ¿No llegó nada? Mirá en spam o pedí uno nuevo.",
+      "Los códigos vencen a los 10 minutos. ¿No llegó nada? Fijate en la carpeta de spam o pedí uno nuevo.",
     codeLabel: "Ingresá el código de 6 dígitos que enviamos a",
     verify: "Verificar",
     useDifferentEmail: "Usar otro email",
@@ -41,7 +41,7 @@ export const auth: Messages["auth"] = {
     regionLabel: "Cuenta de invitado",
     defaultCopy: `Estás usando ${brand} como invitado. Sumá un email para no perder tus cosas.`,
     reminderCopy: (count: number) =>
-      `Guardaste ${count} ${count === 1 ? "cosa" : "cosas"} como invitado. Sumá un email para no perderlas.`,
+      `Guardaste ${count} ${count === 1 ? "cosa" : "cosas"} como invitado. Sumá un email para ${count === 1 ? "no perderla" : "no perderlas"}.`,
     keep: "Conservar mis cosas",
     dismiss: "Ocultar por ahora",
   },
