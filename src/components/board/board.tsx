@@ -21,6 +21,7 @@ import { EmptyState } from "./empty-state";
 import type { CardDnd } from "./board-cards";
 import { ItemGrid } from "./item-grid";
 import { ItemList } from "./item-list";
+import { SelectionBar } from "./selection-bar";
 import { SortableItems } from "./sortable-items";
 import { Toolbar, useEffectiveViewMode, useViewInfo } from "./toolbar";
 
@@ -63,12 +64,14 @@ export function Board({ view, sort }: BoardProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isDragActive, wasJustDragged]);
 
-  // ⌘/Ctrl-click toggles a card, Shift-click selects from the last one clicked. Caught before the
-  // card's own open button so a modified click never opens the drawer.
+  // ⌘/Ctrl-click toggles a card, Shift-click selects from the last one clicked, and in selection
+  // mode a plain click toggles. Caught before the card's own open button so none of them opens the
+  // drawer.
   const onClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const additive = event.metaKey || event.ctrlKey;
-      if (!additive && !event.shiftKey) return;
+      const selecting = useUiStore.getState().selectMode;
+      if (!additive && !event.shiftKey && !selecting) return;
       if (!(event.target instanceof Element) || wasJustDragged?.()) return;
       const card = event.target.closest<HTMLElement>("[data-item-id]");
       const id = card?.dataset.itemId;
@@ -262,6 +265,7 @@ export function Board({ view, sort }: BoardProps) {
       <Suspense fallback={null}>
         <ItemDrawerHost view={view} />
       </Suspense>
+      {canvas ? null : <SelectionBar view={view} itemIds={allItems.map((item) => item.id)} />}
       <PasteListener view={view} />
       <ExternalDropZone view={view} />
       <QuickAdd view={view} />

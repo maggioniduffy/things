@@ -19,7 +19,8 @@ import { itemQueryKey, itemTagsQueryKey } from "./item-query";
 import { ITEM_STATE_MUTATION_KEY, REORDER_MUTATION_KEY } from "./mutation-keys";
 import type { NoteColor } from "./note-colors";
 import type { BoardItem, ItemsPage } from "./queries";
-import { applyChange } from "./state-mutations";
+import { applyChange, storagePathsOf } from "./state-mutations";
+import { BUCKET } from "./upload";
 
 type Client = SupabaseClient<Database>;
 type Items = InfiniteData<ItemsPage>;
@@ -27,7 +28,8 @@ type Items = InfiniteData<ItemsPage>;
 /**
  * What a batch does to every item in it. `collection` with a null id means "no collection"
  * (Inbox). `color` only touches notes (null = the default look). `favorite` always sets the flag (a drop never un-favorites). `unarchive` and `restore`
- * exist for the Undo toast of `archive` and `trash`.
+ * exist for the Undo toast of `archive` and `trash`. `archive` also takes an item out of the trash.
+ * `deleteForever` removes the rows and their files; it has no Undo.
  */
 export type BatchAction =
   | { type: "collection"; id: string | null }
@@ -37,7 +39,8 @@ export type BatchAction =
   | { type: "archive" }
   | { type: "trash" }
   | { type: "unarchive" }
-  | { type: "restore" };
+  | { type: "restore" }
+  | { type: "deleteForever" };
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -56,7 +59,7 @@ export function batchPatch(
     case "favorite":
       return { is_favorite: true };
     case "archive":
-      return { archived_at: now };
+      return { archived_at: now, deleted_at: null };
     case "trash":
       return { deleted_at: now };
     case "unarchive":
@@ -64,6 +67,7 @@ export function batchPatch(
     case "restore":
       return { deleted_at: null };
     case "tag":
+    case "deleteForever":
       return null;
   }
 }
@@ -78,7 +82,7 @@ function alreadyDone(item: BoardItem, action: BatchAction): boolean {
     case "favorite":
       return item.is_favorite;
     case "archive":
-      return item.archived_at !== null;
+      return item.archived_at !== null && item.deleted_at === null;
     case "trash":
       return item.deleted_at !== null;
     case "unarchive":
@@ -86,6 +90,7 @@ function alreadyDone(item: BoardItem, action: BatchAction): boolean {
     case "restore":
       return item.deleted_at === null;
     case "tag":
+    case "deleteForever":
       return false;
   }
 }
@@ -94,8 +99,8 @@ export type BatchPlan = {
   action: BatchAction;
   /** Ids the request writes: the items that change (every id for a tag). */
   ids: string[];
-  /** Row changes for the caches; empty for tags. */
-  changes: { before: BoardItem; after: BoardItem }[];
+  /** Row changes for the caches (`after` is null for a delete); empty for tags. */
+  changes: { before: BoardItem; after: BoardItem | null }[];
 };
 
 /** Which of `ids` the action touches, and how their rows look afterwards. */
@@ -111,7 +116,10 @@ export function planBatch(
   const wanted = new Set(ids);
   const changes = items
     .filter((item) => wanted.has(item.id) && !alreadyDone(item, action))
-    .map((before) => ({ before, after: { ...before, ...patch } }));
+    .map((before) => ({
+      before,
+      after: action.type === "deleteForever" ? null : { ...before, ...patch },
+    }));
   return { action, ids: changes.map((change) => change.before.id), changes };
 }
 
@@ -135,6 +143,8 @@ export function batchMessage(action: BatchAction, count: number, label?: string)
       return toasts.batchUnarchived(count);
     case "restore":
       return toasts.batchRestored(count);
+    case "deleteForever":
+      return toasts.batchDeleted(count);
   }
 }
 
@@ -157,6 +167,8 @@ function batchErrorMessage(action: BatchAction): string {
       return toasts.errBatchTrash;
     case "restore":
       return toasts.errBatchRestore;
+    case "deleteForever":
+      return toasts.errBatchDelete;
   }
 }
 
@@ -226,6 +238,17 @@ async function writeBatch(client: Client, plan: BatchPlan): Promise<void> {
       ids.map((itemId) => ({ item_id: itemId, tag_id: action.id })),
       { onConflict: "item_id,tag_id", ignoreDuplicates: true },
     );
+    if (error) throw error;
+    return;
+  }
+  if (action.type === "deleteForever") {
+    // Objects first: if this fails the rows stay and the delete can be retried, with no orphans.
+    const paths = [...new Set(plan.changes.flatMap((change) => storagePathsOf(change.before)))];
+    if (paths.length > 0) {
+      const removed = await client.storage.from(BUCKET).remove(paths);
+      if (removed.error) throw removed.error;
+    }
+    const { error } = await client.from("items").delete().in("id", ids);
     if (error) throw error;
     return;
   }
@@ -315,9 +338,11 @@ export function useBatchMove(): BatchMove {
 
       // The toast goes up with the optimistic change, like the single-item actions.
       const message = batchMessage(action, plan.ids.length, label);
-      const inverse = INVERSE[action.type];
+      // Archiving from the trash has no exact inverse (it was trashed, not live), so no Undo.
+      const fromTrash = action.type === "archive" && plan.changes.some((c) => c.before.deleted_at);
+      const inverse = fromTrash ? undefined : INVERSE[action.type];
       // The inverse starts from the rows as the batch left them: they may be in no cached list.
-      const after = plan.changes.map((change) => change.after);
+      const after = plan.changes.flatMap((change) => (change.after ? [change.after] : []));
       const toastId = inverse
         ? undoToast(message, () => void run(after, plan.ids, inverse))
         : toast(message);

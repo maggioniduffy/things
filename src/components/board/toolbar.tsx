@@ -5,6 +5,7 @@ import {
   ArrowUpDownIcon,
   FrameIcon,
   LayoutGridIcon,
+  ListChecksIcon,
   ListIcon,
   MenuIcon,
   PanelLeftIcon,
@@ -156,6 +157,9 @@ export function Toolbar({ view, sort }: ToolbarProps) {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const setMobileSidebarOpen = useUiStore((state) => state.setMobileSidebarOpen);
   const setQuickAddOpen = useUiStore((state) => state.setQuickAddOpen);
+  const selectMode = useUiStore((state) => state.selectMode);
+  const setSelectMode = useUiStore((state) => state.setSelectMode);
+  const selectLabel = useT().items.selection.start;
 
   function changeSort(next: string) {
     if (!isSortMode(next)) return;
@@ -205,6 +209,19 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         aria-label={tb.search}
         className="hidden w-56 sm:block"
       />
+
+      {/* The canvas has its own marquee selection and menu. */}
+      {viewMode === "canvas" ? null : (
+        <Button
+          variant={selectMode ? "secondary" : "ghost"}
+          size="sm"
+          aria-pressed={selectMode}
+          onClick={() => setSelectMode(!selectMode)}
+        >
+          <ListChecksIcon />
+          <span className="hidden sm:inline">{selectLabel}</span>
+        </Button>
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

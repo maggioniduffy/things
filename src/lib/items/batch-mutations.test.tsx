@@ -59,12 +59,27 @@ function makeFakeClient() {
       run().then(resolve, reject),
   });
   const client = {
+    storage: {
+      from: (bucket: string) => ({
+        remove: async (paths: string[]) => {
+          state.requests.push({ table: bucket, op: "remove", ids: paths });
+          return state.result();
+        },
+      }),
+    },
     from(table: string) {
       return {
         update: (patch: unknown) => ({
           in: (_column: string, ids: string[]) =>
             thenable(async () => {
               state.requests.push({ table, op: "update", patch, ids });
+              return state.result();
+            }),
+        }),
+        delete: () => ({
+          in: (_column: string, ids: string[]) =>
+            thenable(async () => {
+              state.requests.push({ table, op: "delete", ids });
               return state.result();
             }),
         }),
@@ -140,7 +155,21 @@ describe("planBatch", () => {
     const done = makeItem({ id: ids[1], archived_at: "2026-01-02T00:00:00Z" });
     const plan = planBatch([cards[0]!, done], [ids[0]!, ids[1]!], { type: "archive" });
     expect(plan.ids).toEqual([ids[0]]);
-    expect(plan.changes[0]?.after.archived_at).not.toBeNull();
+    expect(plan.changes[0]?.after?.archived_at).not.toBeNull();
+  });
+
+  it("archives a trashed item out of the trash", () => {
+    const trashed = makeItem({ id: ids[0], deleted_at: "2026-01-02T00:00:00Z" });
+    const plan = planBatch([trashed], [ids[0]!], { type: "archive" });
+    expect(plan.ids).toEqual([ids[0]]);
+    expect(plan.changes[0]?.after?.deleted_at).toBeNull();
+    expect(plan.changes[0]?.after?.archived_at).not.toBeNull();
+  });
+
+  it("plans a delete as rows going away", () => {
+    const plan = planBatch(cards, SELECTED, { type: "deleteForever" });
+    expect(plan.ids).toEqual(SELECTED);
+    expect(plan.changes.every((change) => change.after === null)).toBe(true);
   });
 
   it("keeps every id for a tag, without row changes", () => {
@@ -191,6 +220,30 @@ describe("copy and patches", () => {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
+
+describe("useBatchMove: delete forever", () => {
+  it("removes the files, then the rows with one request each, and drops them from the trash", async () => {
+    const { state, queryClient, move, titles } = setup();
+    const trashed = cards.slice(0, 2).map((card) => ({
+      ...card,
+      deleted_at: "2026-01-02T00:00:00Z",
+      file_path: `u/${card.id}/file.pdf`,
+    }));
+    queryClient.setQueryData(TRASH_KEY, pageOf(trashed));
+
+    await act(async () => {
+      await move([ids[0]!, ids[1]!], { type: "deleteForever" });
+    });
+
+    expect(titles(TRASH_KEY)).toEqual([]);
+    expect(state.requests.map((r) => `${r.table}:${r.op}`)).toEqual([
+      expect.stringMatching(/:remove$/),
+      "items:delete",
+    ]);
+    expect(state.requests[1]?.ids).toEqual([ids[0], ids[1]]);
+    expect(mocks.toast).toHaveBeenCalledWith("Deleted 2 items forever");
+  });
+});
 
 describe("useBatchMove: collection", () => {
   it("moves 5 cards with ONE request and shows them moved before it resolves", async () => {
@@ -321,7 +374,7 @@ describe("useBatchMove: other targets", () => {
 
     expect(state.requests).toHaveLength(1);
     expect(state.requests[0]).toMatchObject({ table: "items", op: "update", ids: SELECTED });
-    expect(state.requests[0]?.patch).toEqual({ archived_at: expect.any(String) });
+    expect(state.requests[0]?.patch).toEqual({ archived_at: expect.any(String), deleted_at: null });
     expect(titles(INBOX_KEY)).toEqual(["Card 5"]);
     expect(titles(ARCHIVE_KEY)).toHaveLength(5);
     expect(queryClient.getQueryData<SidebarCounts>(["counts"])?.archive).toBe(5);

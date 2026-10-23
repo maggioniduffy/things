@@ -3,7 +3,13 @@ import type { BoardItem } from "@/lib/items/queries";
 import { viewerKindOf } from "./file-viewer";
 
 const item = (over: Partial<BoardItem>) =>
-  ({ kind: "document", file_path: "u/1/a", file_name: null, mime_type: null, ...over }) as BoardItem;
+  ({
+    kind: "document",
+    file_path: "u/1/a",
+    file_name: null,
+    mime_type: null,
+    ...over,
+  }) as BoardItem;
 
 describe("viewerKindOf", () => {
   it("reads PDFs, Markdown and text in the app", () => {

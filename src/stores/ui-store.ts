@@ -23,6 +23,10 @@ type UiState = {
   expandedCollections: string[];
   toggleCollectionExpanded: (collectionId: string) => void;
 
+  /** Selection mode: cards show a checkbox and a click toggles them instead of opening. */
+  selectMode: boolean;
+  /** Leaving the mode also clears the selection. */
+  setSelectMode: (on: boolean) => void;
   selectedIds: string[];
   /** The last card clicked without Shift: where a Shift-click range starts. */
   anchorId: string | null;
@@ -40,6 +44,8 @@ type UiState = {
     toId: string,
     options?: { additive?: boolean },
   ) => void;
+  /** Replaces the selection with exactly `ids`. */
+  selectAll: (ids: readonly string[]) => void;
   clearSelection: () => void;
 
   sidebarCollapsed: boolean;
@@ -106,6 +112,9 @@ export const useUiStore = create<UiState>()(
             : [...state.expandedCollections, collectionId],
         })),
 
+      selectMode: false,
+      setSelectMode: (selectMode) =>
+        set(selectMode ? { selectMode } : { selectMode, selectedIds: [], anchorId: null }),
       selectedIds: [],
       anchorId: null,
       select: (id, options) =>
@@ -136,6 +145,7 @@ export const useUiStore = create<UiState>()(
             : [];
           return { selectedIds: [...kept, ...range] };
         }),
+      selectAll: (ids) => set({ selectedIds: [...ids], anchorId: null }),
       clearSelection: () =>
         set((state) =>
           state.selectedIds.length || state.anchorId !== null

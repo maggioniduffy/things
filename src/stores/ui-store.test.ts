@@ -13,6 +13,15 @@ afterEach(() => {
 });
 
 describe("selection", () => {
+  it("selectAll replaces the selection, leaving select mode clears it", () => {
+    const { setSelectMode, selectAll } = useUiStore.getState();
+    setSelectMode(true);
+    selectAll(["a", "b", "c"]);
+    expect(useUiStore.getState().selectedIds).toEqual(["a", "b", "c"]);
+    setSelectMode(false);
+    expect(useUiStore.getState()).toMatchObject({ selectMode: false, selectedIds: [] });
+  });
+
   it("select replaces the selection by default", () => {
     useUiStore.getState().select("a");
     useUiStore.getState().select("b");
