@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/client";
 import { clearBrowserQueryClient } from "@/lib/query-client";
 import { createClient } from "@/lib/supabase/client";
+import { LogOut } from "lucide-react";
 
 export function SignOutButton() {
   const t = useT().shell;
@@ -22,8 +23,15 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="secondary" size="sm" onClick={signOut} disabled={pending}>
-      {t.sidebar.signOut}
-    </Button>
+    <Button
+  variant="secondary"
+  size="sm"
+  onClick={signOut}
+  disabled={pending}
+  aria-label={t.sidebar.signOut}
+  title={t.sidebar.signOut}
+>
+  <LogOut className="size-4" aria-hidden="true" />
+</Button>
   );
 }
