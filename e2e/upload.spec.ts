@@ -13,7 +13,7 @@ const MB = 1024 * 1024;
 
 type Client = SupabaseClient<Database>;
 
-// `getSupabaseEnv` (used by the TUS branch) reads process.env; Playwright does not load .env.local.
+// `getSupabaseEnv` (used by the TUS branch) reads process.env, which playwright.config.ts fills.
 const { url, publishableKey } = supabasePublicEnv();
 process.env.NEXT_PUBLIC_SUPABASE_URL = url;
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = publishableKey;

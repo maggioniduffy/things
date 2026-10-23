@@ -1,20 +1,16 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { readSession, startGuest, type AppSession } from "./helpers/session";
+import { assertLocalUrl } from "./local-env";
 
 // WP 3.2: the real /api/unfurl route against the local Supabase stack. This container has no
 // outbound DNS, so only auth, validation, SSRF and rate-limit paths run here; real sites are
 // covered by unit tests (local server + injected lookup) and checked on the deployed app.
 
-/** Playwright does not load .env.local; read the keys this spec needs straight from the file. */
+/** Set by playwright.config.ts from the local stack (`e2e/local-env.ts`). */
 function envValue(name: string): string {
-  const fromProcess = process.env[name];
-  if (fromProcess) return fromProcess;
-  const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
-  const match = text.match(new RegExp(`^\\s*${name}\\s*=\\s*(.*?)\\s*$`, "m"));
-  const value = match?.[1]?.replace(/^["']|["']$/g, "");
-  if (!value) throw new Error(`${name} is not set. Run \`pnpm db:env\` first.`);
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set. Run e2e through \`pnpm e2e\`.`);
+  if (name === "NEXT_PUBLIC_SUPABASE_URL") assertLocalUrl(value);
   return value;
 }
 
