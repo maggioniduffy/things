@@ -2,9 +2,16 @@
 
 import { LoaderCircleIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { useLocale, useT } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AUTH_MESSAGES, EMAIL_OTP_TYPE, isValidOtp, mapAuthError } from "@/lib/auth";
+import {
+  AUTH_MESSAGES,
+  EMAIL_OTP_TYPE,
+  isValidOtp,
+  mapAuthError,
+  syncUserLocale,
+} from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 import { AuroraButton } from "./aurora-button";
 import { OtpCodeInput } from "./otp-code-input";
@@ -34,6 +41,8 @@ function FieldError({ id, message }: { id: string; message: string | null }) {
 
 /** Two-step email sign-in: request a 6-digit code, then verify it. */
 export function OtpForm({ onSignedIn }: OtpFormProps) {
+  const { login } = useT().auth;
+  const locale = useLocale();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -69,7 +78,7 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
     try {
       const { error: sendError } = await createClient().auth.signInWithOtp({
         email: address,
-        options: { shouldCreateUser: true, captchaToken },
+        options: { shouldCreateUser: true, captchaToken, data: { locale } },
       });
       captcha.reset();
       if (sendError) {
@@ -110,7 +119,8 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
     setError(null);
     setPending("verify");
     try {
-      const { error: verifyError } = await createClient().auth.verifyOtp({
+      const supabase = createClient();
+      const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
         email,
         token,
         type: EMAIL_OTP_TYPE,
@@ -122,6 +132,7 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
         codeInput.current?.focus();
         return;
       }
+      syncUserLocale(supabase, verified?.user, locale);
       onSignedIn();
     } catch (thrown) {
       setError(mapAuthError(thrown));
@@ -163,31 +174,29 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
     <div className="flex flex-col gap-6">
       {step === "email" ? (
         <div className="flex flex-col gap-1.5">
-          <h1 className="font-heading text-page tracking-heading text-ink">Sign in to Thingteca</h1>
-          <p className="text-body text-ink-muted">
-            We&apos;ll email you a 6-digit code. New here? That creates your account.
-          </p>
+          <h1 className="font-heading text-page tracking-heading text-ink">{login.title}</h1>
+          <p className="text-body text-ink-muted">{login.subtitle}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          <h1 className="font-heading text-page tracking-heading text-ink">Check your email</h1>
-          <p className="text-body text-ink-muted">
-            Codes expire after 10 minutes. Nothing arrived? Check spam, or send a new one.
-          </p>
+          <h1 className="font-heading text-page tracking-heading text-ink">
+            {login.checkEmailTitle}
+          </h1>
+          <p className="text-body text-ink-muted">{login.checkEmailBody}</p>
         </div>
       )}
       {step === "email" ? (
         <form onSubmit={onSendCode} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor={emailId} className="text-meta text-ink font-medium">
-              Email
+              {login.emailLabel}
             </label>
             <Input
               id={emailId}
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={login.emailPlaceholder}
               required
               value={email}
               onChange={(event) => {
@@ -200,16 +209,15 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
             />
             <FieldError id={errorId} message={error} />
           </div>
-          <AuroraButton type="submit" pending={pending === "send"} pendingLabel="Sending…">
-            Send code
+          <AuroraButton type="submit" pending={pending === "send"} pendingLabel={login.sending}>
+            {login.sendCode}
           </AuroraButton>
         </form>
       ) : (
         <form onSubmit={onVerifySubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
             <label htmlFor={codeId} className="text-body text-ink-muted">
-              Enter the 6-digit code we sent to{" "}
-              <span className="text-ink font-medium break-all">{email}</span>
+              {login.codeLabel} <span className="text-ink font-medium break-all">{email}</span>
             </label>
             <OtpCodeInput
               ref={codeInput}
@@ -225,11 +233,11 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
           </div>
           <Button type="submit" disabled={pending === "verify"} aria-busy={pending === "verify"}>
             {pending === "verify" ? <Spinner /> : null}
-            Verify
+            {login.verify}
           </Button>
           <div className="flex flex-wrap items-center justify-between gap-x-2">
             <Button type="button" variant="ghost" size="sm" onClick={useDifferentEmail}>
-              Use a different email
+              {login.useDifferentEmail}
             </Button>
             <Button
               type="button"
@@ -239,7 +247,7 @@ export function OtpForm({ onSignedIn }: OtpFormProps) {
               disabled={cooldown > 0 || pending !== null}
             >
               {pending === "resend" ? <Spinner /> : null}
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+              {cooldown > 0 ? login.resendIn(cooldown) : login.resend}
             </Button>
           </div>
         </form>

@@ -5,6 +5,7 @@ import { ArrowRightIcon } from "lucide-react";
 import { GuestStartButton } from "@/components/account/guest-start-button";
 import { Button } from "@/components/ui/button";
 import { focusRing } from "@/components/ui/focus-ring";
+import { useT } from "@/i18n/client";
 import { useHasSession } from "@/hooks/use-has-session";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
  */
 export function HeaderAppLink() {
   const hasSession = useHasSession();
+  const { entry } = useT().marketing;
   return (
     <Link
       href={hasSession ? "/app" : "/login"}
@@ -22,7 +24,7 @@ export function HeaderAppLink() {
         focusRing,
       )}
     >
-      {hasSession ? "Open app" : "Sign in"}
+      {hasSession ? entry.openApp : entry.signIn}
     </Link>
   );
 }
@@ -34,6 +36,7 @@ export function HeaderAppLink() {
  */
 export function HeroActions({ className }: { className?: string }) {
   const hasSession = useHasSession();
+  const { entry } = useT().marketing;
   return (
     <div
       className={cn(
@@ -44,7 +47,7 @@ export function HeroActions({ className }: { className?: string }) {
       {hasSession ? (
         <Button asChild size="lg">
           <Link href="/app">
-            Open app
+            {entry.openApp}
             <ArrowRightIcon />
           </Link>
         </Button>
@@ -52,7 +55,7 @@ export function HeroActions({ className }: { className?: string }) {
         <GuestStartButton size="lg" captchaClassName="order-last w-full sm:basis-full" />
       )}
       <Button asChild size="lg" variant="secondary">
-        <Link href="/login">Sign in</Link>
+        <Link href="/login">{entry.signIn}</Link>
       </Button>
     </div>
   );

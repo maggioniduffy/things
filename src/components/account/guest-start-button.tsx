@@ -4,6 +4,7 @@ import { LoaderCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLocale, useT } from "@/i18n/client";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { AUTH_MESSAGES, mapAuthError } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -23,10 +24,12 @@ export function GuestStartButton({
   variant,
   size,
   className,
-  children = "Try without an account",
+  children,
   captchaClassName,
 }: GuestStartButtonProps) {
   const router = useRouter();
+  const { guest } = useT().auth;
+  const locale = useLocale();
   const [pending, setPending] = useState(false);
   const captcha = useTurnstile();
 
@@ -43,7 +46,9 @@ export function GuestStartButton({
           setPending(false);
           return;
         }
-        const { error } = await supabase.auth.signInAnonymously({ options: { captchaToken } });
+        const { error } = await supabase.auth.signInAnonymously({
+          options: { captchaToken, data: { locale } },
+        });
         captcha.reset();
         if (error) {
           toast.error(mapAuthError(error));
@@ -72,7 +77,7 @@ export function GuestStartButton({
         aria-busy={pending}
       >
         {pending ? <LoaderCircleIcon className="animate-spin motion-reduce:animate-none" /> : null}
-        {children}
+        {children ?? guest.start}
       </Button>
       <TurnstileField {...captcha.field} className={captchaClassName} />
     </>

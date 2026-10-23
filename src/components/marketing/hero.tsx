@@ -2,26 +2,32 @@ import Link from "next/link";
 import { ClipboardPasteIcon, FolderTreeIcon, SearchIcon } from "lucide-react";
 import { Aurora, Logo } from "@/components/brand";
 import { focusRing } from "@/components/ui/focus-ring";
+import { getT } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { HeaderAppLink, HeroActions } from "./app-entry";
 
-const NAV_LINKS = [
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Features", href: "#features" },
-  { label: "FAQ", href: "#faq" },
-] as const;
-
 /** Slim top bar over the hero: logo left, page sections and "Sign in" (or "Open app") right. */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const t = await getT();
+  const nav = t.marketing.nav;
+  const links = [
+    { label: nav.howItWorks, href: "#how-it-works" },
+    { label: nav.features, href: "#features" },
+    { label: nav.faq, href: "#faq" },
+  ];
   return (
     <header className="relative z-10 mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-      <Link href="/" aria-label="Thingteca, home" className={cn("rounded-control", focusRing)}>
+      <Link
+        href="/"
+        aria-label={t.auth.login.homeLabel}
+        className={cn("rounded-control", focusRing)}
+      >
         <Logo />
       </Link>
       <div className="flex items-center gap-2 sm:gap-4">
-        <nav aria-label="Page sections" className="hidden md:block">
+        <nav aria-label={nav.label} className="hidden md:block">
           <ul className="flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
@@ -54,7 +60,8 @@ export function HeroBackdrop() {
   );
 }
 
-export function Hero() {
+export async function Hero() {
+  const { hero } = (await getT()).marketing;
   return (
     <section
       aria-labelledby="hero-title"
@@ -64,35 +71,20 @@ export function Hero() {
         id="hero-title"
         className="font-heading tracking-heading text-ink max-w-[16ch] text-[length:clamp(2.5rem,7vw,4.5rem)] leading-[1.04] font-semibold text-balance"
       >
-        Save anything. Find it again.
+        {hero.title}
       </h1>
       <p className="text-body text-ink-muted mt-5 max-w-[46ch] text-pretty sm:text-[length:var(--text-section)] sm:leading-[var(--text-section--line-height)]">
-        Drop in links, files and notes. Thingteca sorts them by format and keeps them easy to find.
+        {hero.lead}
       </p>
       <HeroActions />
     </section>
   );
 }
 
-const STEPS = [
-  {
-    icon: ClipboardPasteIcon,
-    title: "Capture in one gesture",
-    body: "Paste a link, drop a file or jot a note. It saves at once, with no form to fill in first.",
-  },
-  {
-    icon: FolderTreeIcon,
-    title: "Organize without effort",
-    body: "Each save is filed by format and enriched with a title, image and thumbnail a moment later.",
-  },
-  {
-    icon: SearchIcon,
-    title: "Find it again",
-    body: "Search, filter by format, tag or status, and open any item for a full preview.",
-  },
-] as const;
+const STEP_ICONS = [ClipboardPasteIcon, FolderTreeIcon, SearchIcon];
 
-export function HowItWorks() {
+export async function HowItWorks() {
+  const { how } = (await getT()).marketing;
   return (
     <section
       id="how-it-works"
@@ -101,26 +93,32 @@ export function HowItWorks() {
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <h2 id="how-title" className="sr-only">
-          How it works
+          {how.title}
         </h2>
         <ol className="divide-line grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
-          {STEPS.map(({ icon: Icon, title, body }, index) => (
-            <li key={title} className="flex flex-col gap-4 py-8 md:px-8 md:first:pl-0 md:last:pr-0">
-              <div
-                aria-hidden="true"
-                className="rounded-control border-line bg-surface text-ink flex size-10 items-center justify-center border"
+          {how.steps.map(({ title, body }, index) => {
+            const Icon = STEP_ICONS[index] ?? SearchIcon;
+            return (
+              <li
+                key={title}
+                className="flex flex-col gap-4 py-8 md:px-8 md:first:pl-0 md:last:pr-0"
               >
-                <Icon className="size-[18px]" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-card text-ink font-medium">
-                  <span className="text-ink-subtle tabular-nums">{index + 1}. </span>
-                  {title}
-                </h3>
-                <p className="text-body text-ink-muted max-w-[34ch]">{body}</p>
-              </div>
-            </li>
-          ))}
+                <div
+                  aria-hidden="true"
+                  className="rounded-control border-line bg-surface text-ink flex size-10 items-center justify-center border"
+                >
+                  <Icon className="size-[18px]" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-card text-ink font-medium">
+                    <span className="text-ink-subtle tabular-nums">{index + 1}. </span>
+                    {title}
+                  </h3>
+                  <p className="text-body text-ink-muted max-w-[34ch]">{body}</p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
     </section>

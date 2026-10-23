@@ -1,13 +1,35 @@
+import { getActiveMessages } from "@/i18n/active";
+
+/**
+ * User-facing auth messages in the active locale. Getters, so each read picks up the current
+ * locale (the dictionaries live in i18n/messages/*\/auth.ts).
+ */
 export const AUTH_MESSAGES = {
-  invalidCode: "That code didn't work. Check it or send a new one.",
-  rateLimit: "Too many attempts. Wait a minute, then try again.",
-  captcha: "We couldn't verify that you're a person. Refresh the page and try again.",
-  network: "Can't reach Thingteca. Check your connection and try again.",
-  invalidEmail: "That email address doesn't look right. Check it and try again.",
-  accountExists:
-    "That email already has a Thingteca account. Sign in to it instead — items saved as a guest won't move over yet.",
-  unknown: "Something went wrong. Try again.",
-} as const;
+  get invalidCode() {
+    return getActiveMessages().auth.errors.invalidCode;
+  },
+  get rateLimit() {
+    return getActiveMessages().auth.errors.rateLimit;
+  },
+  get captcha() {
+    return getActiveMessages().auth.errors.captcha;
+  },
+  get network() {
+    return getActiveMessages().auth.errors.network;
+  },
+  get invalidEmail() {
+    return getActiveMessages().auth.errors.invalidEmail;
+  },
+  get accountExists() {
+    return getActiveMessages().auth.errors.accountExists;
+  },
+  get unknown() {
+    return getActiveMessages().auth.errors.unknown;
+  },
+  get callbackFailed() {
+    return getActiveMessages().auth.errors.callbackFailed;
+  },
+};
 
 type ErrorLike = {
   code?: unknown;

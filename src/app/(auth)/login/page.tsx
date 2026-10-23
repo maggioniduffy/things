@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { getT } from "@/i18n/server";
 import { safeNextPath } from "@/lib/supabase/proxy";
 import { LoginPanel } from "./login-panel";
 
-export const metadata: Metadata = {
-  title: "Sign in — Thingteca",
-  robots: { index: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { meta } = await getT();
+  return { title: meta.login.title, robots: { index: false } };
+}
 
 type LoginPageProps = {
   searchParams: Promise<{

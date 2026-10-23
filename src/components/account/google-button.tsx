@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { useT } from "@/i18n/client";
 import { AuroraButton } from "./aurora-button";
 
 type GoogleButtonProps = {
@@ -14,12 +15,13 @@ type GoogleButtonProps = {
 
 /** Secondary button with the Google "G" and the aurora loading fill. */
 export function GoogleButton({ onClick, pending, disabled = false, children }: GoogleButtonProps) {
+  const { login } = useT().auth;
   return (
     <AuroraButton
       variant="secondary"
       onClick={onClick}
       pending={pending}
-      pendingLabel="Connecting…"
+      pendingLabel={login.connecting}
       disabled={disabled}
       icon={<Image src="/brand/google-g.svg" alt="" width={16} height={16} unoptimized />}
     >

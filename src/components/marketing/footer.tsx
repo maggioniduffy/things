@@ -1,33 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/brand";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { IconButton } from "@/components/ui/icon-button";
 import { focusRing } from "@/components/ui/focus-ring";
+import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 const GITHUB_URL = "https://github.com/maggioniduffy/things";
 const CHANGELOG_URL = `${GITHUB_URL}/blob/main/CHANGELOG.md`;
 
 type FooterLink = { label: string; href: string; external?: boolean };
-
-const COLUMNS: { title: string; links: FooterLink[] }[] = [
-  {
-    title: "Product",
-    links: [
-      { label: "How it works", href: "/#how-it-works" },
-      { label: "Features", href: "/#features" },
-      { label: "Guest mode", href: "/#guest" },
-      { label: "FAQ", href: "/#faq" },
-      { label: "Sign in", href: "/login" },
-    ],
-  },
-  {
-    title: "Project",
-    links: [
-      { label: "GitHub", href: GITHUB_URL, external: true },
-      { label: "Changelog", href: CHANGELOG_URL, external: true },
-    ],
-  },
-];
 
 const linkClass = cn(
   "link-underline text-body text-ink-muted hover:text-ink rounded-sm transition-[color,background-color,border-color] duration-(--duration-fast)",
@@ -44,30 +28,50 @@ function GitHubMark() {
 }
 
 export function Footer() {
+  const { footer: t } = useT().common;
+  const columns: { title: string; links: FooterLink[] }[] = [
+    {
+      title: t.product,
+      links: [
+        { label: t.howItWorks, href: "/#how-it-works" },
+        { label: t.features, href: "/#features" },
+        { label: t.guestMode, href: "/#guest" },
+        { label: t.faq, href: "/#faq" },
+        { label: t.signIn, href: "/login" },
+      ],
+    },
+    {
+      title: t.project,
+      links: [
+        { label: t.github, href: GITHUB_URL, external: true },
+        { label: t.changelog, href: CHANGELOG_URL, external: true },
+      ],
+    },
+  ];
+  const { brand } = useT().common;
   return (
     <footer className="border-line relative z-10 w-full border-t">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 md:flex-row md:justify-between">
         <div className="flex max-w-xs flex-col gap-4">
           <Link
             href="/"
-            aria-label="Thingteca, home"
+            aria-label={t.homeLabel}
             className={cn("rounded-control w-fit", focusRing)}
           >
             <Logo />
           </Link>
-          <p className="text-body text-ink-muted">
-            A calm place to keep links, files and notes for later.
-          </p>
+          <p className="text-body text-ink-muted">{t.tagline}</p>
           <div className="flex gap-2">
-            <IconButton asChild label="Thingteca on GitHub">
+            <IconButton asChild label={t.githubLabel}>
               <a href={GITHUB_URL} target="_blank" rel="noreferrer noopener">
                 <GitHubMark />
               </a>
             </IconButton>
           </div>
+          <LanguageSwitcher className="w-fit" />
         </div>
-        <nav aria-label="Footer" className="flex gap-16 sm:gap-24">
-          {COLUMNS.map((column) => (
+        <nav aria-label={t.navLabel} className="flex gap-16 sm:gap-24">
+          {columns.map((column) => (
             <div key={column.title} className="flex flex-col gap-3">
               <h2 className="text-card text-ink font-medium">{column.title}</h2>
               <ul className="flex flex-col gap-2">
@@ -96,9 +100,10 @@ export function Footer() {
       </div>
       <div className="border-line border-t">
         <p className="text-meta text-ink-subtle mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-          © {new Date().getFullYear()} Thingteca - <a href="https://cafecito.app/maggioniduffy" target="_blank">
-         <b> Buy me a coffe! </b>
-        </a>
+          © {new Date().getFullYear()} {brand.name} -{" "}
+          <a href="https://cafecito.app/maggioniduffy" target="_blank" rel="noreferrer noopener">
+            <b>{t.coffee}</b>
+          </a>
         </p>
       </div>
     </footer>
