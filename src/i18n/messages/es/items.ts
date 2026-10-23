@@ -74,6 +74,10 @@ export const items: Messages["items"] = {
     openLink: "Abrir el enlace",
     download: "Descargar",
     downloadFailed: "No se pudo descargar el archivo.",
+    openFullView: "Abrir en pantalla completa",
+    openFileInNewTab: "Abrir en otra pestaña",
+    fullViewDescription: "Vista completa del archivo",
+    viewerFailed: "No se pudo cargar el archivo.",
   },
 
   capture: {

@@ -17,6 +17,7 @@ import type { ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKET } from "@/lib/items/upload";
 import { NoteField } from "./fields";
+import { FileViewerButton, viewerKindOf } from "./file-viewer";
 import { parseVideoEmbed, safeHttpUrl } from "./urls";
 
 const FRAME = "rounded-control border-line bg-line w-full overflow-hidden border";
@@ -103,11 +104,16 @@ function PdfPreview({ item }: { item: BoardItem }) {
   const src = item.file_path ? urls.get(item.file_path) : undefined;
   if (!src) return <Skeleton className="h-[60vh] w-full" />;
   return (
-    <iframe
-      src={src}
-      title={t.pdfTitle(itemDisplayTitle(item, card))}
-      className={`${FRAME} h-[60vh]`}
-    />
+    <div className="grid gap-2">
+      <iframe
+        src={src}
+        title={t.pdfTitle(itemDisplayTitle(item, card))}
+        className={`${FRAME} h-[60vh]`}
+      />
+      <div className="flex flex-wrap gap-2">
+        <FileViewerButton item={item} kind="pdf" />
+      </div>
+    </div>
   );
 }
 
@@ -225,6 +231,7 @@ function FilePreview({ item }: { item: BoardItem }) {
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
   const size = formatBytes(item.file_size, locale);
+  const viewerKind = viewerKindOf(item);
 
   async function download() {
     if (!item.file_path) return;
@@ -258,10 +265,13 @@ function FilePreview({ item }: { item: BoardItem }) {
         {size ? <p className="text-meta text-ink-subtle">{size}</p> : null}
       </div>
       {item.file_path ? (
-        <Button variant="secondary" size="sm" disabled={busy} onClick={() => void download()}>
-          <DownloadIcon />
-          {t.download}
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          {viewerKind ? <FileViewerButton item={item} kind={viewerKind} /> : null}
+          <Button variant="secondary" size="sm" disabled={busy} onClick={() => void download()}>
+            <DownloadIcon />
+            {t.download}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
