@@ -1,10 +1,6 @@
 // Loaded with a dynamic import from thumbnails.ts so pdfjs stays out of the main bundle.
-// The "legacy" build, not the modern one: pdfjs 6 calls Map.prototype.getOrInsertComputed (Chrome
-// 145+, Firefox 144+) and Promise.withResolvers (Safari 17.4+), and only the legacy build
-// polyfills them. Checked in Chromium 141, where the modern build throws on render.
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import { getPdfjs } from "./pdfjs";
 
-let workerConfigured = false;
 /** A pathological PDF must not leave the card's thumbnail step pending forever. */
 const PDF_TIMEOUT_MS = 10_000;
 
@@ -16,15 +12,7 @@ export async function renderPdfFirstPage(
   data: ArrayBuffer,
   width: number,
 ): Promise<HTMLCanvasElement> {
-  if (!workerConfigured) {
-    // The bundler emits the worker as an asset and rewrites this URL.
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/legacy/build/pdf.worker.mjs",
-      import.meta.url,
-    ).toString();
-    workerConfigured = true;
-  }
-
+  const pdfjs = getPdfjs();
   const task = pdfjs.getDocument({ data: new Uint8Array(data) });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
@@ -43,7 +31,7 @@ export async function renderPdfFirstPage(
 }
 
 async function render(
-  task: ReturnType<typeof pdfjs.getDocument>,
+  task: ReturnType<ReturnType<typeof getPdfjs>["getDocument"]>,
   width: number,
 ): Promise<HTMLCanvasElement> {
   const doc = await task.promise;

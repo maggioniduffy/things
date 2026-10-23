@@ -235,6 +235,16 @@ describe("ItemDrawerHost", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/app/all", { scroll: false });
   });
 
+  it("has a Close button in the footer (mobile only via CSS) that closes the drawer", async () => {
+    renderDrawer(NOTE);
+    const dialog = await screen.findByRole("dialog", { name: "My note" });
+    const buttons = within(dialog).getAllByRole("button", { name: "Close" });
+    const footer = buttons.find((b) => b.className.includes("sm:hidden"));
+    expect(footer).toBeDefined();
+    await userEvent.click(footer!);
+    expect(mocks.replace).toHaveBeenCalledWith("/app/all", { scroll: false });
+  });
+
   it("fetches an item that is not in the cache by id", async () => {
     const { state } = renderDrawer(NOTE, { seeded: false });
     expect(await screen.findByRole("textbox", { name: "Title" })).toHaveValue("My note");

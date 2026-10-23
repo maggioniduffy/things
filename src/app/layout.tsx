@@ -38,6 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(await requestOrigin(SITE_URL[locale])),
     title,
     description,
+    appleWebApp: { capable: true, title: siteName, statusBarStyle: "default" },
     alternates: { languages: { en: SITE_URL.en, es: SITE_URL.es } },
     openGraph: { title, description, siteName, type: "website", locale, images },
     twitter: { card: "summary_large_image", title, description, images },

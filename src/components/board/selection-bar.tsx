@@ -30,6 +30,17 @@ type SelectionBarProps = {
   itemIds: readonly string[];
 };
 
+// The bar is graphite with inverse ink, so it reads clearly over any card.
+const ACTION =
+  "border-ink-inverse/20 bg-ink-inverse/5 text-ink-inverse hover:border-ink-inverse/40 hover:bg-ink-inverse/10";
+const QUIET = "text-ink-inverse-muted hover:bg-ink-inverse/10 hover:text-ink-inverse";
+const DANGER = "border-aurora-coral/40 bg-transparent text-aurora-coral hover:bg-aurora-coral/10";
+
+/** A button label that collapses to the icon alone on phones (the name stays for screen readers). */
+function Label({ children }: { children: string }) {
+  return <span className="max-sm:sr-only">{children}</span>;
+}
+
 /**
  * The actions for the selected cards, by view. Trash: restore, archive, delete forever. Archive:
  * restore, trash. Anywhere else: move to a collection, archive, trash.
@@ -63,14 +74,17 @@ export function SelectionBar({ view, itemIds }: SelectionBarProps) {
     <div
       role="toolbar"
       aria-label={t.toolbarLabel}
-      className="bg-surface border-line rounded-card shadow-card fixed inset-x-3 bottom-4 z-30 mx-auto flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-center gap-2 border p-2 backdrop-blur-md"
+      // Sticky in the main column, not fixed: it never covers the sidebar, and at the end of the
+      // board it takes its own space, so the last card stays reachable.
+      className="bg-note-graphite border-ink-inverse/10 rounded-card shadow-card-hover sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 mx-auto mt-auto mb-4 flex w-fit max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-center gap-1.5 border p-2"
     >
-      <span role="status" className="text-body text-ink px-2 font-medium">
+      <span role="status" className="text-body text-ink-inverse px-2 font-medium">
         {ids.length === 0 ? t.none : t.count(ids.length)}
       </span>
       <Button
         variant="ghost"
         size="sm"
+        className={QUIET}
         onClick={() => (allSelected ? clearSelection() : selectAll(itemIds))}
       >
         {allSelected ? t.deselectAll : t.selectAll}
@@ -81,29 +95,32 @@ export function SelectionBar({ view, itemIds }: SelectionBarProps) {
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "restore" })}
           >
             <Undo2Icon />
-            {t.restore}
+            <Label>{t.restore}</Label>
           </Button>
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "archive" })}
           >
             <ArchiveIcon />
-            {t.archive}
+            <Label>{t.archive}</Label>
           </Button>
           <Button
             variant="destructive"
             size="sm"
+            className={DANGER}
             disabled={disabled}
             onClick={() => setConfirming(true)}
           >
             <Trash2Icon />
-            {t.deleteForever}
+            <Label>{t.deleteForever}</Label>
           </Button>
         </>
       ) : view.type === "archive" ? (
@@ -111,52 +128,62 @@ export function SelectionBar({ view, itemIds }: SelectionBarProps) {
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "unarchive" })}
           >
             <ArchiveRestoreIcon />
-            {t.restore}
+            <Label>{t.restore}</Label>
           </Button>
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "trash" })}
           >
             <Trash2Icon />
-            {t.trash}
+            <Label>{t.trash}</Label>
           </Button>
         </>
       ) : (
         <>
-          <Button variant="secondary" size="sm" disabled={disabled} onClick={() => setMoving(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className={ACTION}
+            disabled={disabled}
+            onClick={() => setMoving(true)}
+          >
             <FolderInputIcon />
-            {t.moveTo}
+            <Label>{t.moveTo}</Label>
           </Button>
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "archive" })}
           >
             <ArchiveIcon />
-            {t.archive}
+            <Label>{t.archive}</Label>
           </Button>
           <Button
             variant="secondary"
             size="sm"
+            className={ACTION}
             disabled={disabled}
             onClick={() => run({ type: "trash" })}
           >
             <Trash2Icon />
-            {t.trash}
+            <Label>{t.trash}</Label>
           </Button>
         </>
       )}
 
-      <Button variant="ghost" size="sm" onClick={() => setSelectMode(false)}>
+      <Button variant="ghost" size="sm" className={QUIET} onClick={() => setSelectMode(false)}>
         <XIcon />
-        {t.done}
+        <Label>{t.done}</Label>
       </Button>
 
       <MoveDialog

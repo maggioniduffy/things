@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckIcon, GripVerticalIcon } from "lucide-react";
+import { GripVerticalIcon } from "lucide-react";
 import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 import { memo, useCallback, useMemo, type CSSProperties, type Ref } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
@@ -86,6 +86,7 @@ function CardFrame({
   const chrome = useMemo(
     () => ({
       as: "div" as const,
+      selected: selectMode ? selected : undefined,
       dragHandle: handleLabel ? (
         <button
           ref={setActivatorNodeRef}
@@ -103,7 +104,7 @@ function CardFrame({
         </button>
       ) : undefined,
     }),
-    [handleLabel, setActivatorNodeRef, attributes, item, variant, card],
+    [handleLabel, setActivatorNodeRef, attributes, item, variant, card, selectMode, selected],
   );
 
   return (
@@ -130,19 +131,6 @@ function CardFrame({
               onRetry={onRetry}
             />
           </CardChromeContext.Provider>
-          {selectMode ? (
-            <span
-              aria-hidden="true"
-              className={cn(
-                "rounded-control pointer-events-none absolute top-2 left-2 z-20 flex size-5 items-center justify-center border-2",
-                selected
-                  ? "border-focus bg-focus text-primary-foreground"
-                  : "border-line bg-surface",
-              )}
-            >
-              {selected ? <CheckIcon className="size-3.5" /> : null}
-            </span>
-          ) : null}
           {selected ? <span className="sr-only">{t.selected}</span> : null}
         </div>
       </div>
