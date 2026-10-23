@@ -117,13 +117,14 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
         <ItemMetadata item={item} />
       </div>
 
-      <div className="border-line flex items-center gap-2 border-t p-4">
-        <div className="min-w-0 flex-1">
-          <ItemActionBar item={item} view={view} actions={actions} onClose={onClose} />
-        </div>
-        <Button variant="secondary" className="shrink-0 sm:hidden" onClick={onClose}>
-          {t.close}
-        </Button>
+      <div className="border-line border-t p-4">
+        <ItemActionBar
+          item={item}
+          view={view}
+          actions={actions}
+          onClose={onClose}
+          closeLabel={t.close}
+        />
       </div>
     </>
   );
