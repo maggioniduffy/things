@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getT } from "@/i18n/server";
 import { Footer } from "@/components/marketing/footer";
 import { Hero, HeroBackdrop, HowItWorks, SiteHeader } from "@/components/marketing/hero";
-import { ClosingCta, Faq, Features, GuestMode } from "@/components/marketing/sections";
+import { ClosingCta, Faq, Features, GuestMode, InstallApp } from "@/components/marketing/sections";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { meta } = await getT();
@@ -23,6 +23,7 @@ export default function LandingPage() {
         <main className="overflow-x-clip">
           <Hero />
           <HowItWorks />
+          <InstallApp />
           <Features />
           <GuestMode />
           <Faq />

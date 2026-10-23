@@ -1,17 +1,17 @@
 "use client";
 
-import { ArchiveIcon, ArchiveRestoreIcon, StarIcon, Trash2Icon, Undo2Icon } from "lucide-react";
+import { ArchiveIcon, ArchiveRestoreIcon, StarIcon, Trash2Icon, Undo2Icon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
@@ -23,10 +23,12 @@ type ItemActionBarProps = {
   actions: ItemActions;
   /** Called after an action that takes the item out of the current view. */
   onClose: () => void;
+  /** Phones only: a Close button on the first row, next to Favorite and Archive. */
+  closeLabel?: string;
 };
 
 /** Favorite, archive, trash / restore, and (only in the Trash view) delete forever. */
-export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarProps) {
+export function ItemActionBar({ item, view, actions, onClose, closeLabel }: ItemActionBarProps) {
   const t = useT().items.drawer;
   const card = useT().shell.card;
   const [confirming, setConfirming] = useState(false);
@@ -65,6 +67,13 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
         )
       ) : null}
 
+      {closeLabel ? (
+        <Button size="sm" className="ml-auto sm:hidden" onClick={onClose}>
+          <XIcon />
+          {closeLabel}
+        </Button>
+      ) : null}
+
       {trashed ? (
         <Button variant="secondary" size="sm" onClick={() => leave(actions.restore(item))}>
           <Undo2Icon />
@@ -82,15 +91,15 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
           <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
             {t.deleteForever}
           </Button>
-          <Dialog open={confirming} onOpenChange={setConfirming}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t.deleteForeverTitle}</DialogTitle>
-                <DialogDescription>
+          <ResponsiveDialog open={confirming} onOpenChange={setConfirming}>
+            <ResponsiveDialogContent>
+              <ResponsiveDialogHeader>
+                <ResponsiveDialogTitle>{t.deleteForeverTitle}</ResponsiveDialogTitle>
+                <ResponsiveDialogDescription>
                   {t.deleteForeverBody(itemDisplayTitle(item, card))}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
+                </ResponsiveDialogDescription>
+              </ResponsiveDialogHeader>
+              <ResponsiveDialogFooter>
                 <Button variant="secondary" onClick={() => setConfirming(false)}>
                   {t.cancel}
                 </Button>
@@ -103,9 +112,9 @@ export function ItemActionBar({ item, view, actions, onClose }: ItemActionBarPro
                 >
                   {t.deleteForever}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </ResponsiveDialogFooter>
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
         </>
       ) : null}
     </div>

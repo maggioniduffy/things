@@ -1,27 +1,11 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { expect, type BrowserContext, type Page } from "@playwright/test";
+import { assertLocalUrl } from "../local-env";
 
-/** Playwright does not load .env.local the way Next does, so read the generated file directly. */
-function readEnvLocal(): Record<string, string> {
-  try {
-    const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
-    const entries = text
-      .split("\n")
-      .map((line) => line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/))
-      .filter((match): match is RegExpMatchArray => match !== null)
-      .map((match) => [match[1] ?? "", (match[2] ?? "").replace(/^["']|["']$/g, "")] as const);
-    return Object.fromEntries(entries);
-  } catch {
-    return {};
-  }
-}
-
-const envLocal = readEnvLocal();
-
+/** Set by playwright.config.ts from the local stack (`e2e/local-env.ts`), never from .env.local. */
 function requireEnv(name: string): string {
-  const value = process.env[name] || envLocal[name];
-  if (!value) throw new Error(`${name} is not set. Run \`pnpm db:env\` first.`);
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set. Run e2e through \`pnpm e2e\`.`);
+  if (name === "NEXT_PUBLIC_SUPABASE_URL") assertLocalUrl(value);
   return value;
 }
 

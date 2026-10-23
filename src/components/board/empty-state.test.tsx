@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 import { messages } from "@/i18n/messages";
 import type { ViewSpec } from "@/lib/views";
+import { useUiStore } from "@/stores/ui-store";
 import { EmptyState, emptyCopy } from "./empty-state";
 
 const shell = messages.en.shell;
@@ -92,5 +93,53 @@ describe("EmptyState", () => {
     render(<EmptyState view={{ type: "collection", collectionId: ID }} unknown />);
     expect(screen.getByRole("heading", { name: "This page doesn't exist." })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to Inbox" })).toHaveAttribute("href", "/app");
+  });
+
+  describe("add card", () => {
+    beforeEach(() => useUiStore.setState({ quickAddOpen: false, quickAddDefaults: null }));
+
+    const SHOWN: [string, ViewSpec][] = [
+      ["inbox", { type: "inbox" }],
+      ["all", { type: "all" }],
+      ["unread", { type: "unread" }],
+      ["collection", { type: "collection", collectionId: ID }],
+      ["kind", { type: "kind", kind: "video" }],
+      ["tag", { type: "tag", tagId: ID }],
+    ];
+    const HIDDEN: [string, ViewSpec][] = [
+      ["favorites", { type: "favorites" }],
+      ["archive", { type: "archive" }],
+      ["trash", { type: "trash" }],
+      ["smart view", { type: "smart", viewId: ID }],
+    ];
+
+    it.each(SHOWN)("shows in the %s view", (_name, view) => {
+      render(<EmptyState view={view} name="thesis" />);
+      expect(screen.getByRole("button", { name: /Add something/ })).toBeInTheDocument();
+      expect(screen.getByText("Paste a link, drop a file or write a note")).toBeInTheDocument();
+    });
+
+    it.each(HIDDEN)("is absent in the %s view", (_name, view) => {
+      render(<EmptyState view={view} />);
+      expect(screen.queryByRole("button", { name: /Add something/ })).not.toBeInTheDocument();
+    });
+
+    it("is absent on a page that does not exist", () => {
+      render(<EmptyState view={{ type: "collection", collectionId: ID }} unknown />);
+      expect(screen.queryByRole("button", { name: /Add something/ })).not.toBeInTheDocument();
+    });
+
+    it("opens quick add", () => {
+      render(<EmptyState view={{ type: "inbox" }} />);
+      fireEvent.click(screen.getByRole("button", { name: /Add something/ }));
+      expect(useUiStore.getState().quickAddOpen).toBe(true);
+      expect(useUiStore.getState().quickAddDefaults).toBeNull();
+    });
+
+    it("hands the tag to quick add in a tag view", () => {
+      render(<EmptyState view={{ type: "tag", tagId: ID }} name="thesis" />);
+      fireEvent.click(screen.getByRole("button", { name: /Add something/ }));
+      expect(useUiStore.getState().quickAddDefaults).toEqual({ tagNames: ["thesis"] });
+    });
   });
 });

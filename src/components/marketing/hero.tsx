@@ -12,6 +12,7 @@ export async function SiteHeader() {
   const nav = t.marketing.nav;
   const links = [
     { label: nav.howItWorks, href: "#how-it-works" },
+    { label: nav.install, href: "#install" },
     { label: nav.features, href: "#features" },
     { label: nav.faq, href: "#faq" },
   ];
@@ -65,7 +66,7 @@ export async function Hero() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative z-10 mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-4xl flex-col items-center px-4 pt-[clamp(2rem,7vh,5rem)] text-center sm:px-6"
+      className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center px-4 pt-[clamp(1rem,4vh,3rem)] pb-10 text-center sm:px-6"
     >
       <h1
         id="hero-title"
@@ -92,16 +93,22 @@ export async function HowItWorks() {
       className="border-line relative z-10 w-full scroll-mt-4 border-t"
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        <h2 id="how-title" className="sr-only">
-          {how.title}
-        </h2>
-        <ol className="divide-line grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
-          {how.steps.map(({ title, body }, index) => {
+        <div className="flex flex-col items-center gap-2 pt-8 text-center">
+          <h2
+            id="how-title"
+            className="font-heading tracking-heading text-ink text-[length:var(--text-section)] leading-[var(--text-section--line-height)] font-semibold"
+          >
+            {how.title}
+          </h2>
+          <p className="text-body text-ink-muted max-w-[52ch] text-pretty">{how.lead}</p>
+        </div>
+        <ol className="grid gap-4 py-6 md:grid-cols-3">
+          {how.steps.map(({ title, body, example, chips }, index) => {
             const Icon = STEP_ICONS[index] ?? SearchIcon;
             return (
               <li
                 key={title}
-                className="flex flex-col gap-4 py-8 md:px-8 md:first:pl-0 md:last:pr-0"
+                className="border-line bg-surface rounded-card flex flex-col gap-3 border p-5"
               >
                 <div
                   aria-hidden="true"
@@ -114,8 +121,22 @@ export async function HowItWorks() {
                     <span className="text-ink-subtle tabular-nums">{index + 1}. </span>
                     {title}
                   </h3>
-                  <p className="text-body text-ink-muted max-w-[34ch]">{body}</p>
+                  <p className="text-body text-ink-muted">{body}</p>
                 </div>
+                <div
+                  aria-hidden="true"
+                  className="border-line bg-paper rounded-control flex flex-wrap items-center gap-1.5 border p-2"
+                >
+                  {chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="border-line bg-surface text-ink-muted text-meta rounded-control border px-2 py-0.5"
+                    >
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-meta text-ink-subtle">{example}</p>
               </li>
             );
           })}

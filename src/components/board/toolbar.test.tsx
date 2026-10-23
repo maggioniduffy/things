@@ -239,9 +239,15 @@ describe("Toolbar", () => {
   });
 
   it("toggles the sidebar from its buttons", async () => {
+    // While the sidebar is open, its own header holds the hide button.
+    const { unmount } = renderToolbar({ type: "inbox" });
+    expect(screen.queryByRole("button", { name: "Hide sidebar", hidden: true })).toBeNull();
+    unmount();
+
+    useUiStore.setState({ sidebarCollapsed: true });
     renderToolbar({ type: "inbox" });
-    await userEvent.click(screen.getByRole("button", { name: "Hide sidebar", hidden: true }));
-    expect(useUiStore.getState().sidebarCollapsed).toBe(true);
+    await userEvent.click(screen.getByRole("button", { name: "Show sidebar", hidden: true }));
+    expect(useUiStore.getState().sidebarCollapsed).toBe(false);
 
     await userEvent.click(screen.getByRole("button", { name: "Open sidebar", hidden: true }));
     expect(useUiStore.getState().mobileSidebarOpen).toBe(true);

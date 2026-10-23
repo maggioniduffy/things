@@ -93,6 +93,7 @@ export const shell: Messages["shell"] = {
 
   tagDialog: {
     renameTitle: "Renombrar etiqueta",
+    renameDescription: "Todo lo que tiene esta etiqueta la conserva con el nuevo nombre.",
     deleteTitle: (name) => `¿Eliminar #${name}?`,
     deleteDescription: "Las cosas conservan todo lo demás.",
   },
@@ -208,6 +209,8 @@ export const shell: Messages["shell"] = {
   empty: {
     unknown: "Esta página no existe.",
     goToInbox: "Ir a la bandeja de entrada",
+    addSomething: "Agregar algo",
+    addHint: "Pegá un enlace, soltá un archivo o escribí una nota",
     saved: "Los enlaces, archivos y notas que guardes van a aparecer acá.",
     inboxHeading: "Soltá cualquier cosa acá.",
     allHeading: "Todavía no guardaste nada.",

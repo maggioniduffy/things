@@ -126,13 +126,19 @@ export function readDataTransfer(dataTransfer: DataTransferLike) {
 export function saveRequests(
   capture: Capture,
   { requests, capped }: { requests: CaptureRequest[]; capped: boolean },
-  { canvasAt }: { canvasAt?: CanvasTarget } = {},
+  { canvasAt, tagNames }: { canvasAt?: CanvasTarget; tagNames?: string[] } = {},
 ): void {
   if (capped) toast(cappedCopy());
   for (let index = requests.length - 1; index >= 0; index -= 1) {
     const request = requests[index];
     if (!request) continue;
-    const at = canvasAt ? { canvasAt: cascadePoint(canvasAt, index) } : undefined;
+    const at =
+      canvasAt || tagNames?.length
+        ? {
+            ...(canvasAt ? { canvasAt: cascadePoint(canvasAt, index) } : {}),
+            ...(tagNames?.length ? { tagNames } : {}),
+          }
+        : undefined;
     switch (request.type) {
       case "file":
         void (at ? capture.captureFile(request.file, at) : capture.captureFile(request.file));
@@ -146,8 +152,12 @@ export function saveRequests(
         } else {
           void capture.captureNote(request.text, {
             title: request.title,
-            tagNames: request.tagNames,
             ...at,
+            // Typed `#tags` and the view's tag both apply.
+            tagNames:
+              request.tagNames || at?.tagNames
+                ? [...new Set([...(request.tagNames ?? []), ...(at?.tagNames ?? [])])]
+                : undefined,
           });
         }
         break;

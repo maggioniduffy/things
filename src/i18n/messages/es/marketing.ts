@@ -8,6 +8,7 @@ export const marketing: Messages["marketing"] = {
   nav: {
     label: "Secciones de la página",
     howItWorks: "Cómo funciona",
+    install: "Instalar",
     features: "Funciones",
     faq: "Preguntas frecuentes",
   },
@@ -18,20 +19,61 @@ export const marketing: Messages["marketing"] = {
   },
   how: {
     title: "Cómo funciona",
+    lead: "Tres pasos para pasar de un enlace suelto a algo que encontrás en segundos.",
     steps: [
       {
         title: "Guardá en un gesto",
         body: "Pegá un enlace, soltá un archivo o anotá algo. Se guarda al instante, sin formularios.",
+        example: "Pegá un enlace, soltá un PDF o escribí una nota.",
+        chips: ["https://…", "informe.pdf", "Comprar avena"],
       },
       {
         title: "Orden sin esfuerzo",
         body: "Cada cosa se ordena por formato y, un momento después, suma título, imagen y miniatura.",
+        example: "Se archiva como Artículo, PDF o Nota.",
+        chips: ["Artículo", "PDF", "Nota"],
       },
       {
         title: "Encontralo de nuevo",
         body: "Buscá, filtrá por formato, etiqueta o estado, y abrí cualquier cosa para verla completa.",
+        example: "Encontralo con ⌘K o por formato.",
+        chips: ["⌘K", "Formato", "Etiqueta"],
       },
     ],
+  },
+  install: {
+    eyebrow: "Instalar",
+    title: "Instalá la app",
+    lead: `${brand} funciona en el navegador. Agregala a tu pantalla de inicio o al escritorio y abrila como cualquier otra app.`,
+    tabsLabel: "Elegí tu dispositivo",
+    installButton: "Instalar",
+    installedNote: "Instalada. Abrila desde tu pantalla de inicio o la lista de apps.",
+    platforms: {
+      android: {
+        tab: "Android",
+        title: "Android, en Chrome",
+        steps: [
+          "Abrí el menú (tres puntos) en la esquina de Chrome.",
+          "Tocá Agregar a la pantalla principal, o Instalar app.",
+          "Confirmá con Instalar.",
+        ],
+      },
+      ios: {
+        tab: "iPhone y iPad",
+        title: "iPhone y iPad, en Safari",
+        steps: ["Tocá el botón Compartir.", "Bajá y tocá Agregar a inicio.", "Tocá Agregar."],
+        note: "En iOS funciona desde Safari. Otros navegadores también pueden hacerlo desde iOS 16.4, con su menú Compartir.",
+      },
+      desktop: {
+        tab: "Escritorio",
+        title: "Escritorio, en Chrome o Edge",
+        steps: [
+          "Hacé clic en el ícono de instalar, al final de la barra de direcciones.",
+          "O abrí el menú, luego Transmitir, guardar y compartir, y después Instalar página como app.",
+          "Confirmá con Instalar.",
+        ],
+      },
+    },
   },
   features: {
     eyebrow: "Funciones",

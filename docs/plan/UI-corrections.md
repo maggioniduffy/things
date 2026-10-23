@@ -49,3 +49,9 @@ Decisions taken with the owner:
 
 | Finding | Fix in |
 | --- | --- |
+| Dialogs opened without a Radix Trigger (collection, tag rename, smart view, upgrade, move, confirms) return focus to `<body>` on close; only quick add restores its opener. Predates 10.4. | follow-up |
+| Delete-forever confirm (item drawer) and collection sheet (sidebar sheet) are vaul roots inside another vaul drawer without `Drawer.NestedRoot`; a drag on the inner sheet may move the outer one. Check on a phone. | gate (manual) |
+| `e2e/mobile-forms.spec.ts` covers Add and New collection only, and checks `visualViewport.scale` once at the end. | follow-up |
+| After a long swipe the item drawer snaps back before vaul's close animation. | follow-up |
+| Item drawer has two "Close" buttons in the accessibility tree on phones. | follow-up |
+| Phone PDF pages shift slightly as each page finishes rendering. | follow-up |

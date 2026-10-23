@@ -48,7 +48,7 @@ export function OtpCodeInput({
       readOnly={readOnly}
       aria-invalid={invalid ? true : undefined}
       aria-describedby={describedBy}
-      className="h-11 text-center font-mono text-[length:var(--text-section)] tracking-[0.4em]"
+      className="h-11 text-center font-mono text-[length:var(--text-section)] tracking-[0.4em] sm:text-[length:var(--text-section)]"
     />
   );
 }

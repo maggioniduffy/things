@@ -24,6 +24,7 @@ export function AppShell({ email, children }: AppShellProps) {
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const mobileOpen = useUiStore((state) => state.mobileSidebarOpen);
   const setMobileOpen = useUiStore((state) => state.setMobileSidebarOpen);
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
 
   return (
     <BoardDndProvider>
@@ -35,13 +36,17 @@ export function AppShell({ email, children }: AppShellProps) {
             collapsed ? "hidden" : "hidden md:block",
           )}
         >
-          <Sidebar email={email} />
+          <Sidebar email={email} onClose={toggleSidebar} />
         </div>
 
         <Drawer direction="left" open={mobileOpen} onOpenChange={setMobileOpen}>
           <DrawerContent aria-describedby={undefined} className="bg-paper md:hidden">
             <DrawerTitle className="sr-only">{t.sidebar.drawerTitle}</DrawerTitle>
-            <Sidebar email={email} onNavigate={() => setMobileOpen(false)} />
+            <Sidebar
+              email={email}
+              onNavigate={() => setMobileOpen(false)}
+              onClose={() => setMobileOpen(false)}
+            />
           </DrawerContent>
         </Drawer>
 

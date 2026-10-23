@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { makeCounts, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
 import { Sidebar } from "./sidebar";
@@ -120,5 +121,19 @@ describe("Sidebar", () => {
 
     renderWithQuery(<Sidebar email="ada@example.com" />, seed());
     expect(screen.getByRole("group", { name: "Account" })).toHaveTextContent("ada@example.com");
+  });
+
+  it("hides itself from the header icon and from the app name", async () => {
+    const onClose = vi.fn();
+    renderWithQuery(<Sidebar email={null} onClose={onClose} />, seed());
+    await userEvent.click(screen.getByRole("button", { name: "Hide sidebar" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    await userEvent.click(screen.getByText("Thing", { exact: false }));
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it("has no hide controls without onClose", () => {
+    renderWithQuery(<Sidebar email={null} />, seed());
+    expect(screen.queryByRole("button", { name: "Hide sidebar" })).not.toBeInTheDocument();
   });
 });

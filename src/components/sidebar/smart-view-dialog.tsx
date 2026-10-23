@@ -4,13 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/i18n/client";
 import { normalizeCollectionName, parseEmoji } from "@/lib/collections/fields";
@@ -363,14 +363,14 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
         </Field>
       </div>
 
-      <DialogFooter>
+      <ResponsiveDialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
           {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={trimmedName === "" || daysInvalid}>
           {editing ? t.actions.save : t.actions.create}
         </Button>
-      </DialogFooter>
+      </ResponsiveDialogFooter>
     </form>
   );
 }
@@ -379,14 +379,14 @@ function SmartViewForm({ smartView, close }: { smartView?: SidebarSmartView; clo
 export function SmartViewDialog({ open, onOpenChange, smartView }: SmartViewDialogProps) {
   const d = useT().shell.smartViewDialog;
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{smartView ? d.editTitle : d.newTitle}</DialogTitle>
-          <DialogDescription className="text-meta">{d.description}</DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{smartView ? d.editTitle : d.newTitle}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription className="text-meta">{d.description}</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <SmartViewForm smartView={smartView} close={() => onOpenChange(false)} />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

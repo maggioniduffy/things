@@ -3,12 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { InboxIcon } from "lucide-react";
 import {
-  CommandDialog,
+  Command,
   CommandEmpty,
   CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { useT } from "@/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import { collectionsQueryOptions, type SidebarCollection } from "@/lib/sidebar/queries";
@@ -43,37 +50,40 @@ export function MoveDialog({
     onPick(id, label);
   };
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={t.canvas.movePrompt(count)}
-      description={t.canvas.moveDescription}
-    >
-      <CommandInput placeholder={t.canvas.findCollection} />
-      <CommandList>
-        <CommandEmpty>{t.canvas.noCollection}</CommandEmpty>
-        <CommandItem
-          value={t.inbox}
-          disabled={currentCollectionId === null}
-          onSelect={() => pick(null, t.inbox)}
-        >
-          <InboxIcon aria-hidden="true" />
-          {t.inbox}
-        </CommandItem>
-        {collections.map((collection) => (
-          <CommandItem
-            key={collection.id}
-            value={collection.name}
-            disabled={collection.id === currentCollectionId}
-            onSelect={() => pick(collection.id, collection.name)}
-          >
-            <span aria-hidden="true" className="w-4 text-center">
-              {collection.emoji ?? ""}
-            </span>
-            {collection.name}
-          </CommandItem>
-        ))}
-      </CommandList>
-    </CommandDialog>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent flush showCloseButton={false} className="overflow-hidden">
+        <ResponsiveDialogHeader className="sr-only">
+          <ResponsiveDialogTitle>{t.canvas.movePrompt(count)}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>{t.canvas.moveDescription}</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
+        <Command className="bg-transparent backdrop-blur-none">
+          <CommandInput placeholder={t.canvas.findCollection} />
+          <CommandList>
+            <CommandEmpty>{t.canvas.noCollection}</CommandEmpty>
+            <CommandItem
+              value={t.inbox}
+              disabled={currentCollectionId === null}
+              onSelect={() => pick(null, t.inbox)}
+            >
+              <InboxIcon aria-hidden="true" />
+              {t.inbox}
+            </CommandItem>
+            {collections.map((collection) => (
+              <CommandItem
+                key={collection.id}
+                value={collection.name}
+                disabled={collection.id === currentCollectionId}
+                onSelect={() => pick(collection.id, collection.name)}
+              >
+                <span aria-hidden="true" className="w-4 text-center">
+                  {collection.emoji ?? ""}
+                </span>
+                {collection.name}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

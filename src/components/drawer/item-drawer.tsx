@@ -10,6 +10,8 @@ import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui
 import { IconButton } from "@/components/ui/icon-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useSwipeToClose } from "@/hooks/use-swipe-to-close";
 import { useT } from "@/i18n/client";
 import { itemQueryOptions } from "@/lib/items/item-query";
 import { useItemActions } from "@/lib/items/state-mutations";
@@ -116,7 +118,13 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
       </div>
 
       <div className="border-line border-t p-4">
-        <ItemActionBar item={item} view={view} actions={actions} onClose={onClose} />
+        <ItemActionBar
+          item={item}
+          view={view}
+          actions={actions}
+          onClose={onClose}
+          closeLabel={t.close}
+        />
       </div>
     </>
   );
@@ -129,6 +137,8 @@ function DrawerBody({ id, view, onClose }: { id: string; view: ViewSpec; onClose
 export function ItemDrawerHost({ view }: { view: ViewSpec }) {
   const id = useSearchParams().get(ITEM_PARAM);
   const close = useCloseItem();
+  const phone = useMediaQuery("(max-width: 639px)");
+  const swipeRef = useSwipeToClose({ enabled: phone, onClose: close });
 
   // Keep the last id while the drawer slides out, so its content does not vanish mid-animation.
   const [shownId, setShownId] = useState(id);
@@ -144,6 +154,7 @@ export function ItemDrawerHost({ view }: { view: ViewSpec }) {
       }}
     >
       <DrawerContent
+        ref={swipeRef}
         aria-describedby={undefined}
         data-testid="item-drawer"
         className="data-[vaul-drawer-direction=right]:w-full data-[vaul-drawer-direction=right]:sm:max-w-xl"

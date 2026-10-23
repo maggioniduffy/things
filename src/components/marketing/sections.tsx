@@ -15,6 +15,8 @@ import { getT } from "@/i18n/server";
 import type { Messages } from "@/i18n";
 import type { ItemKind } from "@/types/supabase";
 import { HeroActions } from "./app-entry";
+import { InstallPrompt } from "./install-prompt";
+import { SwRegister } from "./sw-register";
 
 const sectionClass = "border-line relative z-10 w-full scroll-mt-4 border-t";
 const innerClass = "relative mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 md:py-24";
@@ -57,6 +59,26 @@ const FEATURE_ICONS: { key: FeatureKey; icon: LucideIcon }[] = [
 ];
 
 type FeatureKey = keyof Messages["marketing"]["features"]["items"];
+
+/** "Install the app": steps per platform plus the install button where the browser offers one. */
+export async function InstallApp() {
+  const { install } = (await getT()).marketing;
+  return (
+    <section id="install" aria-labelledby="install-title" className={sectionClass}>
+      <div className={innerClass}>
+        <header>
+          <p className={eyebrowClass}>{install.eyebrow}</p>
+          <h2 id="install-title" className={titleClass}>
+            {install.title}
+          </h2>
+          <p className={leadClass}>{install.lead}</p>
+        </header>
+        <InstallPrompt />
+        <SwRegister />
+      </div>
+    </section>
+  );
+}
 
 /** What the app does: automatic formats first, then the feature grid. */
 export async function Features() {

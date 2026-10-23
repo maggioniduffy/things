@@ -3,12 +3,13 @@
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/i18n/client";
 import { useTagManager, normalizeTagName } from "@/lib/tags/mutations";
@@ -46,14 +47,14 @@ function RenameForm({ tag, close }: { tag: SidebarTag; close: () => void }) {
           onChange={(event) => setName(event.target.value)}
         />
       </div>
-      <DialogFooter>
+      <ResponsiveDialogFooter>
         <Button type="button" variant="secondary" onClick={close}>
           {t.actions.cancel}
         </Button>
         <Button type="submit" disabled={empty}>
           {t.actions.save}
         </Button>
-      </DialogFooter>
+      </ResponsiveDialogFooter>
     </form>
   );
 }
@@ -70,13 +71,14 @@ export function TagRenameDialog({
 }) {
   const t = useT().shell;
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.tagDialog.renameTitle}</DialogTitle>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{t.tagDialog.renameTitle}</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>{t.tagDialog.renameDescription}</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
         <RenameForm tag={tag} close={() => onOpenChange(false)} />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

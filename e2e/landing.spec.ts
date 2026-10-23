@@ -32,6 +32,7 @@ test.describe("landing page", () => {
     const main = page.getByRole("main");
     for (const name of [
       "How it works",
+      "Install the app",
       "Organized before you think about it",
       "Try it without an account",
       "Questions, answered",
@@ -39,7 +40,7 @@ test.describe("landing page", () => {
     ]) {
       await expect(main.getByRole("region", { name })).toBeVisible();
     }
-    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(5);
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(6);
     await expect(main.getByRole("list", { name: "Formats" }).getByRole("listitem")).toHaveCount(8);
 
     await page
@@ -49,6 +50,23 @@ test.describe("landing page", () => {
     await expect(page).toHaveURL(/#faq$/);
     await expect(main.getByRole("region", { name: "Questions, answered" })).toBeInViewport();
   });
+
+  for (const [label, size] of [
+    ["phone", { width: 390, height: 844 }],
+    ["desktop", { width: 1440, height: 900 }],
+  ] as const) {
+    test(`shows the start of "How it works" in the first viewport on a ${label}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await page.goto("/");
+      const top = await page
+        .locator("#how-it-works")
+        .evaluate((el) => el.getBoundingClientRect().top);
+      expect(top).toBeLessThan(size.height);
+      await expect(page.getByRole("heading", { level: 2, name: "How it works" })).toBeInViewport();
+    });
+  }
 
   test("does not scroll horizontally on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });

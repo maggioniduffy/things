@@ -1,5 +1,24 @@
 ## Unreleased
 
+### Phase 10 — UI corrections
+
+#### Added
+
+- Landing: "Install the app" section (`#install`) with steps for Android, iPhone / iPad and desktop Chrome / Edge. It opens the tab for your platform, shows an Install button where the browser offers one, and hides itself when the app already runs installed. "Install" link in the header. A pass-through service worker (`public/sw.js`, registered in production only) keeps Chromium's install prompt available.
+- Empty inbox, all, collection, unread, kind and tag views show a big "Add something" card that opens quick add. In a collection the new thing is filed there; in a tag view it gets that tag. Files dropped on it go through the usual drop flow.
+- `ResponsiveDialog` (`src/components/ui/responsive-dialog.tsx`): a dialog at `sm` and up, a bottom sheet with a handle, safe-area padding and an 85svh cap below. Quick add, collection, tag rename, smart view, upgrade, move and every delete confirmation use it. The command palette stays a dialog.
+- PDFs open on phones: pages render with pdf.js as images ("Page N of M") instead of an iframe that mobile browsers won't show.
+- Item drawer on phones: swipe right to close, and a Close button (primary, with an X) on the same row as Favorite and Archive.
+- Sidebar header: a hide button at the top right, and clicking the app name hides the sidebar too (collapses it on desktop, closes the drawer on phones). The toolbar only shows Show sidebar while it is collapsed.
+- e2e always runs against the local Supabase from `supabase status` and refuses a non-local URL, whatever `.env.local` says.
+
+#### Changed
+
+- Landing hero is shorter so "How it works" starts in the first screen, with a visible heading, a lead line and an example plus a small mockup for each step.
+- Form fields use 16px text below `sm` (15px above), so iOS no longer zooms in when you focus one. Pinch zoom still works.
+- Selection mode: the checkbox sits inside the card, next to the format badge, and a click on it or the card does the same thing. The selection bar is graphite, stays inside the board column (no longer over the sidebar) and leaves room for the last card; on phones it shows icons only.
+- App icons (`apple-icon.png`, `icon.png`) match the favicon's ink mark, plus a maskable icon and `id` in the manifest. Re-add the app to the home screen to see it.
+
 ### Selection, file reader and PWA icon
 
 #### Added

@@ -96,6 +96,7 @@ export const shell = {
 
   tagDialog: {
     renameTitle: "Rename tag",
+    renameDescription: "Every thing with this tag keeps it under the new name.",
     deleteTitle: (name: string) => `Delete #${name}?`,
     deleteDescription: "Items keep everything else.",
   },
@@ -213,6 +214,8 @@ export const shell = {
   empty: {
     unknown: "This page doesn't exist.",
     goToInbox: "Go to Inbox",
+    addSomething: "Add something",
+    addHint: "Paste a link, drop a file or write a note",
     saved: "Links, files and notes you save will land here.",
     inboxHeading: "Drop anything here.",
     allHeading: "Nothing saved yet.",

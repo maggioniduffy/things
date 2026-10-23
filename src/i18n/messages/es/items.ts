@@ -78,6 +78,7 @@ export const items: Messages["items"] = {
     openFileInNewTab: "Abrir en otra pestaña",
     fullViewDescription: "Vista completa del archivo",
     viewerFailed: "No se pudo cargar el archivo.",
+    pdfPage: (page, total) => `Página ${page} de ${total}`,
   },
 
   selection: {

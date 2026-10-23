@@ -81,6 +81,7 @@ export const items = {
     openFileInNewTab: "Open in new tab",
     fullViewDescription: "Full view of the file",
     viewerFailed: "Couldn't load that file.",
+    pdfPage: (page: number, total: number) => `Page ${page} of ${total}`,
   },
 
   selection: {

@@ -7,6 +7,7 @@ export const marketing = {
   nav: {
     label: "Page sections",
     howItWorks: "How it works",
+    install: "Install",
     features: "Features",
     faq: "FAQ",
   },
@@ -17,20 +18,61 @@ export const marketing = {
   },
   how: {
     title: "How it works",
+    lead: "Three steps from a stray link to something you can find in seconds.",
     steps: [
       {
         title: "Capture in one gesture",
         body: "Paste a link, drop a file or jot a note. It saves at once, with no form to fill in first.",
+        example: "Paste a link, drop a PDF or type a note.",
+        chips: ["https://…", "report.pdf", "Buy oat milk"],
       },
       {
         title: "Organize without effort",
         body: "Each save is filed by format and enriched with a title, image and thumbnail a moment later.",
+        example: "It's filed as Article, PDF or Note.",
+        chips: ["Article", "PDF", "Note"],
       },
       {
         title: "Find it again",
         body: "Search, filter by format, tag or status, and open any item for a full preview.",
+        example: "Find it with ⌘K or by format.",
+        chips: ["⌘K", "Format", "Tag"],
       },
     ],
+  },
+  install: {
+    eyebrow: "Install",
+    title: "Install the app",
+    lead: `${brand} runs in your browser. Add it to your home screen or desktop to open it like any other app.`,
+    tabsLabel: "Choose your device",
+    installButton: "Install",
+    installedNote: "Installed. Open it from your home screen or app list.",
+    platforms: {
+      android: {
+        tab: "Android",
+        title: "Android, in Chrome",
+        steps: [
+          "Open the menu (three dots) in the top corner of Chrome.",
+          "Tap Add to home screen, or Install app.",
+          "Confirm with Install.",
+        ],
+      },
+      ios: {
+        tab: "iPhone and iPad",
+        title: "iPhone and iPad, in Safari",
+        steps: ["Tap the Share button.", "Scroll down and tap Add to Home Screen.", "Tap Add."],
+        note: "On iOS this works from Safari. Other browsers can do it too from iOS 16.4 onwards, through their Share menu.",
+      },
+      desktop: {
+        tab: "Desktop",
+        title: "Desktop, in Chrome or Edge",
+        steps: [
+          "Click the install icon at the right end of the address bar.",
+          "Or open the menu, then Cast, save and share, then Install page as app.",
+          "Confirm with Install.",
+        ],
+      },
+    },
   },
   features: {
     eyebrow: "Features",

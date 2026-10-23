@@ -10,12 +10,14 @@ import { KindIcon } from "@/components/kind-icon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { useLocale, useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKET } from "@/lib/items/upload";
+import { PdfPages, PHONE_PDF_QUERY } from "./pdf-pages";
 import { NoteField } from "./fields";
 import { FileViewerButton, viewerKindOf } from "./file-viewer";
 import { parseVideoEmbed, safeHttpUrl } from "./urls";
@@ -102,14 +104,19 @@ function PdfPreview({ item }: { item: BoardItem }) {
   const card = useT().shell.card;
   const urls = useSignedUrls([item.file_path]);
   const src = item.file_path ? urls.get(item.file_path) : undefined;
+  const phone = useMediaQuery(PHONE_PDF_QUERY);
   if (!src) return <Skeleton className="h-[60vh] w-full" />;
   return (
     <div className="grid gap-2">
-      <iframe
-        src={src}
-        title={t.pdfTitle(itemDisplayTitle(item, card))}
-        className={`${FRAME} h-[60vh]`}
-      />
+      {phone ? (
+        <PdfPages src={src} className={`${FRAME} h-[60vh]`} />
+      ) : (
+        <iframe
+          src={src}
+          title={t.pdfTitle(itemDisplayTitle(item, card))}
+          className={`${FRAME} h-[60vh]`}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <FileViewerButton item={item} kind="pdf" />
       </div>

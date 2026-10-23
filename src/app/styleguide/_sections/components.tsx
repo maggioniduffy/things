@@ -19,7 +19,9 @@ import {
   ContextMenuDemo,
   DialogDemo,
   DrawerDemo,
+  EmptyStateDemo,
   DropdownDemo,
+  ResponsiveDialogDemo,
   SearchDemo,
   ToastDemo,
 } from "./demos";
@@ -131,6 +133,14 @@ export function ComponentsSection() {
 
       <Group title="Dialog">
         <DialogDemo />
+      </Group>
+
+      <Group title="Responsive dialog">
+        <ResponsiveDialogDemo />
+      </Group>
+
+      <Group title="Empty state" className="block">
+        <EmptyStateDemo />
       </Group>
 
       <Group title="Drawer">

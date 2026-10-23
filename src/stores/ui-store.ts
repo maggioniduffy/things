@@ -4,6 +4,8 @@ import { createJSONStorage, persist, type StateStorage } from "zustand/middlewar
 
 export type ViewMode = "grid" | "list" | "canvas";
 
+export type QuickAddDefaults = { tagNames?: string[] };
+
 type UiState = {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
@@ -58,7 +60,9 @@ type UiState = {
 
   /** The "Add" dialog; the toolbar button and the Phase 7 palette open it. */
   quickAddOpen: boolean;
-  setQuickAddOpen: (open: boolean) => void;
+  /** What the opener wants the new thing to carry (a tag view's tag); cleared when it closes. */
+  quickAddDefaults: QuickAddDefaults | null;
+  setQuickAddOpen: (open: boolean, defaults?: QuickAddDefaults) => void;
 };
 
 export const UI_STORE_KEY = "things-ui";
@@ -162,7 +166,9 @@ export const useUiStore = create<UiState>()(
       setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
 
       quickAddOpen: false,
-      setQuickAddOpen: (quickAddOpen) => set({ quickAddOpen }),
+      quickAddDefaults: null,
+      setQuickAddOpen: (quickAddOpen, defaults) =>
+        set({ quickAddOpen, quickAddDefaults: quickAddOpen ? (defaults ?? null) : null }),
     }),
     {
       name: UI_STORE_KEY,

@@ -1,6 +1,6 @@
 "use client";
 
-import { StarIcon } from "lucide-react";
+import { CheckIcon, StarIcon } from "lucide-react";
 import { createContext, useContext, type ReactNode } from "react";
 import { KindIcon } from "@/components/kind-icon";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +92,31 @@ function CardMarkers({ item, inverse = false }: { item: BoardItem; inverse?: boo
 }
 
 /**
+ * The checkbox a card shows in selection mode. Decorative: the whole card toggles (the board
+ * catches the click), and the selected state is announced by the board card.
+ */
+function SelectBox({ selected, inverse }: { selected: boolean; inverse: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="card-select-box"
+      data-checked={selected || undefined}
+      className={cn(
+        "flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px]",
+        "transition-colors duration-(--duration-fast)",
+        selected
+          ? "border-focus bg-focus text-ink-inverse"
+          : inverse
+            ? "border-ink-inverse-muted"
+            : "border-ink-subtle",
+      )}
+    >
+      {selected ? <CheckIcon strokeWidth={3} className="size-3" /> : null}
+    </span>
+  );
+}
+
+/**
  * Lets a wrapper (the sortable board) change how every card renders its root and add a drag
  * handle, without each per-kind card forwarding new props.
  */
@@ -100,6 +125,8 @@ export type CardChrome = {
   as: "li" | "div";
   /** Reorder handle, placed above the open button. */
   dragHandle?: ReactNode;
+  /** Selection mode: whether this card is selected. Absent when the board is not selecting. */
+  selected?: boolean;
 };
 
 export const CardChromeContext = createContext<CardChrome>({ as: "li" });
@@ -150,7 +177,9 @@ export function CardShell({
 }: CardShellProps) {
   const t = useT().shell.card;
   const kinds = useT().shell.kinds;
-  const { as: Root, dragHandle } = useContext(CardChromeContext);
+  const { as: Root, dragHandle, selected } = useContext(CardChromeContext);
+  const selectBox =
+    selected === undefined ? null : <SelectBox selected={selected} inverse={inverse} />;
   const displayTitle = itemDisplayTitle(item, t);
   const { pending, failed, failedCopy, retry } = status;
   // One accessible name per card; collapse line breaks of note titles.
@@ -167,6 +196,7 @@ export function CardShell({
         className="group border-line hover:bg-accent relative flex min-h-12 items-center gap-3 border-b px-2 py-2.5 transition-colors duration-(--duration-fast)"
       >
         {dragHandle}
+        {selectBox}
         <KindIcon kind={item.kind} className="text-ink-subtle size-4 shrink-0" />
         <span className="text-body text-ink min-w-0 flex-1 truncate">{displayTitle}</span>
         {pending ? <Skeleton className="hidden h-3 w-24 sm:block" /> : null}
@@ -211,13 +241,16 @@ export function CardShell({
       {dragHandle}
       {media}
       <div className="flex items-center justify-between gap-2">
-        <Badge
-          className={
-            inverse ? "bg-ink-inverse/10 text-ink-inverse-muted border-ink-inverse/25" : undefined
-          }
-        >
-          {kindSingularLabel(kinds, item.kind)}
-        </Badge>
+        <span className="flex min-w-0 items-center gap-2">
+          {selectBox}
+          <Badge
+            className={
+              inverse ? "bg-ink-inverse/10 text-ink-inverse-muted border-ink-inverse/25" : undefined
+            }
+          >
+            {kindSingularLabel(kinds, item.kind)}
+          </Badge>
+        </span>
         <CardMarkers item={item} inverse={inverse} />
       </div>
       <p

@@ -9,9 +9,11 @@ import { itemDisplayTitle } from "@/components/cards/card-status";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
+import { PdfPages, PHONE_PDF_QUERY } from "./pdf-pages";
 
 type ViewerKind = "pdf" | "markdown" | "text";
 
@@ -73,13 +75,14 @@ function FileText({ src, markdown }: { src: string | undefined; markdown: boolea
 }
 
 /**
- * Full-view reader for an item's file: PDFs in a native frame, Markdown rendered, plain text as is.
+ * Full-view reader for an item's file: PDFs in a native frame (pdf.js pages on phones), Markdown rendered, plain text as is.
  * Plus, for PDFs, a way out to a browser tab (the browser's own viewer, with its toolbar).
  */
 export function FileViewerButton({ item, kind }: { item: BoardItem; kind: ViewerKind }) {
   const t = useT().items.drawer;
   const card = useT().shell.card;
   const [open, setOpen] = useState(false);
+  const phone = useMediaQuery(PHONE_PDF_QUERY);
   const urls = useSignedUrls([open || kind === "pdf" ? item.file_path : null]);
   const src = item.file_path ? urls.get(item.file_path) : undefined;
   const title = itemDisplayTitle(item, card);
@@ -105,7 +108,11 @@ export function FileViewerButton({ item, kind }: { item: BoardItem; kind: Viewer
           <div className="min-h-0 overflow-auto">
             {kind === "pdf" ? (
               src ? (
-                <iframe src={src} title={t.pdfTitle(title)} className="size-full" />
+                phone ? (
+                  <PdfPages src={src} className="h-full" />
+                ) : (
+                  <iframe src={src} title={t.pdfTitle(title)} className="size-full" />
+                )
               ) : (
                 <Skeleton className="h-full w-full" />
               )
