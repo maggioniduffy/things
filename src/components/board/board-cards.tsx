@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVerticalIcon } from "lucide-react";
+import { CheckIcon, GripVerticalIcon } from "lucide-react";
 import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 import { memo, useCallback, useMemo, type CSSProperties, type Ref } from "react";
 import { itemDisplayTitle } from "@/components/cards/card-status";
@@ -70,6 +70,7 @@ function CardFrame({
   const ui = useBoardDnd();
   const reduced = useReducedMotion() ?? false;
   const selected = useUiStore((state) => state.selectedIds.includes(item.id));
+  const selectMode = useUiStore((state) => state.selectMode);
 
   const layout = ui?.dragging || reduced || liMotion ? false : "position";
   const wasJustDragged = ui?.wasJustDragged;
@@ -116,7 +117,7 @@ function CardFrame({
           data-selected={selected ? "true" : undefined}
           style={{ ...dragStyle, opacity: carried ? 0.4 : 1 }}
           className={cn(
-            "h-full select-none [&>*]:h-full",
+            "relative h-full select-none [&>*]:h-full",
             "data-[selected=true]:*:outline-focus data-[selected=true]:*:outline-2 data-[selected=true]:*:-outline-offset-1",
           )}
         >
@@ -129,6 +130,19 @@ function CardFrame({
               onRetry={onRetry}
             />
           </CardChromeContext.Provider>
+          {selectMode ? (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "rounded-control pointer-events-none absolute top-2 left-2 z-20 flex size-5 items-center justify-center border-2",
+                selected
+                  ? "border-focus bg-focus text-primary-foreground"
+                  : "border-line bg-surface",
+              )}
+            >
+              {selected ? <CheckIcon className="size-3.5" /> : null}
+            </span>
+          ) : null}
           {selected ? <span className="sr-only">{t.selected}</span> : null}
         </div>
       </div>

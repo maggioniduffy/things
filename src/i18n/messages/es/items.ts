@@ -80,6 +80,26 @@ export const items: Messages["items"] = {
     viewerFailed: "No se pudo cargar el archivo.",
   },
 
+  selection: {
+    start: "Seleccionar",
+    done: "Listo",
+    toolbarLabel: "Selección",
+    count: (n) => (n === 1 ? "1 seleccionada" : `${n} seleccionadas`),
+    none: "Seleccioná cosas",
+    selectAll: "Seleccionar todo",
+    deselectAll: "Deseleccionar todo",
+    moveTo: "Mover a…",
+    archive: "Archivar",
+    trash: "Mover a la papelera",
+    restore: "Restaurar",
+    deleteForever: "Eliminar para siempre",
+    deleteForeverTitle: (n) =>
+      n === 1 ? "¿Eliminar 1 cosa para siempre?" : `¿Eliminar ${n} cosas para siempre?`,
+    deleteForeverBody: "Se eliminarán definitivamente, con sus archivos. No se puede deshacer.",
+    cancel: "Cancelar",
+    selectCard: (title) => `Seleccionar ${title}`,
+  },
+
   capture: {
     add: "Agregar",
     shortcutHint: "Enter para guardar, Shift + Enter para una línea nueva.",
@@ -154,6 +174,8 @@ export const items: Messages["items"] = {
       count === 1 ? "Se desarchivó 1 cosa" : `Se desarchivaron ${count} cosas`,
     batchRestored: (count) =>
       count === 1 ? "Se restauró 1 cosa" : `Se restauraron ${count} cosas`,
+    batchDeleted: (count) =>
+      count === 1 ? "Se eliminó 1 cosa para siempre" : `Se eliminaron ${count} cosas para siempre`,
     errBatchMove: "No se pudieron mover las cosas.",
     errBatchTag: "No se pudo agregar la etiqueta.",
     errBatchColor: "No se pudo cambiar el color.",
@@ -162,6 +184,7 @@ export const items: Messages["items"] = {
     errBatchUnarchive: "No se pudieron desarchivar las cosas.",
     errBatchTrash: "No se pudieron mover las cosas a la papelera.",
     errBatchRestore: "No se pudieron restaurar las cosas.",
+    errBatchDelete: "No se pudieron eliminar las cosas.",
     pasted: (count) => (count === 1 ? "Se pegó 1 cosa" : `Se pegaron ${count} cosas`),
     duplicated: (count) => (count === 1 ? "Se duplicó 1 cosa" : `Se duplicaron ${count} cosas`),
     nothingToPaste: "No hay nada para pegar.",

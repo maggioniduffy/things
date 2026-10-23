@@ -83,6 +83,25 @@ export const items = {
     viewerFailed: "Couldn't load that file.",
   },
 
+  selection: {
+    start: "Select",
+    done: "Done",
+    toolbarLabel: "Selection",
+    count: (n: number) => `${n} selected`,
+    none: "Select items",
+    selectAll: "Select all",
+    deselectAll: "Deselect all",
+    moveTo: "Move to…",
+    archive: "Archive",
+    trash: "Move to trash",
+    restore: "Restore",
+    deleteForever: "Delete forever",
+    deleteForeverTitle: (n: number) => `Delete ${n} ${n === 1 ? "item" : "items"} forever?`,
+    deleteForeverBody: "They and their files will be deleted for good. This can't be undone.",
+    cancel: "Cancel",
+    selectCard: (title: string) => `Select ${title}`,
+  },
+
   capture: {
     add: "Add",
     shortcutHint: "Press Enter to save, Shift and Enter for a new line.",
@@ -156,6 +175,7 @@ export const items = {
     batchTrashed: (count: number) => `Moved ${count} ${count === 1 ? "item" : "items"} to trash`,
     batchUnarchived: (count: number) => `Unarchived ${count} ${count === 1 ? "item" : "items"}`,
     batchRestored: (count: number) => `Restored ${count} ${count === 1 ? "item" : "items"}`,
+    batchDeleted: (count: number) => `Deleted ${count} ${count === 1 ? "item" : "items"} forever`,
     errBatchMove: "Couldn't move those items.",
     errBatchTag: "Couldn't add that tag.",
     errBatchColor: "Couldn't change the color.",
@@ -164,6 +184,7 @@ export const items = {
     errBatchUnarchive: "Couldn't unarchive those items.",
     errBatchTrash: "Couldn't move those items to trash.",
     errBatchRestore: "Couldn't restore those items.",
+    errBatchDelete: "Couldn't delete those items.",
     // Copy / paste / duplicate
     pasted: (count: number) => `Pasted ${count} ${count === 1 ? "item" : "items"}`,
     duplicated: (count: number) => `Duplicated ${count} ${count === 1 ? "item" : "items"}`,

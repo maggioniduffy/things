@@ -49,6 +49,6 @@ const Rules = z.object({
 | 5.0 | B | **Spike** (#8): 200 sortable cards with Motion `layout` disabled during drag; measure; Opus decides pattern | Pattern recorded in research-notes |
 | 5.1 | B | Collections CRUD (emoji, aurora color) + tags CRUD; inline `#tag` parsing in title/note inputs | Optimistic CRUD tests |
 | 5.2 | B | `lib/order.ts` (fractional-indexing wrappers) + sortable grid/list (manual sort only), `DragOverlay`, keyboard sensor | Reorder = one-row update (assert request count); persists after reload |
-| 5.3 | B | Multi-select (⌘/Shift-click) + drag one/many to sidebar targets (collection, tag, Favorites, Archive, Trash); one optimistic batch mutation | 5 cards → collection in one mutation |
+| 5.3 | B | Multi-select (⌘/Shift-click; later a Select mode with a selection bar, see CHANGELOG) + drag one/many to sidebar targets (collection, tag, Favorites, Archive, Trash); one optimistic batch mutation | 5 cards → collection in one mutation |
 | 5.4 | B | Sidebar reorder (collections, smart views); smart-view builder: zod `Rules` → `lib/filters.ts` → query (unit-tested) | Rules round-trip tests |
 | 5.G | R + O | Gate incl. keyboard DnD | Green |

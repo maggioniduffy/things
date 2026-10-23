@@ -49,7 +49,7 @@ const open = (index: number) => screen.getByRole("button", { name: `Open Card ${
 describe("Board selection", () => {
   beforeEach(() => {
     push.mockClear();
-    useUiStore.setState({ viewMode: "grid", selectedIds: [], anchorId: null });
+    useUiStore.setState({ viewMode: "grid", selectedIds: [], anchorId: null, selectMode: false });
   });
 
   it("Ctrl-click toggles cards without opening them", async () => {
@@ -128,5 +128,55 @@ describe("Board selection", () => {
   it("has no drag handles in Trash", () => {
     renderBoard("manual", { type: "trash" });
     expect(screen.queryByRole("button", { name: /^(Reorder|Move) / })).not.toBeInTheDocument();
+  });
+
+  it("selection mode: a plain click toggles, Select all selects every card", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    await user.click(open(0));
+    expect(useUiStore.getState().selectedIds).toEqual([IDS[0]]);
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+    expect(useUiStore.getState().selectedIds).toEqual(IDS);
+    await user.click(screen.getByRole("button", { name: "Deselect all" }));
+    expect(useUiStore.getState().selectedIds).toEqual([]);
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("toolbar", { name: "Selection" })).not.toBeInTheDocument();
+  });
+
+  it("offers move, archive and trash in a live view", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+    const bar = screen.getByRole("toolbar", { name: "Selection" });
+    expect(bar).toHaveTextContent("Move to…");
+    expect(bar).toHaveTextContent("Archive");
+    expect(bar).toHaveTextContent("Move to trash");
+  });
+
+  it("offers restore, archive and delete forever in the trash", async () => {
+    const user = userEvent.setup();
+    renderBoard("manual", { type: "trash" });
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+    expect(screen.getByRole("button", { name: "Restore" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Archive" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Delete forever" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Delete 6 items forever?");
+  });
+
+  it("offers restore and trash in the archive", async () => {
+    const user = userEvent.setup();
+    renderBoard("manual", { type: "archive" });
+    await user.click(screen.getByRole("button", { name: "Select" }));
+    const bar = screen.getByRole("toolbar", { name: "Selection" });
+    expect(bar).toHaveTextContent("Restore");
+    expect(bar).toHaveTextContent("Move to trash");
+    expect(bar).not.toHaveTextContent("Delete forever");
   });
 });

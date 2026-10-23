@@ -1,5 +1,22 @@
 ## Unreleased
 
+### Selection, file reader and PWA icon
+
+#### Added
+
+- Multi-select you can see: a Select button in the board toolbar (grid and list; the canvas keeps its marquee) turns on selection mode. Cards show a checkbox and a click toggles them instead of opening the drawer; ⌘/Ctrl-click and Shift-click still work without the mode. Done leaves the mode and clears the selection; Escape clears it.
+- Selection bar with the count, Select all / Deselect all (every card loaded in the view) and actions by view:
+  - Inbox, collections, tags and the rest: Move to… (a collection or the Inbox), Archive, Move to trash.
+  - Archive: Restore (unarchive), Move to trash.
+  - Trash: Restore, Archive, Delete forever (asks to confirm; removes the files, then the rows).
+  Each action is one optimistic batch with an Undo toast, except Delete forever and Archive from the trash, which have no exact inverse.
+- Full-view file reader in the detail drawer: PDFs, Markdown (rendered with `react-markdown` and GFM, no raw HTML, links open in a new tab), plain text and CSV open in a near-fullscreen dialog. PDFs also get "Open in new tab". New dependencies: `react-markdown`, `remark-gfm`.
+
+#### Changed
+
+- Batch `archive` also takes the item out of the trash (`deleted_at` is cleared). New batch action `deleteForever`.
+- PWA icons (`public/brand/icon-ink-192.png`, `icon-ink-512.png`): the two-card mark centered on flat ink, no aurora, referenced from `src/app/manifest.ts`. Reinstall the PWA to see it.
+
 ### Rename — Thingteca / Cosateca
 
 #### Changed
