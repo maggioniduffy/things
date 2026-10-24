@@ -69,6 +69,8 @@ type Context = {
   goTo: (href: string) => void;
   saveClipboard: () => void;
   actions: ReturnType<typeof useItemActions>;
+  /** Moves cmdk's highlight to the option with this value. */
+  select: (value: string) => void;
 };
 
 /**
@@ -88,6 +90,15 @@ export function CommandPalette() {
   const openItemParam = useOpenItem();
   const actions = useItemActions();
   const capture = useCapture(viewFromPath(pathname));
+  // Controlled highlight: server results arrive after cmdk has highlighted the first match, so
+  // the palette moves it to the top result itself (else Enter would hit a filtered-out action).
+  const [selected, setSelected] = useState("");
+  // Each opening starts unhighlighted, however the palette was closed (Esc, ⌘K, an action).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) setSelected("");
+  }
 
   const cursorItem = useMemo(
     // Read when the palette opens: the cache can change under a closed palette.
@@ -99,6 +110,7 @@ export function CommandPalette() {
     isGuest,
     cursorItem,
     actions,
+    select: setSelected,
     close: () => setOpen(false),
     openItem: (item) => {
       setOpen(false);
@@ -124,7 +136,12 @@ export function CommandPalette() {
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      // vimBindings off: Ctrl+K is the palette's own toggle, not "previous option".
+      commandProps={{ value: selected, onValueChange: setSelected, vimBindings: false }}
+    >
       <PaletteBody {...context} />
     </CommandDialog>
   );
@@ -138,6 +155,7 @@ function PaletteBody({
   openItem,
   goTo,
   saveClipboard,
+  select,
 }: Context) {
   const messages = useT();
   const t = messages.palette;
@@ -161,6 +179,11 @@ function PaletteBody({
   const results = settled && query !== "" ? (search.data ?? []) : [];
   const waiting = text.trim() !== "" && (!settled || search.isPending);
   const showEmpty = !waiting && results.length === 0;
+
+  const topResult = results[0]?.id;
+  useEffect(() => {
+    if (topResult) select(`result ${topResult}`);
+  }, [topResult, select]);
 
   /** Closes the palette, then runs `action` with the store's setters. */
   const run = (action: () => void) => () => {

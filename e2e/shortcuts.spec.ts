@@ -75,7 +75,7 @@ test.describe("keyboard shortcuts", () => {
       .poll(async () => (await itemRow(session, items[1]!.id))?.archived_at)
       .not.toBeNull();
 
-    await page.keyboard.press("j");
+    // Archiving moved the cursor on to the next card.
     await page.keyboard.press("Backspace");
     await expect
       .poll(async () => (await itemRow(session, items[2]!.id))?.deleted_at)
@@ -180,13 +180,31 @@ test.describe("keyboard shortcuts", () => {
     await expect(page.getByRole("searchbox", { name: "Search" })).toBeFocused();
   });
 
-  test("Cmd/Ctrl+K toggles the palette state from anywhere", async ({ page, context }) => {
+  test("Cmd/Ctrl+K opens the palette and pressing it again closes it", async ({
+    page,
+    context,
+  }) => {
+    const errors = trackConsoleErrors(page);
     await startGuest(page);
     await seed(page, context);
-    // The palette itself is Phase 7.2; here only that the key does not break the board.
-    const errors = trackConsoleErrors(page);
+
+    const palette = page.getByRole("dialog", { name: "Command palette" });
     await page.keyboard.press("ControlOrMeta+k");
+    await expect(palette).toBeVisible();
     await page.keyboard.press("ControlOrMeta+k");
+    await expect(palette).toBeHidden();
     errors.assertNone();
+  });
+
+  test("Cmd/Ctrl+V saves the clipboard text as a note", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await startGuest(page);
+    await seed(page, context);
+
+    await page.evaluate(() => navigator.clipboard.writeText("Pasted with the keyboard"));
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press("ControlOrMeta+v");
+    await expect(page.locator("[data-item-id]").filter({ hasText: "Pasted with the keyboard" }))
+      .toHaveCount(1);
   });
 });

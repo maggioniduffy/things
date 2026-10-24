@@ -116,6 +116,28 @@ describe("Board selection", () => {
     expect(useUiStore.getState().selectedIds).toEqual([]);
   });
 
+  it("Escape that closes a dialog keeps the cursor and the selection", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+    useUiStore.getState().select(IDS[0]!);
+    useUiStore.getState().setCursor(IDS[1]!);
+    // A dialog mounted after the board that removes itself on Escape in the capture phase, as
+    // Radix dialogs and drawers do.
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.appendChild(dialog);
+    const closeDialog = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dialog.remove();
+    };
+    document.addEventListener("keydown", closeDialog, true);
+
+    await user.keyboard("{Escape}");
+    document.removeEventListener("keydown", closeDialog, true);
+    expect(dialog.isConnected).toBe(false);
+    expect(useUiStore.getState().selectedIds).toEqual([IDS[0]]);
+    expect(useUiStore.getState().cursorId).toBe(IDS[1]);
+  });
+
   it("offers drag handles named for what they do", () => {
     const manual = renderBoard("manual");
     expect(screen.getAllByRole("button", { name: /^Reorder Card/ })).toHaveLength(6);

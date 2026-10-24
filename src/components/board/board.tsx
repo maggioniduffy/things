@@ -107,7 +107,8 @@ export function Board({ view, sort }: BoardProps) {
   const isDragActive = boardDnd?.isDragActive;
 
   // Escape clears the selection, unless it belongs to something else: a drag being cancelled, an
-  // open dialog or drawer, or a text field.
+  // open dialog or drawer, or a text field. Capture phase, so this runs before a Radix dialog's own
+  // capture listener (attached later) has closed it and taken it out of the DOM.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
@@ -125,8 +126,8 @@ export function Board({ view, sort }: BoardProps) {
       useUiStore.getState().clearSelection();
       useUiStore.getState().setCursor(null);
     }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [isDragActive, wasJustDragged]);
 
   // ⌘/Ctrl-click toggles a card, Shift-click selects from the last one clicked, and in selection

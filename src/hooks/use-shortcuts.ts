@@ -54,6 +54,19 @@ function targetIds(): string[] {
   return cursorId ? [cursorId] : [];
 }
 
+/**
+ * Where the cursor goes when the cards in `leaving` leave the view: the next card on screen that
+ * stays, else the closest one before it, else nowhere. Null when the cursor is not among them.
+ */
+function cursorAfterRemoving(leaving: readonly string[]): string | null | undefined {
+  const { cursorId } = useUiStore.getState();
+  if (!cursorId || !leaving.includes(cursorId)) return undefined;
+  const ids = cardIds();
+  const at = ids.indexOf(cursorId);
+  const stays = (id: string) => id !== "" && !leaving.includes(id);
+  return ids.slice(at + 1).find(stays) ?? ids.slice(0, at).reverse().find(stays) ?? null;
+}
+
 const BOARD_ACTIONS: ReadonlySet<BoardAction> = new Set([
   "next",
   "prev",
@@ -124,6 +137,11 @@ export function useShortcuts(): void {
           const ids = targetIds();
           if (ids.length === 0) return;
           const items = ids.flatMap((id) => findCachedItem(queryClient, id) ?? []);
+          if (action !== "favorite") {
+            // Archived or trashed cards leave the view: keep the cursor on the board.
+            const next = cursorAfterRemoving(ids);
+            if (next !== undefined) ui.setCursor(next);
+          }
           if (ids.length === 1) {
             const item = items[0];
             if (!item) return;
@@ -145,10 +163,10 @@ export function useShortcuts(): void {
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented) return;
       const action = boardShortcut(event, { pendingG });
       if (!action) return;
 
+      // ⌘K comes first: a list inside a dialog may already have claimed the key.
       if (action === "palette") {
         // ⌘K is the one key that also works from a field or a dialog.
         endChord();
@@ -157,6 +175,7 @@ export function useShortcuts(): void {
         setPaletteOpen(!paletteOpen);
         return;
       }
+      if (event.defaultPrevented) return;
 
       const target = event.target instanceof Element ? event.target : null;
       if (

@@ -122,6 +122,18 @@ describe("CommandPalette", () => {
     expect(client.getQueryData(itemQueryKey(NOTE.id))).toEqual(NOTE);
   });
 
+  it("highlights the top result once it arrives, so Enter opens it", async () => {
+    const { user } = setup();
+    await open();
+    await user.type(await screen.findByPlaceholderText(/Search things/), "cancion");
+
+    const row = await screen.findByRole("option", { name: /Canción de cuna/ });
+    await waitFor(() => expect(row).toHaveAttribute("aria-selected", "true"));
+    await user.keyboard("{Enter}");
+    expect(useUiStore.getState().paletteOpen).toBe(false);
+    expect(mocks.push).toHaveBeenCalledWith(`/app?item=${NOTE.id}`, { scroll: false });
+  });
+
   it("does not search for blank text", async () => {
     const { user } = setup();
     await open();

@@ -148,6 +148,16 @@ describe("useShortcuts", () => {
     dialog.remove();
   });
 
+  it("Cmd/Ctrl+K still toggles when a list in a dialog already claimed the key", () => {
+    mount();
+    const list = document.createElement("div");
+    list.addEventListener("keydown", (event) => event.preventDefault());
+    document.body.appendChild(list);
+    press("k", { ctrlKey: true }, list);
+    expect(useUiStore.getState().paletteOpen).toBe(true);
+    list.remove();
+  });
+
   it("/ focuses the search field and is left alone when there is none", () => {
     mount();
     press("/");
@@ -163,8 +173,11 @@ describe("useShortcuts", () => {
     expect(toggleFavorite).toHaveBeenCalledWith(expect.objectContaining({ id: A }));
     press("e");
     expect(archive).toHaveBeenCalledWith(expect.objectContaining({ id: A }));
+    // E and Backspace move the cursor off the card that leaves (tested below); put it back.
+    useUiStore.setState({ cursorId: A });
     press("Backspace");
     expect(trash).toHaveBeenCalledWith(expect.objectContaining({ id: A }));
+    useUiStore.setState({ cursorId: A });
     press("Enter");
     expect(openItem).toHaveBeenCalledWith(expect.objectContaining({ id: A }));
     press("m");
@@ -175,6 +188,24 @@ describe("useShortcuts", () => {
     useUiStore.setState({ shortcutDialog: null });
     press(" ");
     expect(useUiStore.getState().shortcutDialog).toBe("quick-look");
+  });
+
+  it("E or Backspace on the cursor card moves the cursor to the next card, or back at the end", () => {
+    mount();
+    act(() => useUiStore.getState().setCursor(A));
+    press("e");
+    expect(archive).toHaveBeenCalledWith(expect.objectContaining({ id: A }));
+    expect(useUiStore.getState().cursorId).toBe(B);
+    press("Backspace");
+    expect(trash).toHaveBeenCalledWith(expect.objectContaining({ id: B }));
+    expect(useUiStore.getState().cursorId).toBe(A);
+  });
+
+  it("F leaves the cursor where it is", () => {
+    mount();
+    act(() => useUiStore.getState().setCursor(A));
+    press("f");
+    expect(useUiStore.getState().cursorId).toBe(A);
   });
 
   it("acts on the selection when there is one", () => {
