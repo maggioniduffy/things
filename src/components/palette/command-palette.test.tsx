@@ -219,7 +219,7 @@ describe("CommandPalette", () => {
     setup();
     await open();
     await screen.findByRole("option", { name: "Add item" });
-    expect(screen.getByRole("option", { name: /Save clipboard/ })).toHaveTextContent("⌘V");
+    expect(screen.getByRole("option", { name: /Save clipboard/ })).toHaveTextContent("Ctrl+V");
     expect(screen.getByRole("option", { name: /Inbox/ })).toHaveTextContent("G I");
     expect(screen.getByRole("option", { name: /^All/ })).toHaveTextContent("G A");
     expect(screen.getByRole("option", { name: /Favorites/ })).toHaveTextContent("G F");

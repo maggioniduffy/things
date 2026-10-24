@@ -107,7 +107,7 @@ export function EmptyState({
             "focus-visible:outline-ring focus-visible:outline-2 focus-visible:outline-offset-2",
           )}
         >
-          <PlusIcon className="size-6" aria-hidden="true" />
+          <PlusIcon className="size-6" strokeWidth={2.75} aria-hidden="true" />
           <span className="text-ink text-body font-medium">{t.empty.addSomething}</span>
           <span className="text-meta">{t.empty.addHint}</span>
         </button>

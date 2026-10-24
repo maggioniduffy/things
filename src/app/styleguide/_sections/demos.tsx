@@ -212,11 +212,11 @@ export function CommandDemo() {
         <CommandGroup heading="Actions">
           <CommandItem>
             <PlusIcon /> Add link
-            <CommandShortcut>⌘L</CommandShortcut>
+            <CommandShortcut>Ctrl+L</CommandShortcut>
           </CommandItem>
           <CommandItem>
             <PencilIcon /> Add note
-            <CommandShortcut>⌘N</CommandShortcut>
+            <CommandShortcut>Ctrl+N</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandGroup heading="Go to">
@@ -250,7 +250,7 @@ export function CommandDialogDemo() {
             </CommandItem>
             <CommandItem onSelect={() => setOpen(false)}>
               <CopyIcon /> Save clipboard
-              <CommandShortcut>⌘V</CommandShortcut>
+              <CommandShortcut>Ctrl+V</CommandShortcut>
             </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Go to">

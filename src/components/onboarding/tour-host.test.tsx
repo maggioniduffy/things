@@ -56,7 +56,7 @@ describe("TourHost", () => {
 
   it("Finish writes once", async () => {
     const user = setup({ needed: true });
-    for (let step = 0; step < 4; step++) {
+    for (let step = 0; step < 5; step++) {
       await user.click(await screen.findByRole("button", { name: "Next" }));
     }
     await user.click(screen.getByRole("button", { name: "Finish" }));
@@ -73,7 +73,7 @@ describe("TourHost", () => {
 
   it("Add email marks the tour done and opens the upgrade dialog", async () => {
     const user = setup({ needed: true, isGuest: true });
-    for (let step = 0; step < 5; step++) {
+    for (let step = 0; step < 6; step++) {
       await user.click(await screen.findByRole("button", { name: "Next" }));
     }
     await user.click(screen.getByRole("button", { name: "Add email" }));
