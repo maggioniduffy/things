@@ -21,7 +21,7 @@ See docs/plan/README.md for the loop and the brief template.
 ## Rules
 - Start tasks in PLAN MODE
 - No separate backend. Browser -> Supabase with RLS for CRUD.
-  Route Handlers only for /api/unfurl, auth callback and /api/cron/*.
+  Route Handlers only for /api/unfurl, auth callback, /api/cron/* and /api/mcp (caller's JWT under RLS, never the service key).
 - Service-role / secret key only in /api/cron/* (server-only, CRON_SECRET-protected); never anywhere else. Env vars in .env.local, read via process.env, never logged.
 - Every table has user_id + RLS. New migration = new file in supabase/migrations; regenerate types.
 - Server state in TanStack Query with optimistic updates + rollback. UI-only state in Zustand.
