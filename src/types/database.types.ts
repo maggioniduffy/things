@@ -150,7 +150,49 @@ isOneToOne: false
                            },
 "save_canvas_layout":
 { Args: { "layout": Json }; Returns: undefined
-                           }
+                           },
+"search_items":
+{ Args: { "lim"?: number,"q": string,"rules"?: Json }; Returns: {
+              "archived_at": string | null,
+"canvas_h": number | null,
+"canvas_w": number | null,
+"canvas_x": number | null,
+"canvas_y": number | null,
+"canvas_z": number,
+"collection_id": string | null,
+"color": string | null,
+"created_at": string,
+"deleted_at": string | null,
+"description": string | null,
+"domain": string | null,
+"enrich_status": string,
+"favicon_url": string | null,
+"file_name": string | null,
+"file_path": string | null,
+"file_size": number | null,
+"id": string,
+"image_url": string | null,
+"is_favorite": boolean,
+"is_read": boolean,
+"kind": Database["public"]['Enums']["item_kind"],
+"metadata": NonNullable<Json>,
+"mime_type": string | null,
+"note": string | null,
+"position": string,
+"search": unknown,
+"site_name": string | null,
+"thumbnail_path": string | null,
+"title": string | null,
+"updated_at": string,
+"url": string | null,
+"user_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "items"
+        isOneToOne: false
+        isSetofReturn: true
+      } }
           }
           Enums: {
             "item_kind": "link"|"article"|"video"|"image"|"pdf"|"document"|"note"|"audio"|"code"|"other"

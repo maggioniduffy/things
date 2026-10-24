@@ -13,6 +13,7 @@ import {
   parseRules,
   ruleSelect,
   tagEmbedAlias,
+  viewToSearchRules,
   type RulesFilterable,
 } from "./filters";
 
@@ -353,5 +354,34 @@ describe("parseDomainList", () => {
       "ok.com",
       "local:3000",
     ]);
+  });
+});
+
+describe("viewToSearchRules", () => {
+  it("maps system views", () => {
+    expect(viewToSearchRules({ type: "inbox" })).toEqual({ inbox: true });
+    expect(viewToSearchRules({ type: "all" })).toEqual({});
+    expect(viewToSearchRules({ type: "unread" })).toEqual({ isRead: false });
+    expect(viewToSearchRules({ type: "favorites" })).toEqual({ isFavorite: true });
+    expect(viewToSearchRules({ type: "archive" })).toEqual({ scope: "archived" });
+    expect(viewToSearchRules({ type: "trash" })).toEqual({ scope: "trashed" });
+  });
+
+  it("maps kind, collection and tag views", () => {
+    expect(viewToSearchRules({ type: "kind", kind: "pdf" })).toEqual({ kinds: ["pdf"] });
+    expect(viewToSearchRules({ type: "collection", collectionId: COLLECTION_A })).toEqual({
+      collectionIds: [COLLECTION_A],
+    });
+    expect(viewToSearchRules({ type: "tag", tagId: TAG_A })).toEqual({ tagIds: [TAG_A] });
+  });
+
+  it("maps a smart view to its cleaned rules", () => {
+    expect(
+      viewToSearchRules(
+        { type: "smart", viewId: "v" },
+        { kinds: ["pdf", "pdf"], tagIds: [], query: "  hi  " },
+      ),
+    ).toEqual({ kinds: ["pdf"], query: "hi" });
+    expect(viewToSearchRules({ type: "smart", viewId: "v" })).toEqual({});
   });
 });

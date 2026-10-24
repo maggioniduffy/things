@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Messages } from "@/i18n/messages";
 import { kindPluralLabel } from "@/lib/kinds";
-import { ITEM_KINDS } from "@/lib/views";
+import { ITEM_KINDS, type ViewSpec } from "@/lib/views";
 
 /**
  * Smart-view rules: a saved set of filters. Every field is optional and they all apply together
@@ -230,4 +230,33 @@ export function describeRules(
   }
   if (clean.query) parts.push(t.matching(clean.query));
   return parts;
+}
+
+/** Rules the `search_items` RPC accepts: smart-view rules plus the scope of the view being searched. */
+export type SearchRules = Rules & { scope?: "live" | "archived" | "trashed"; inbox?: boolean };
+
+/** The `search_items` rules that make a search stay inside the view it was opened from. */
+export function viewToSearchRules(view: ViewSpec, smartRules?: Rules): SearchRules {
+  switch (view.type) {
+    case "inbox":
+      return { inbox: true };
+    case "all":
+      return {};
+    case "unread":
+      return { isRead: false };
+    case "favorites":
+      return { isFavorite: true };
+    case "archive":
+      return { scope: "archived" };
+    case "trash":
+      return { scope: "trashed" };
+    case "kind":
+      return { kinds: [view.kind] };
+    case "collection":
+      return { collectionIds: [view.collectionId] };
+    case "tag":
+      return { tagIds: [view.tagId] };
+    case "smart":
+      return cleanRules(smartRules ?? {});
+  }
 }
