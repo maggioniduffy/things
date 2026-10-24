@@ -185,6 +185,23 @@ export const shell: Messages["shell"] = {
     notFound: "No encontrada",
   },
 
+  search: {
+    filtersLabel: "Filtros de búsqueda",
+    addFilter: "Agregar filtro",
+    clear: "Limpiar",
+    clearSearch: "Borrar búsqueda",
+    kind: "Tipo",
+    tag: "Etiqueta",
+    domain: "Dominio",
+    status: "Estado",
+    statuses: { unread: "Sin abrir", read: "Abierto", favorite: "Favorito" },
+    noTags: "Todavía no tenés etiquetas.",
+    noDomains: "No hay dominios en estos resultados.",
+    removeFilter: (label) => `Quitar filtro: ${label}`,
+    noMatches: "Sin resultados",
+    noMatchesBody: "Probá con otras palabras o quitá algún filtro.",
+  },
+
   board: {
     loadFailed: "No pudimos cargar tus cosas.",
     loadAllFailed: "No pudimos cargar todas tus cosas.",

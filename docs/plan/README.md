@@ -19,6 +19,7 @@ Thingteca (English) / Cosateca (Spanish), formerly Things, is a personal "save f
 | 8 Polish & release | [phase-8.md](phase-8.md) | | |
 | 9 Notes & board feedback | [phase-9.md](phase-9.md) | done (gate passed after the stack-spacer fix; migration pushed to cloud) | Phase 9 PR |
 | 10 UI corrections | [UI-corrections.md](UI-corrections.md) | gate in progress: unit 1517/1517; e2e (owner, local), aurora fade, Lighthouse and device checks pending | |
+| 11 MCP server | [phase-11.md](phase-11.md) | planned | |
 
 Update this table when a WP or gate lands.
 
@@ -91,6 +92,7 @@ Stop and ask me only for owner actions or a decision that changes the spec.
 | O4 | Cloudflare Turnstile site + enable CAPTCHA in Supabase Auth | Production | Local/e2e uses always-pass test keys |
 | O5 | Brevo SMTP into Supabase Auth; OTP template with `{{ .Token }}` | Production | Local uses the mail catcher |
 | O6 | Vercel project, env vars, `CRON_SECRET` | Phase 8 deploy | Hobby plan, daily cron |
+| O7 | Supabase OAuth server on the cloud project (enable, consent URL `https://<prod>/oauth/consent`, client registration, redirect allow-list) | Phase 11 production | Local uses `config.toml` `[auth.oauth_server]` |
 
 ## Architecture
 
@@ -98,7 +100,7 @@ The browser talks to Supabase directly for all CRUD and uploads, under RLS. Next
 
 - **Server Components:** app shell, first 50 items prefetched and hydrated into TanStack Query.
 - **Client Components:** board, cards, DnD, drawer, palette, upload pipeline.
-- **Route Handlers:** `POST /api/unfurl` (SSRF-safe fetch + parse), `GET /auth/callback`, `/api/cron/daily` (trash purge, guest cleanup; only place with the secret key).
+- **Route Handlers:** `POST /api/unfurl` (SSRF-safe fetch + parse), `GET /auth/callback`, `/api/cron/daily` (trash purge, guest cleanup; only place with the secret key). `/api/mcp` (Phase 11, MCP server: OAuth bearer JWT under RLS, never the secret key).
 - **`proxy.ts`** (Next 16's `middleware.ts`): refreshes the session cookie, redirects unauthenticated users away from `/app`.
 - **Storage:** browser uploads with the user's JWT, so files never pass through Vercel functions (≈4.5 MB body limit).
 

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { trackConsoleErrors } from "./helpers";
 import { startGuest } from "./helpers/session";
 

@@ -5,6 +5,7 @@ Shared rules, loop and status: [README.md](README.md). Schema: [data-model.md](d
 ## Build
 
 - `search_items` RPC, debounced search field, filter chips, ⌘K palette (search results + actions + navigation), all shortcuts.
+- Onboarding wizard (WP 7.5, added 2026-10-24 by the owner).
 - **Done when:** searching "cancion" finds "Canción"; a one-character typo still matches titles; every shortcut in both tables (this file and the canvas table in [phase-6.md](phase-6.md)) works.
 
 ## Spec
@@ -37,6 +38,7 @@ Shared rules, loop and status: [README.md](README.md). Schema: [data-model.md](d
 | 7.2 | B | Debounced search field (`/`), filter chips (kind, tag, domain, status) synced to URL, `CommandPalette` (results, actions, navigation) | Playwright |
 | 7.3 | B | `hooks/use-shortcuts.ts` with chord support (`G` then `I/A/F`), all global shortcuts | One test per shortcut |
 | 7.4 | S | Sweep: matrix of every shortcut in both tables vs. implementation + tests; report gaps | Zero gaps |
+| 7.5 | B | Onboarding wizard: a blocking step modal on the first app visit of a new guest or a first sign-in (welcome, capture, organize, find: search, ⌘K and shortcuts, canvas; guests also get "add your email to keep things"). Next/Back, progress dots, Skip; Skip or Finish sets `user_metadata.tour_done_at`; "Show the tour" in the palette and Settings replays it | Unit + Playwright: shows once for a new guest, Skip/Finish never shows it again after reload, replay works |
 | 7.G | R + O | Gate | Green |
 
 ## Open findings

@@ -50,6 +50,14 @@ type UiState = {
   selectAll: (ids: readonly string[]) => void;
   clearSelection: () => void;
 
+  /** The keyboard cursor (J/K): the card shortcuts act on when nothing is selected. */
+  cursorId: string | null;
+  setCursor: (id: string | null) => void;
+
+  /** The dialog a board shortcut opened (M, T, Space); the board renders it. */
+  shortcutDialog: "move" | "tag" | "quick-look" | null;
+  setShortcutDialog: (dialog: "move" | "tag" | "quick-look" | null) => void;
+
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   mobileSidebarOpen: boolean;
@@ -63,6 +71,14 @@ type UiState = {
   /** What the opener wants the new thing to carry (a tag view's tag); cleared when it closes. */
   quickAddDefaults: QuickAddDefaults | null;
   setQuickAddOpen: (open: boolean, defaults?: QuickAddDefaults) => void;
+
+  /** The guest "Add email" dialog; the banner, the palette and the quota toasts open it. */
+  upgradeOpen: boolean;
+  setUpgradeOpen: (open: boolean) => void;
+
+  /** The first-visit tour; opens itself for a new account and replays from the palette/sidebar. */
+  tourOpen: boolean;
+  setTourOpen: (open: boolean) => void;
 };
 
 export const UI_STORE_KEY = "things-ui";
@@ -157,6 +173,12 @@ export const useUiStore = create<UiState>()(
             : state,
         ),
 
+      cursorId: null,
+      setCursor: (cursorId) => set({ cursorId }),
+
+      shortcutDialog: null,
+      setShortcutDialog: (shortcutDialog) => set({ shortcutDialog }),
+
       sidebarCollapsed: false,
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       mobileSidebarOpen: false,
@@ -169,6 +191,12 @@ export const useUiStore = create<UiState>()(
       quickAddDefaults: null,
       setQuickAddOpen: (quickAddOpen, defaults) =>
         set({ quickAddOpen, quickAddDefaults: quickAddOpen ? (defaults ?? null) : null }),
+
+      upgradeOpen: false,
+      setUpgradeOpen: (upgradeOpen) => set({ upgradeOpen }),
+
+      tourOpen: false,
+      setTourOpen: (tourOpen) => set({ tourOpen }),
     }),
     {
       name: UI_STORE_KEY,

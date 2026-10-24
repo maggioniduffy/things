@@ -13,19 +13,19 @@ const row =
 
 export const menuItem = [
   row,
-  "text-ink data-[highlighted]:bg-accent data-[inset]:pl-8",
+  "text-ink data-[highlighted]:bg-highlight data-[inset]:pl-8",
   "[&_svg:not([class*='text-'])]:text-ink-muted",
   "data-[variant=destructive]:text-destructive data-[variant=destructive]:data-[highlighted]:bg-destructive/10 data-[variant=destructive]:*:[svg]:text-destructive!",
 ].join(" ");
 
 export const menuCheckableItem = [
   row,
-  "py-1.5 pr-2 pl-8 text-ink data-[highlighted]:bg-accent",
+  "py-1.5 pr-2 pl-8 text-ink data-[highlighted]:bg-highlight",
 ].join(" ");
 
 export const menuSubTrigger = [
   row,
-  "text-ink data-[highlighted]:bg-accent data-[inset]:pl-8 data-[state=open]:bg-accent",
+  "text-ink data-[highlighted]:bg-highlight data-[inset]:pl-8 data-[state=open]:bg-highlight",
   "[&_svg:not([class*='text-'])]:text-ink-muted",
 ].join(" ");
 

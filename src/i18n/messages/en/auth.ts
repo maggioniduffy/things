@@ -42,6 +42,7 @@ export const auth = {
     reminderCopy: (count: number) =>
       `You've saved ${count} things as a guest. Add an email so you don't lose them.`,
     keep: "Keep my things",
+    addEmail: "Add email",
     dismiss: "Dismiss for now",
   },
   upgrade: {

@@ -190,6 +190,23 @@ export const shell = {
     notFound: "Not found",
   },
 
+  search: {
+    filtersLabel: "Search filters",
+    addFilter: "Add filter",
+    clear: "Clear",
+    clearSearch: "Clear search",
+    kind: "Kind",
+    tag: "Tag",
+    domain: "Domain",
+    status: "Status",
+    statuses: { unread: "Unread", read: "Read", favorite: "Favorite" },
+    noTags: "No tags yet.",
+    noDomains: "No domains in these results.",
+    removeFilter: (label: string) => `Remove filter: ${label}`,
+    noMatches: "No matches",
+    noMatchesBody: "Try other words, or remove a filter.",
+  },
+
   board: {
     loadFailed: "Couldn't load your things.",
     loadAllFailed: "Couldn't load all your things.",

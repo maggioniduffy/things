@@ -1,6 +1,8 @@
-import type { InfiniteData } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient } from "@tanstack/react-query";
+import { itemMatchesRules, type Rules } from "@/lib/filters";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import { ITEM_KINDS, type SortMode, type SystemView, type ViewSpec } from "@/lib/views";
+import { itemQueryKey } from "./item-query";
 import type { BoardItem, ItemsPage } from "./queries";
 
 // Pure helpers for editing the cached `["items", viewKey, sort]` lists and the `["counts"]` cache
@@ -42,11 +44,40 @@ export function viewFromKey(key: string): ViewSpec | null {
   }
 }
 
+/** Extra knowledge about views the item alone cannot answer. */
+export type ViewContext = {
+  /** Rules of a smart view when they are known (cached); undefined leaves it to the refetch. */
+  smartRules?: (viewId: string) => Rules | undefined;
+};
+
+/** Smart-view rules from the cached sidebar list (`["smart-views"]`); no request is made. */
+export function viewContextOf(queryClient: QueryClient): ViewContext {
+  const views = queryClient.getQueryData<{ id: string; rules: Rules; invalidRules?: boolean }[]>([
+    "smart-views",
+  ]);
+  return {
+    smartRules: (viewId) => {
+      const found = views?.find((view) => view.id === viewId);
+      return found && !found.invalidRules ? found.rules : undefined;
+    },
+  };
+}
+
+/** A key of a ranked search result (`["items", viewKey, sort, { search }]`), not a plain list. */
+export function isSearchKey(key: readonly unknown[]): boolean {
+  return key.length > 3;
+}
+
+export function isSortMode(value: unknown): value is SortMode {
+  return value === "manual" || value === "newest" || value === "oldest" || value === "title";
+}
+
 /**
- * Whether `item` belongs in `view`, by the same rules as `fetchItemsPage`. Tag and smart views
- * answer false: tag membership lives in another table, and smart-view rules are left to the refetch.
+ * Whether `item` belongs in `view`, by the same rules as `fetchItemsPage`. Tag views answer false:
+ * tag membership lives in another table. Smart views answer true only when `context` knows their
+ * rules and the item can be judged against them; otherwise false (left to the refetch).
  */
-export function itemMatchesView(item: BoardItem, view: ViewSpec): boolean {
+export function itemMatchesView(item: BoardItem, view: ViewSpec, context?: ViewContext): boolean {
   const deleted = item.deleted_at !== null;
   const archived = item.archived_at !== null;
   const live = !deleted && !archived;
@@ -69,16 +100,25 @@ export function itemMatchesView(item: BoardItem, view: ViewSpec): boolean {
     case "collection":
       return live && item.collection_id === view.collectionId;
     case "tag":
-    case "smart":
       return false;
+    case "smart": {
+      const rules = context?.smartRules?.(view.viewId);
+      return rules ? itemMatchesRules(item, rules) === true : false;
+    }
   }
 }
 
 /**
  * Whether an item that is already listed in `view` should stay there after an edit. Same as
- * `itemMatchesView`, except tag and smart views (membership lives elsewhere) keep any live item.
+ * `itemMatchesView`, except tag views (membership lives elsewhere) keep any live item, and so do
+ * smart views whose rules are unknown or cannot be judged on the client.
  */
-export function itemStaysInView(item: BoardItem, view: ViewSpec): boolean {
+export function itemStaysInView(item: BoardItem, view: ViewSpec, context?: ViewContext): boolean {
+  if (view.type === "smart") {
+    const rules = context?.smartRules?.(view.viewId);
+    const verdict = rules ? itemMatchesRules(item, rules) : null;
+    if (verdict !== null) return verdict;
+  }
   if (view.type === "tag" || view.type === "smart") {
     return item.deleted_at === null && item.archived_at === null;
   }
@@ -138,6 +178,27 @@ export function insertSortedInPages(data: Items, item: BoardItem, sort: SortMode
       index === lastIndex ? { ...page, items: [...page.items, item] } : page,
     ),
   };
+}
+
+/**
+ * Adds `item` to the cached plain lists of the given tags' views (never to search results, which
+ * are ranked server-side). Items that are trashed or archived do not belong in a tag view.
+ */
+export function addToTagLists(
+  queryClient: QueryClient,
+  item: BoardItem,
+  tagIds: readonly string[],
+): void {
+  if (item.deleted_at !== null || item.archived_at !== null) return;
+  const keys = new Set(tagIds.map((tagId) => `tag:${tagId}`));
+  for (const [key, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
+    const [, vk, sort] = key;
+    if (!data || isSearchKey(key) || typeof vk !== "string" || !keys.has(vk) || !isSortMode(sort)) {
+      continue;
+    }
+    const next = insertSortedInPages(data, item, sort);
+    if (next !== data) queryClient.setQueryData(key, next);
+  }
 }
 
 /** Puts `item` first in page 0. A list that already holds the id comes back unchanged. */
@@ -207,4 +268,16 @@ export function addToCounts(counts: SidebarCounts, item: BoardItem): SidebarCoun
 /** Inverse of `addToCounts`, for rollback. Never goes below zero. */
 export function removeFromCounts(counts: SidebarCounts, item: BoardItem): SidebarCounts {
   return adjustCounts(counts, item, -1);
+}
+
+/** An item from any board cache (`["items", …]`) or, failing that, the drawer's cache, by id. */
+export function findCachedItem(queryClient: QueryClient, id: string | null): BoardItem | null {
+  if (!id) return null;
+  for (const [, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
+    for (const page of data?.pages ?? []) {
+      const found = page.items.find((item) => item.id === id);
+      if (found) return found;
+    }
+  }
+  return queryClient.getQueryData<BoardItem | null>(itemQueryKey(id)) ?? null;
 }

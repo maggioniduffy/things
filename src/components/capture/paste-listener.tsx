@@ -14,9 +14,12 @@ export function isEditableElement(element: Element | null): boolean {
   return element?.closest(EDITABLE) != null;
 }
 
-/** An open dialog or drawer owns the keyboard (quick add handles its own paste). */
+/**
+ * An open dialog or drawer owns the keyboard (quick add handles its own paste). One that is only
+ * playing its closing animation (`data-state="closed"`) no longer does.
+ */
 export function isDialogOpen(): boolean {
-  return document.querySelector('[role="dialog"]') !== null;
+  return document.querySelector('[role="dialog"]:not([data-state="closed"])') !== null;
 }
 
 /**

@@ -1,4 +1,5 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { type BrowserContext, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { trackConsoleErrors } from "./helpers";
 import { createCollection, readSession, seedItems, startGuest } from "./helpers/session";
 

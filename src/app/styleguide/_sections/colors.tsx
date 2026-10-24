@@ -7,7 +7,7 @@ type ColorGroup = { title: string; tokens: readonly string[] };
 export const COLOR_GROUPS: readonly ColorGroup[] = [
   {
     title: "Surfaces and ink",
-    tokens: ["paper", "surface", "ink", "ink-muted", "ink-subtle", "line"],
+    tokens: ["paper", "surface", "ink", "ink-muted", "ink-subtle", "line", "highlight"],
   },
   {
     title: "Aurora stops",

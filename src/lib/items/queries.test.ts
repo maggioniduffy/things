@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import type { Database } from "@/types/supabase";
+import type { BoardSearch } from "@/lib/search-params";
 import type { SortMode, ViewSpec } from "@/lib/views";
 import {
   ITEM_COLUMNS,
@@ -8,6 +9,7 @@ import {
   PAGE_SIZE,
   fetchItemsPage,
   itemsInfiniteQueryOptions,
+  itemsSearchQueryKey,
   itemsQueryKey,
   quotePostgrestValue,
   type BoardItem,
@@ -406,5 +408,85 @@ describe("itemsInfiniteQueryOptions", () => {
     ) => unknown;
     expect(getNext({ items: [], nextCursor: cursor }, [], null, [])).toEqual(cursor);
     expect(getNext({ items: [], nextCursor: null }, [], null, [])).toBeUndefined();
+  });
+
+  it("keeps the plain key when there is no search", () => {
+    const { client } = setup();
+    expect(itemsInfiniteQueryOptions(client, { type: "inbox" }, "newest", null).queryKey).toEqual([
+      "items",
+      "inbox",
+      "newest",
+    ]);
+  });
+});
+
+describe("itemsInfiniteQueryOptions with a search", () => {
+  const SEARCH: BoardSearch = { q: "cancion", kinds: [], tagIds: [], domains: [], statuses: [] };
+
+  async function run(view: ViewSpec, search = SEARCH, body: unknown = []) {
+    const calls: { url: URL; body: string }[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      calls.push({ url, body: typeof init?.body === "string" ? init.body : "" });
+      return new Response(JSON.stringify(url.pathname.endsWith("/smart_views") ? null : body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const client = createClient<Database>("http://localhost:54321", "test-key", {
+      global: { fetch: fakeFetch },
+    });
+    const opts = itemsInfiniteQueryOptions(client, view, "manual", search);
+    const queryFn = opts.queryFn as (ctx: { pageParam: null }) => Promise<{
+      items: BoardItem[];
+      nextCursor: unknown;
+    }>;
+    const page = await queryFn({ pageParam: null });
+    return { opts, calls, page };
+  }
+
+  it("adds a { search } segment under the items prefix", () => {
+    const { client } = setup();
+    const opts = itemsInfiniteQueryOptions(client, { type: "inbox" }, "manual", SEARCH);
+    expect(opts.queryKey).toEqual(["items", "inbox", "manual", { search: SEARCH }]);
+    expect(opts.queryKey).toEqual(itemsSearchQueryKey({ type: "inbox" }, "manual", SEARCH));
+  });
+
+  it("fetches one ranked page through search_items with the view's scope", async () => {
+    const rows = [makeRow(2), makeRow(1)];
+    const { calls, page } = await run({ type: "archive" }, SEARCH, rows);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url.pathname).toBe("/rest/v1/rpc/search_items");
+    expect(JSON.parse(calls[0]!.body)).toEqual({
+      q: "cancion",
+      rules: { scope: "archived" },
+      lim: 200,
+    });
+    expect(page.items.map((item) => item.id)).toEqual(rows.map((row) => row.id));
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("sends chips as rules", async () => {
+    const { calls } = await run(
+      { type: "unread" },
+      { ...SEARCH, kinds: ["note"], statuses: ["favorite"] },
+    );
+    expect(JSON.parse(calls[0]!.body).rules).toEqual({
+      isRead: false,
+      kinds: ["note"],
+      isFavorite: true,
+    });
+  });
+
+  it("returns an empty page without a request when the chips contradict the view", async () => {
+    const { calls, page } = await run({ type: "unread" }, { ...SEARCH, statuses: ["read"] });
+    expect(calls).toHaveLength(0);
+    expect(page).toEqual({ items: [], nextCursor: null });
+  });
+
+  it("returns an empty page when the smart view no longer exists", async () => {
+    const { calls, page } = await run({ type: "smart", viewId: UUID_A });
+    expect(calls.map((call) => call.url.pathname)).toEqual(["/rest/v1/smart_views"]);
+    expect(page.items).toEqual([]);
   });
 });

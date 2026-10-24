@@ -1,6 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { useUiStore } from "@/stores/ui-store";
 import { makeCounts, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
 import { Sidebar } from "./sidebar";
 
@@ -135,5 +136,14 @@ describe("Sidebar", () => {
   it("has no hide controls without onClose", () => {
     renderWithQuery(<Sidebar email={null} />, seed());
     expect(screen.queryByRole("button", { name: "Hide sidebar" })).not.toBeInTheDocument();
+  });
+
+  it("replays the tour from the account area", async () => {
+    useUiStore.setState({ tourOpen: false });
+    const onNavigate = vi.fn();
+    renderWithQuery(<Sidebar email={null} onNavigate={onNavigate} />, seed());
+    await userEvent.click(screen.getByRole("button", { name: "Show the tour" }));
+    expect(useUiStore.getState().tourOpen).toBe(true);
+    expect(onNavigate).toHaveBeenCalled();
   });
 });

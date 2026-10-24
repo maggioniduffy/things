@@ -20,6 +20,7 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
 import { useT } from "@/i18n/client";
+import { useUiStore } from "@/stores/ui-store";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -80,7 +81,8 @@ function Section({
 }
 
 export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
-  const t = useT().shell;
+  const messages = useT();
+  const t = messages.shell;
   const client = createClient();
   const { data: counts } = useQuery(countsQueryOptions(client));
   const { data: collections } = useQuery(collectionsQueryOptions(client));
@@ -96,7 +98,7 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 pr-2 pl-4">
         {onClose ? (
           // A pointer shortcut; the icon button next to it is the labelled, focusable control.
-          <button type="button" tabIndex={-1} onClick={onClose} className="cursor-pointer">
+          <button type="button" tabIndex={-1} onClick={onClose} className="flex cursor-pointer">
             <Logo />
           </button>
         ) : (
@@ -283,6 +285,16 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
           <LanguageSwitcher className="h-8" />
           <SignOutButton />
         </div>
+        <button
+          type="button"
+          className="text-meta text-ink-muted hover:text-ink self-start underline-offset-2 hover:underline"
+          onClick={() => {
+            onNavigate?.();
+            useUiStore.getState().setTourOpen(true);
+          }}
+        >
+          {messages.onboarding.showTour}
+        </button>
       </div>
     </div>
   );

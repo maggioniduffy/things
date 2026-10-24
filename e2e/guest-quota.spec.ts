@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { readSession, startGuest, uploadBytes } from "./helpers/session";
 
 const MB = 1024 * 1024;

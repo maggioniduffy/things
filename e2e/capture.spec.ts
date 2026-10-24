@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
+import { type Locator, type Page, type Route } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { trackConsoleErrors } from "./helpers";
 import { startGuest } from "./helpers/session";
 

@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GUEST_BANNER_DISMISSED_KEY, resetGuestBannerDismissedForTests } from "@/lib/auth/guest";
 import { I18nProvider } from "@/i18n/client";
 import { makeCounts, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
+import { useUiStore } from "@/stores/ui-store";
 import { GuestBanner } from "./guest-banner";
+import { UpgradeHost } from "./upgrade-host";
 
 // What the counts query (item_counts) returns when the banner has to fetch it itself.
 const countsQuery = vi.hoisted(() => ({
@@ -27,6 +29,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  useUiStore.getState().setUpgradeOpen(false);
   resetGuestBannerDismissedForTests();
 });
 
@@ -88,9 +91,21 @@ describe("GuestBanner", () => {
     expect(screen.queryByRole("region", { name: "Guest account" })).not.toBeInTheDocument();
   });
 
-  it("opens the upgrade dialog from Keep my things", async () => {
+  it("asks the store to open the upgrade dialog from Keep my things", async () => {
     const user = userEvent.setup();
     renderWithQuery(<GuestBanner />);
+    await user.click(await screen.findByRole("button", { name: "Keep my things" }));
+    expect(useUiStore.getState().upgradeOpen).toBe(true);
+  });
+
+  it("opens the dialog once the host mounted in the layout sees the store flag", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(
+      <>
+        <GuestBanner />
+        <UpgradeHost />
+      </>,
+    );
     await user.click(await screen.findByRole("button", { name: "Keep my things" }));
     expect(await screen.findByRole("dialog", { name: "Keep your things" })).toBeInTheDocument();
   });

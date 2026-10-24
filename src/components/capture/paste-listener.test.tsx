@@ -124,6 +124,18 @@ describe("PasteListener", () => {
     expect(capture.captureNote).not.toHaveBeenCalled();
   });
 
+  it("saves a paste while a dialog is only playing its closing animation", () => {
+    render(<PasteListener view={VIEW} />);
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("data-state", "closed");
+    document.body.append(dialog);
+    const event = paste(document.body, clipboard({ "text/plain": "hello" }));
+    expect(event.defaultPrevented).toBe(true);
+    expect(capture.captureNote).toHaveBeenCalled();
+    dialog.remove();
+  });
+
   it("leaves an empty paste alone", () => {
     render(<PasteListener view={VIEW} />);
     const event = paste(document.body, clipboard({ "text/plain": "  " }));

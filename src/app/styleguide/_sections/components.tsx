@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CommandDemo,
+  CommandDialogDemo,
   ContextMenuDemo,
   DialogDemo,
   DrawerDemo,
@@ -149,6 +150,10 @@ export function ComponentsSection() {
 
       <Group title="Command (inline)" className="block">
         <CommandDemo />
+      </Group>
+
+      <Group title="Command dialog">
+        <CommandDialogDemo />
       </Group>
 
       <Group title="Skeleton" className="block">

@@ -43,6 +43,7 @@ export const auth: Messages["auth"] = {
     reminderCopy: (count: number) =>
       `Guardaste ${count} ${count === 1 ? "cosa" : "cosas"} como invitado. Sumá un email para ${count === 1 ? "no perderla" : "no perderlas"}.`,
     keep: "Conservar mis cosas",
+    addEmail: "Sumar email",
     dismiss: "Ocultar por ahora",
   },
   upgrade: {

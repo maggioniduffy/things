@@ -71,6 +71,7 @@ function CardFrame({
   const reduced = useReducedMotion() ?? false;
   const selected = useUiStore((state) => state.selectedIds.includes(item.id));
   const selectMode = useUiStore((state) => state.selectMode);
+  const cursor = useUiStore((state) => state.cursorId === item.id);
 
   const layout = ui?.dragging || reduced || liMotion ? false : "position";
   const wasJustDragged = ui?.wasJustDragged;
@@ -116,10 +117,14 @@ function CardFrame({
           {...listeners}
           data-sortable-id={item.id}
           data-selected={selected ? "true" : undefined}
+          data-cursor={cursor ? "true" : undefined}
+          aria-current={cursor ? "true" : undefined}
           style={{ ...dragStyle, opacity: carried ? 0.4 : 1 }}
           className={cn(
             "relative h-full select-none [&>*]:h-full",
             "data-[selected=true]:*:outline-focus data-[selected=true]:*:outline-2 data-[selected=true]:*:-outline-offset-1",
+            // The keyboard cursor: an outset ring in the same token, so it reads with a selection.
+            "data-[cursor=true]:*:outline-focus data-[cursor=true]:*:outline-2 data-[cursor=true]:*:outline-offset-2",
           )}
         >
           <CardChromeContext.Provider value={chrome}>

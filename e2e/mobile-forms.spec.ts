@@ -1,4 +1,5 @@
-import { devices, expect, test, type Locator, type Page } from "@playwright/test";
+import { devices, type Locator, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { startGuest } from "./helpers/session";
 
 // WP 10.4: on a phone every form is a bottom sheet, and focusing a field never zooms the page.

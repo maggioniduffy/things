@@ -6,6 +6,14 @@ const RADII = [
   { token: "card", className: "rounded-card", use: "Item cards, drawer, dialog" },
 ] as const;
 
+/** Derived from `--radius` (= control); what shadcn components use for their inner corners. */
+const DERIVED_RADII = [
+  { token: "sm", className: "rounded-sm", use: "Menu rows" },
+  { token: "md", className: "rounded-md", use: "Between sm and lg" },
+  { token: "lg", className: "rounded-lg", use: "Equals control" },
+  { token: "xl", className: "rounded-xl", use: "Control plus 4px" },
+] as const;
+
 const SHADOWS = [
   { token: "card", className: "shadow-card" },
   { token: "card-hover", className: "shadow-card-hover" },
@@ -27,6 +35,18 @@ export function ShapeMotionSection() {
     >
       <Group title="Radii" className="items-start gap-6">
         {RADII.map((radius) => (
+          <div key={radius.token} className="flex w-40 flex-col gap-2">
+            <div className={`${radius.className} border-line bg-surface h-20 border`} />
+            <div className="flex flex-col">
+              <span className="text-meta text-ink font-medium">--radius-{radius.token}</span>
+              <TokenValue name={`--radius-${radius.token}`} />
+              <Caption>{radius.use}</Caption>
+            </div>
+          </div>
+        ))}
+      </Group>
+      <Group title="Derived radii" className="items-start gap-6">
+        {DERIVED_RADII.map((radius) => (
           <div key={radius.token} className="flex w-40 flex-col gap-2">
             <div className={`${radius.className} border-line bg-surface h-20 border`} />
             <div className="flex flex-col">

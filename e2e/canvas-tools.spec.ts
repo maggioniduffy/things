@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { trackConsoleErrors } from "./helpers";
 import {
   createCollection,
@@ -260,6 +261,88 @@ test.describe("canvas tools", () => {
         .evaluate((n) => (n as HTMLElement).style.zIndex);
     expect(await z(alpha.id)).toBe("1");
     expect(await z(beta.id)).toBe("0");
+  });
+
+  test("[ sends a card behind the others and the z is saved", async ({ page, context }) => {
+    await startGuest(page);
+    const session = await readSession(context);
+    const [alpha, beta] = await seedPlaced(session, null);
+    if (!alpha || !beta) throw new Error("No seeded items.");
+    await openCanvas(page, "/app");
+
+    await marqueeSelect(page, beta.id);
+    const saved = page.waitForRequest((request) => isLayoutRpc(request.url()));
+    await page.keyboard.press("[");
+    await saved;
+    await expect
+      .poll(async () => (await rowOf(session, null, beta.id)).canvas_z)
+      .toBeLessThan((await rowOf(session, null, alpha.id)).canvas_z);
+  });
+
+  test("Cmd/Ctrl + and − zoom, Shift+0 is 100% and Shift+1 fits every card", async ({
+    page,
+    context,
+  }) => {
+    const errors = trackConsoleErrors(page);
+    await startGuest(page);
+    const session = await readSession(context);
+    const [alpha, beta] = await seedPlaced(session, null);
+    if (!alpha || !beta) throw new Error("No seeded items.");
+    await openCanvas(page, "/app");
+    // The canvas keys only listen while focus is on the page or the canvas.
+    const empty = await emptyPoint(page);
+    await page.mouse.click(empty.x, empty.y);
+
+    const zoom = async () => (await domViewport(page)).zoom;
+    await page.keyboard.press("Shift+Digit0");
+    await expect.poll(zoom).toBeCloseTo(1, 2);
+
+    await page.keyboard.press("ControlOrMeta+=");
+    await expect.poll(zoom).toBeGreaterThan(1.01);
+    const zoomedIn = await zoom();
+    await page.keyboard.press("ControlOrMeta+-");
+    await expect.poll(zoom).toBeLessThan(zoomedIn - 0.01);
+
+    for (let i = 0; i < 4; i++) await page.keyboard.press("ControlOrMeta+=");
+    await page.keyboard.press("Shift+Digit1");
+    const pane = await page.locator(".react-flow").boundingBox();
+    if (!pane) throw new Error("Canvas has no box.");
+    for (const id of [alpha.id, beta.id]) {
+      await expect
+        .poll(async () => {
+          const box = await page.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+          return (
+            !!box &&
+            box.x >= pane.x &&
+            box.y >= pane.y &&
+            box.x + box.width <= pane.x + pane.width &&
+            box.y + box.height <= pane.y + pane.height
+          );
+        })
+        .toBe(true);
+    }
+    errors.assertNone();
+  });
+
+  test("holding Space and dragging empty canvas pans the view", async ({ page, context }) => {
+    await startGuest(page);
+    const session = await readSession(context);
+    await seedPlaced(session, null);
+    await openCanvas(page, "/app");
+    const start = await emptyPoint(page);
+    await page.mouse.click(start.x, start.y);
+
+    const before = await domViewport(page);
+    await page.keyboard.down("Space");
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x + 120, start.y - 60, { steps: 8 });
+    await page.mouse.up();
+    await page.keyboard.up("Space");
+
+    await expect.poll(async () => (await domViewport(page)).x).not.toBe(before.x);
+    // No quick look: the board's Space key steps aside on the canvas.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
   test("M moves the selected card to a collection and it leaves the Inbox canvas", async ({

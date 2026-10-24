@@ -2,7 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { useT } from "@/i18n/client";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
@@ -14,7 +14,7 @@ import {
 } from "@/lib/auth";
 import { countsQueryOptions } from "@/lib/sidebar/queries";
 import { createClient } from "@/lib/supabase/client";
-import { UpgradeDialog } from "./upgrade-dialog";
+import { useUiStore } from "@/stores/ui-store";
 
 /**
  * Slim, persistent offer to keep a guest's things. Mount it only for anonymous sessions
@@ -26,7 +26,7 @@ export function GuestBanner() {
   // counts optimistically) moves the reminder right away; null until known or if the query fails.
   const counts = useQuery(countsQueryOptions(createClient()));
   const count = counts.data ? counts.data.all + counts.data.archive : null;
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const setUpgradeOpen = useUiStore((state) => state.setUpgradeOpen);
 
   // Server snapshot is "dismissed" so nothing flashes before the tab's stored choice is known.
   const dismissed = useSyncExternalStore(
@@ -39,27 +39,24 @@ export function GuestBanner() {
   if (variant === "hidden") return null;
 
   return (
-    <>
-      <div
-        role="region"
-        aria-label={guest.regionLabel}
-        className="border-line bg-surface relative z-10 border-b px-4 py-2 backdrop-blur-md sm:px-6"
-      >
-        <div className="flex items-center gap-x-3 gap-y-2">
-          <p className="text-meta text-ink min-w-0 flex-1">
-            {variant === "reminder" && count !== null
-              ? guest.reminderCopy(count)
-              : guest.defaultCopy}
-          </p>
-          <Button size="sm" onClick={() => setDialogOpen(true)}>
-            {guest.keep}
-          </Button>
-          <IconButton variant="ghost" size="sm" label={guest.dismiss} onClick={dismissGuestBanner}>
-            <XIcon />
-          </IconButton>
-        </div>
+    <div
+      role="region"
+      aria-label={guest.regionLabel}
+      className="border-line bg-surface relative z-10 border-b px-4 py-2 backdrop-blur-md sm:px-6"
+    >
+      <div className="flex items-center gap-x-3 gap-y-2">
+        <p className="text-meta text-ink min-w-0 flex-1">
+          {variant === "reminder" && count !== null
+            ? guest.reminderCopy(count)
+            : guest.defaultCopy}
+        </p>
+        <Button size="sm" onClick={() => setUpgradeOpen(true)}>
+          {guest.keep}
+        </Button>
+        <IconButton variant="ghost" size="sm" label={guest.dismiss} onClick={dismissGuestBanner}>
+          <XIcon />
+        </IconButton>
       </div>
-      <UpgradeDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-    </>
+    </div>
   );
 }

@@ -14,6 +14,8 @@
   --color-ink-muted: #4a4a52;
   --color-ink-subtle: #6b6b74; /* darkened from the plan's #8B8B94 (3.1:1) to meet AA 4.5:1 on paper */
   --color-line: rgb(15 15 18 / 0.12);
+  /* Highlighted menu and command rows: 1.55:1 against the popover surface over paper (the old 6% ink was 1.13:1). */
+  --color-highlight: color-mix(in srgb, var(--color-ink) 20%, transparent);
 
   /* Note surfaces: white and graphite (dark, with inverse ink) next to the aurora tints */
   --color-note-white: #ffffff;
@@ -143,7 +145,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
+  /* No --color-card: it would make `text-card` (font size, 17px) compile to a color. */
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
@@ -197,6 +199,23 @@
   h6 {
     font-family: var(--font-heading);
     letter-spacing: var(--tracking-heading);
+  }
+}
+
+/*
+ * No iOS focus zoom: Safari zooms the page when a focused text field computes below 16px. Fields
+ * use text-base (16px) with sm:text-body (15px) for mouse users, but the sm breakpoint is a width,
+ * so iPads and landscape phones fell under 16px. Unlayered, so it beats Tailwind's layered utilities;
+ * keyed on pointer type, so desktop sizes are untouched. 1em is the parent's size, not the field's,
+ * so fields set above 16px (the drawer title, text-card 17px; the OTP code, 20px) are excluded
+ * rather than shrunk. Pinch zoom is untouched (the viewport is not locked).
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [autocomplete="one-time-code"], .text-card),
+  textarea,
+  select,
+  [contenteditable]:not([contenteditable="false"]) {
+    font-size: max(16px, 1em);
   }
 }
 

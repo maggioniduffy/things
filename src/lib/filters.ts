@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { Messages } from "@/i18n/messages";
 import { kindPluralLabel } from "@/lib/kinds";
-import { ITEM_KINDS } from "@/lib/views";
+import type { BoardItem } from "@/lib/items/queries";
+import { ITEM_KINDS, type ViewSpec } from "@/lib/views";
 
 /**
  * Smart-view rules: a saved set of filters. Every field is optional and they all apply together
@@ -166,6 +167,44 @@ export function applyRules<Q extends RulesFilterable<Q>>(
 }
 
 /**
+ * Whether `item` satisfies `rules`, with the semantics of `applyRules` (live items only). Returns
+ * null when the rules need data the row does not carry (`tagIds`, `query`): the caller must not
+ * guess and leaves the answer to the refetch.
+ */
+export function itemMatchesRules(
+  item: BoardItem,
+  rules: Rules,
+  now: Date = new Date(),
+): boolean | null {
+  if (unique(rules.tagIds).length > 0 || rules.query?.trim()) return null;
+  if (item.deleted_at !== null || item.archived_at !== null) return false;
+
+  const kinds = unique(rules.kinds);
+  if (kinds.length > 0 && !kinds.includes(item.kind)) return false;
+
+  const collectionIds = unique(rules.collectionIds);
+  if (
+    collectionIds.length > 0 &&
+    !(item.collection_id && collectionIds.includes(item.collection_id))
+  )
+    return false;
+
+  const domains = unique(
+    rules.domains?.map((domain) => domain.trim()).filter((domain) => DOMAIN_PATTERN.test(domain)),
+  );
+  if (domains.length > 0 && !(item.domain && domains.includes(item.domain))) return false;
+
+  if (rules.isRead !== undefined && item.is_read !== rules.isRead) return false;
+  if (rules.isFavorite !== undefined && item.is_favorite !== rules.isFavorite) return false;
+
+  if (rules.savedWithinDays !== undefined) {
+    const since = now.getTime() - rules.savedWithinDays * DAY_MS;
+    if (new Date(item.created_at).getTime() < since) return false;
+  }
+  return true;
+}
+
+/**
  * Domains typed in the builder: split on commas, spaces and new lines; a pasted URL becomes its
  * host; lower case, no `www.` (the form `items.domain` is stored in). Duplicates and blanks go.
  */
@@ -230,4 +269,44 @@ export function describeRules(
   }
   if (clean.query) parts.push(t.matching(clean.query));
   return parts;
+}
+
+/** Rules the `search_items` RPC accepts: smart-view rules plus the scope of the view being searched. */
+export type SearchRules = Rules & { scope?: "live" | "archived" | "trashed"; inbox?: boolean };
+
+/**
+ * Search rules as sent to `search_items`: `cleanRules`, plus `scope` only when it is not the
+ * default and `inbox` only when true, so absent filters are absent keys (the RPC errors on nulls).
+ */
+export function cleanSearchRules(rules: SearchRules): SearchRules {
+  const clean: SearchRules = cleanRules(rules);
+  if (rules.scope === "archived" || rules.scope === "trashed") clean.scope = rules.scope;
+  if (rules.inbox === true) clean.inbox = true;
+  return clean;
+}
+
+/** The `search_items` rules that make a search stay inside the view it was opened from. */
+export function viewToSearchRules(view: ViewSpec, smartRules?: Rules): SearchRules {
+  switch (view.type) {
+    case "inbox":
+      return { inbox: true };
+    case "all":
+      return {};
+    case "unread":
+      return { isRead: false };
+    case "favorites":
+      return { isFavorite: true };
+    case "archive":
+      return { scope: "archived" };
+    case "trash":
+      return { scope: "trashed" };
+    case "kind":
+      return { kinds: [view.kind] };
+    case "collection":
+      return { collectionIds: [view.collectionId] };
+    case "tag":
+      return { tagIds: [view.tagId] };
+    case "smart":
+      return cleanRules(smartRules ?? {});
+  }
 }

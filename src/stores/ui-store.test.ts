@@ -51,6 +51,40 @@ describe("selection", () => {
   });
 });
 
+describe("keyboard cursor", () => {
+  it("setCursor sets and clears the cursor without touching the selection", () => {
+    const { select, setCursor } = useUiStore.getState();
+    select("a");
+    setCursor("b");
+    expect(useUiStore.getState()).toMatchObject({
+      cursorId: "b",
+      selectedIds: ["a"],
+      anchorId: "a",
+    });
+    setCursor(null);
+    expect(useUiStore.getState().cursorId).toBeNull();
+    expect(useUiStore.getState().selectedIds).toEqual(["a"]);
+  });
+
+  it("selection behaviour holds alongside the cursor", () => {
+    const { setCursor, toggle, clearSelection } = useUiStore.getState();
+    setCursor("a");
+    toggle("a");
+    toggle("b");
+    expect(useUiStore.getState().selectedIds).toEqual(["a", "b"]);
+    clearSelection();
+    expect(useUiStore.getState()).toMatchObject({ selectedIds: [], cursorId: "a" });
+  });
+
+  it("the shortcut dialog opens one at a time and closes with null", () => {
+    const { setShortcutDialog } = useUiStore.getState();
+    setShortcutDialog("tag");
+    expect(useUiStore.getState().shortcutDialog).toBe("tag");
+    setShortcutDialog(null);
+    expect(useUiStore.getState().shortcutDialog).toBeNull();
+  });
+});
+
 describe("range selection", () => {
   const order = ["a", "b", "c", "d", "e", "f"];
 
@@ -208,5 +242,41 @@ describe("persistence", () => {
     await expect(useUiStore.persist.rehydrate()).resolves.not.toThrow();
     expect(() => useUiStore.getState().setViewMode("list")).not.toThrow();
     expect(useUiStore.getState().viewMode).toBe("list");
+  });
+});
+
+describe("upgrade dialog", () => {
+  it("opens and closes through the store, apart from the palette and quick add", () => {
+    expect(useUiStore.getState().upgradeOpen).toBe(false);
+    useUiStore.getState().setUpgradeOpen(true);
+    expect(useUiStore.getState()).toMatchObject({
+      upgradeOpen: true,
+      paletteOpen: false,
+      quickAddOpen: false,
+    });
+    useUiStore.getState().setUpgradeOpen(false);
+    expect(useUiStore.getState().upgradeOpen).toBe(false);
+  });
+
+  it("is not persisted", () => {
+    useUiStore.getState().setUpgradeOpen(true);
+    expect(localStorage.getItem(UI_STORE_KEY) ?? "").not.toContain("upgradeOpen");
+  });
+});
+
+describe("tour", () => {
+  it("tourOpen toggles, is not persisted, and leaves palette and upgrade state alone", () => {
+    const { setTourOpen, setPaletteOpen, setUpgradeOpen } = useUiStore.getState();
+    setPaletteOpen(true);
+    setUpgradeOpen(true);
+    setTourOpen(true);
+    expect(useUiStore.getState()).toMatchObject({
+      tourOpen: true,
+      paletteOpen: true,
+      upgradeOpen: true,
+    });
+    expect(localStorage.getItem(UI_STORE_KEY) ?? "").not.toContain("tourOpen");
+    setTourOpen(false);
+    expect(useUiStore.getState()).toMatchObject({ tourOpen: false, paletteOpen: true });
   });
 });

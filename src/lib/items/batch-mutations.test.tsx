@@ -342,6 +342,23 @@ describe("useBatchMove: other targets", () => {
     expect(mocks.toast).toHaveBeenCalledWith("Added #later to 5 items");
   });
 
+  it("adds the items to the tag's view, and rolls back when the upsert fails", async () => {
+    const { state, queryClient, move, titles } = setup();
+    const tagKey = itemsQueryKey({ type: "tag", tagId: TAG }, "manual");
+    queryClient.setQueryData(tagKey, pageOf([]));
+    await act(async () => {
+      await move(SELECTED, { type: "tag", id: TAG }, "later");
+    });
+    expect(titles(tagKey)).toEqual(SELECTED.map((_, i) => `Card ${i}`));
+
+    queryClient.setQueryData(tagKey, pageOf([]));
+    state.result = () => ({ error: new Error("nope") });
+    await act(async () => {
+      await move(SELECTED, { type: "tag", id: TAG }, "later");
+    });
+    expect(titles(tagKey)).toEqual([]);
+  });
+
   it("rolls back the cached tags of the items when the upsert fails", async () => {
     const { state, queryClient, move } = setup();
     queryClient.setQueryData(itemTagsQueryKey(ids[0]!), []);

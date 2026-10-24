@@ -5,6 +5,7 @@ import {
   useQueryClient,
   type InfiniteData,
   type QueryClient,
+  type QueryKey,
 } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -20,11 +21,13 @@ import type { SidebarCounts } from "@/lib/sidebar/counts";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
 import { attachTagNames } from "@/lib/tags/mutations";
 import { SORT_MODES, viewHref, viewKey, type SortMode, type ViewSpec } from "@/lib/views";
+import { useUiStore } from "@/stores/ui-store";
 import { useUploadStore } from "@/stores/upload-store";
 import type { UnfurlResult } from "@/lib/unfurl/types";
 import type { Database, ItemKind } from "@/types/supabase";
 import {
   addToCounts,
+  isSearchKey,
   itemMatchesView,
   patchInPages,
   prependToPages,
@@ -70,6 +73,19 @@ export function captureTargetFor(view: ViewSpec): CaptureTarget {
 
 /** Copy is read where it is shown, so it follows the active language. */
 export const guestQuotaCopy = (): string => getActiveMessages().items.toasts.guestQuota;
+
+/**
+ * The guest-quota error toast, with an "Add email" action that opens the upgrade dialog (the
+ * only way out of a full quota). Quota errors only happen to guests.
+ */
+export function guestQuotaToast(message: string = guestQuotaCopy()): void {
+  toast.error(message, {
+    action: {
+      label: getActiveMessages().auth.guest.addEmail,
+      onClick: () => useUiStore.getState().setUpgradeOpen(true),
+    },
+  });
+}
 
 /** Toast copy for an upload failure (the Retry action is added by the caller). */
 export function uploadErrorMessage(code: UploadErrorCode, fileName: string): string {
@@ -305,7 +321,7 @@ function isSortMode(value: unknown): value is SortMode {
 /** Applies `edit` to every cached `["items", viewKey, sort]` list; skips lists it leaves as is. */
 function editLists(
   queryClient: QueryClient,
-  edit: (data: Items, view: ViewSpec | null, sort: SortMode | null) => Items,
+  edit: (data: Items, view: ViewSpec | null, sort: SortMode | null, key: QueryKey) => Items,
 ): void {
   for (const [key, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
     if (!data) continue;
@@ -314,15 +330,20 @@ function editLists(
       data,
       typeof vk === "string" ? viewFromKey(vk) : null,
       isSortMode(sort) ? sort : null,
+      key,
     );
     if (next !== data) queryClient.setQueryData(key, next);
   }
 }
 
 export function insertIntoCaches(queryClient: QueryClient, row: BoardItem): void {
-  editLists(queryClient, (data, view, sort) =>
+  editLists(queryClient, (data, view, sort, key) =>
     // Oldest/title lists would put it elsewhere: the refetch at the end of the capture does.
-    view && (sort === "manual" || sort === "newest") && itemMatchesView(row, view)
+    // Search results are ranked server-side: never insert into them.
+    view &&
+    !isSearchKey(key) &&
+    (sort === "manual" || sort === "newest") &&
+    itemMatchesView(row, view)
       ? prependToPages(data, row)
       : data,
   );
@@ -503,6 +524,8 @@ async function enrichFile(
         toast.error(message, {
           action: { label: getActiveMessages().items.toasts.retry, onClick: retry },
         });
+      } else if (code === "guest_quota") {
+        guestQuotaToast(message);
       } else {
         toast.error(message);
       }
@@ -570,11 +593,8 @@ function useInsertItem() {
     onError: (error, { row }) => {
       // Take out exactly this card (a snapshot restore would also undo other captures in flight).
       removeFromCaches(queryClient, row);
-      toast.error(
-        isGuestQuotaError(error)
-          ? guestQuotaCopy()
-          : getActiveMessages().items.toasts.errSaveFile(row.file_name),
-      );
+      if (isGuestQuotaError(error)) guestQuotaToast();
+      else toast.error(getActiveMessages().items.toasts.errSaveFile(row.file_name));
     },
   });
 }

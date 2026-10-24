@@ -142,6 +142,19 @@ export const items: Messages["items"] = {
     noCollection: "No se encontró ninguna colección.",
   },
 
+  shortcuts: {
+    tagTitle: (n) => `Agregar una etiqueta a ${n === 1 ? "1 cosa" : `${n} cosas`}`,
+    tagDescription: "Elegí una etiqueta, o escribí un nombre para crearla.",
+    findTag: "Buscar o crear una etiqueta",
+    noTag: "No se encontró ninguna etiqueta.",
+    createTag: (name) => `Crear etiqueta “${name}”`,
+    quickLookTitle: "Vista rápida",
+    quickLookDescription:
+      "Vista previa de la cosa resaltada. Enter la abre, Espacio o Escape cierran.",
+    quickLookEmpty: "No hay nada para mostrar.",
+    cursorHint: "Resaltada con el teclado",
+  },
+
   toasts: {
     errTrash: "No se pudo mover a la papelera.",
     errRestore: "No se pudo restaurar.",

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { readSession, startGuest, type AppSession } from "./helpers/session";
 import { assertLocalUrl } from "./local-env";
 
