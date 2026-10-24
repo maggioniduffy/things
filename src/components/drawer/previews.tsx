@@ -2,24 +2,22 @@
 
 import { DownloadIcon, ExternalLinkIcon } from "lucide-react";
 import { useState, type ComponentProps } from "react";
-import { toast } from "sonner";
 import { itemDisplayTitle, useCardStatus } from "@/components/cards/card-status";
 import { Favicon } from "@/components/cards/card-media";
 import { formatBytes } from "@/components/cards/format-bytes";
 import { KindIcon } from "@/components/kind-icon";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSignedUrls } from "@/hooks/use-signed-urls";
 import { useLocale, useT } from "@/i18n/client";
 import type { BoardItem } from "@/lib/items/queries";
 import type { ItemActions } from "@/lib/items/state-mutations";
-import { createClient } from "@/lib/supabase/client";
-import { BUCKET } from "@/lib/items/upload";
 import { PdfPages, PHONE_PDF_QUERY } from "./pdf-pages";
 import { NoteField } from "./fields";
 import { FileViewerButton, viewerKindOf } from "./file-viewer";
+import { ImageViewer } from "./image-viewer";
+import { useFileDownload } from "./use-file-download";
 import { parseVideoEmbed, safeHttpUrl } from "./urls";
 
 const FRAME = "rounded-control border-line bg-line w-full overflow-hidden border";
@@ -82,19 +80,7 @@ function ImagePreview({ item }: { item: BoardItem }) {
           className="max-h-[50vh] w-full object-contain"
         />
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-5xl">
-          <DialogTitle className="sr-only">{title}</DialogTitle>
-          <DialogDescription className="sr-only">{t.fullSizeImage}</DialogDescription>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={title}
-            referrerPolicy="no-referrer"
-            className="max-h-[80dvh] w-full object-contain"
-          />
-        </DialogContent>
-      </Dialog>
+      <ImageViewer item={item} src={src} title={title} open={open} onOpenChange={setOpen} />
     </>
   );
 }
@@ -236,31 +222,9 @@ function FilePreview({ item }: { item: BoardItem }) {
   const t = useT().items.drawer;
   const card = useT().shell.card;
   const locale = useLocale();
-  const [busy, setBusy] = useState(false);
+  const { busy, download } = useFileDownload(item);
   const size = formatBytes(item.file_size, locale);
   const viewerKind = viewerKindOf(item);
-
-  async function download() {
-    if (!item.file_path) return;
-    setBusy(true);
-    try {
-      const { data, error } = await createClient()
-        .storage.from(BUCKET)
-        .createSignedUrl(item.file_path, 60, { download: item.file_name ?? true });
-      if (error || !data?.signedUrl) throw error ?? new Error("No URL");
-      // The signed URL carries a Content-Disposition: attachment, so the page itself stays put.
-      const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.rel = "noopener";
-      document.body.append(link);
-      link.click();
-      link.remove();
-    } catch {
-      toast.error(t.downloadFailed);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <div className={`${FRAME} bg-surface flex items-center gap-3 p-4`}>
