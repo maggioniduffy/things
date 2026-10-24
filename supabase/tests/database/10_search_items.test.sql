@@ -1,6 +1,6 @@
 -- search_items RPC: ranked, typo-tolerant, accent-insensitive search with smart-view rules.
 begin;
-select plan(23);
+select plan(25);
 
 insert into auth.users (id, email, is_anonymous, aud, role) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a@test.local', false, 'authenticated', 'authenticated'),
@@ -17,7 +17,7 @@ insert into public.items (id, user_id, kind, title, note, domain, position, coll
   ('a1000000-0000-0000-0000-000000000001', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'note', 'Canción de cuna para dormir', null, null, 'a0', 'c1000000-0000-0000-0000-000000000001', false, true, now()),
   ('a1000000-0000-0000-0000-000000000002', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'note', 'Receta de pan', null, null, 'a1', null, true, false, now() - interval '1 hour'),
   ('a1000000-0000-0000-0000-000000000003', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'link', 'Gardening', 'zanahoria tips', 'garden.com', 'a2', null, false, false, now() - interval '30 days'),
-  ('a1000000-0000-0000-0000-000000000004', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'note', 'Zanahoria soup', null, null, 'a3', null, false, false, now() - interval '2 hours');
+  ('a1000000-0000-0000-0000-000000000004', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'note', 'Zanahoria soup', null, null, 'a3', null, false, false, now() - interval '40 days');
 insert into public.items (id, user_id, kind, title, position, archived_at) values
   ('a1000000-0000-0000-0000-000000000005', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'note', 'Archived thing', 'a4', now());
 insert into public.items (id, user_id, kind, title, position, deleted_at) values
@@ -48,9 +48,9 @@ select is(pg_temp.ids('CANCIÓN'), array['001'], 'accented uppercase query match
 select is(pg_temp.ids('cancoin'), array['001'], 'transposition typo "cancoin" finds "Canción de cuna para dormir"');
 select is(pg_temp.ids('reseta'), array['002'], 'typo "reseta" finds "Receta de pan"');
 select is(pg_temp.ids('zzzzqqq'), '{}'::text[], 'unrelated query matches nothing');
-select is(pg_temp.ids('zanahoria'), array['004','003'], 'title match ranks above note-only match');
-select is(pg_temp.ids(null), array['001','002','004','003'], 'null q: live items, newest first');
-select is(pg_temp.ids('   '), array['001','002','004','003'], 'blank q behaves like null');
+select is(pg_temp.ids('zanahoria'), array['004','003'], 'older title match ranks above newer note-only match');
+select is(pg_temp.ids(null), array['001','002','003','004'], 'null q: live items, newest first');
+select is(pg_temp.ids('   '), array['001','002','003','004'], 'blank q behaves like null');
 select is(pg_temp.ids('', '{"kinds":["link"]}'), array['003'], 'kinds rule');
 select is(pg_temp.ids('', '{"collectionIds":["c1000000-0000-0000-0000-000000000001"]}'), array['001'], 'collectionIds rule');
 select is(pg_temp.ids('', '{"tagIds":["d1000000-0000-0000-0000-000000000001"]}'), array['001','002'], 'single tag rule');
@@ -58,13 +58,19 @@ select is(pg_temp.ids('', '{"tagIds":["d1000000-0000-0000-0000-000000000001","d1
 select is(pg_temp.ids('', '{"domains":["garden.com"]}'), array['003'], 'domains rule');
 select is(pg_temp.ids('', '{"isRead":true}'), array['002'], 'isRead rule');
 select is(pg_temp.ids('', '{"isFavorite":true}'), array['001'], 'isFavorite rule');
-select is(pg_temp.ids('', '{"savedWithinDays":7}'), array['001','002','004'], 'savedWithinDays rule');
+select is(pg_temp.ids('', '{"savedWithinDays":7}'), array['001','002'], 'savedWithinDays rule');
 select is(pg_temp.ids('', '{"query":"cancion"}'), array['001'], 'rules.query is an extra unaccented FTS filter');
-select is(pg_temp.ids('', '{"inbox":true}'), array['002','004','003'], 'inbox rule: no collection');
+select is(pg_temp.ids('', '{"inbox":true}'), array['002','003','004'], 'inbox rule: no collection');
 select is(pg_temp.ids('', '{"scope":"archived"}'), array['005'], 'scope archived');
 select is(pg_temp.ids('', '{"scope":"trashed"}'), array['006'], 'scope trashed');
 select is(cardinality(pg_temp.ids('', '{}', 2)), 2, 'lim caps the result');
 select is(cardinality(pg_temp.ids('', '{}', 0)), 1, 'lim below 1 is clamped to 1');
+
+-- B sees only B's row, and A's tag id gives B nothing
+select set_config('request.jwt.claims',
+  json_build_object('sub', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'role', 'authenticated', 'is_anonymous', false)::text, true);
+select is((select array_agg(id::text) from public.search_items(null)), array['b1000000-0000-0000-0000-000000000001'], 'user B sees only its own rows');
+select is(pg_temp.ids('', '{"tagIds":["d1000000-0000-0000-0000-000000000001"]}'), '{}'::text[], 'another user''s tag id returns nothing');
 
 select * from finish();
 rollback;
