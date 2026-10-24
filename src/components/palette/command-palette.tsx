@@ -162,7 +162,7 @@ function PaletteBody({
   const client = useMemo(() => createClient(), []);
   const [text, setText] = useState("");
   const query = useDebounced(text.trim(), SEARCH_DEBOUNCE_MS);
-  const { setQuickAddOpen, setUpgradeOpen, setShortcutDialog } = useUiStore.getState();
+  const { setQuickAddOpen, setUpgradeOpen, setShortcutDialog, setTourOpen } = useUiStore.getState();
 
   const search = useQuery({
     // Not under ["items"]: a board mutation must not refetch or patch these.
@@ -306,6 +306,13 @@ function PaletteBody({
               {addEmail}
             </CommandItem>
           ) : null}
+          <CommandItem
+            value="show the tour"
+            keywords={["onboarding", "help", "guide", "welcome"]}
+            onSelect={run(() => setTourOpen(true))}
+          >
+            {messages.onboarding.showTour}
+          </CommandItem>
           {itemActions.map((action) => (
             <CommandItem key={action.key} value={action.label} onSelect={action.onSelect}>
               {action.label}

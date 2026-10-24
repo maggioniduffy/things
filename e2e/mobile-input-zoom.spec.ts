@@ -1,4 +1,5 @@
-import { devices, expect, test, type Locator, type Page } from "@playwright/test";
+import { devices, type Locator, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { startGuest } from "./helpers/session";
 
 // iOS Safari zooms the page when a focused text field computes below 16px. On touch devices every

@@ -4,11 +4,13 @@ import { redirect } from "next/navigation";
 import { GuestBanner } from "@/components/account/guest-banner";
 import { UpgradeHost } from "@/components/account/upgrade-host";
 import { AppShell } from "@/components/app-shell/app-shell";
+import { TourHost } from "@/components/onboarding/tour-host";
 import { ShortcutsHost } from "@/hooks/use-shortcuts";
 import { CommandPalette } from "@/components/palette/command-palette";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ViewerProvider } from "@/components/providers/viewer-provider";
 import { getT } from "@/i18n/server";
+import { needsTour } from "@/lib/onboarding";
 import { makeQueryClient } from "@/lib/query-client";
 import {
   collectionsQueryOptions,
@@ -52,6 +54,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="bg-paper flex h-dvh flex-col">
             {isGuest ? <GuestBanner /> : null}
             {isGuest ? <UpgradeHost /> : null}
+            <TourHost needed={needsTour(claims.user_metadata)} />
             <AppShell email={email}>
               <ShortcutsHost />
               <CommandPalette />

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { createCollection, readSession, seedCanvasItems, startGuest } from "./helpers/session";
 
 const COUNT = Number(process.env.CANVAS_PERF_COUNT ?? 300);

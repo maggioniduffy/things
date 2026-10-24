@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { createNotes, readSession, startGuest } from "./helpers/session";
 
 test("signing out and starting a new guest never shows the previous account's items", async ({

@@ -20,6 +20,7 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
 import { useT } from "@/i18n/client";
+import { useUiStore } from "@/stores/ui-store";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -80,7 +81,8 @@ function Section({
 }
 
 export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
-  const t = useT().shell;
+  const messages = useT();
+  const t = messages.shell;
   const client = createClient();
   const { data: counts } = useQuery(countsQueryOptions(client));
   const { data: collections } = useQuery(collectionsQueryOptions(client));
@@ -283,6 +285,16 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
           <LanguageSwitcher className="h-8" />
           <SignOutButton />
         </div>
+        <button
+          type="button"
+          className="text-meta text-ink-muted hover:text-ink self-start underline-offset-2 hover:underline"
+          onClick={() => {
+            onNavigate?.();
+            useUiStore.getState().setTourOpen(true);
+          }}
+        >
+          {messages.onboarding.showTour}
+        </button>
       </div>
     </div>
   );

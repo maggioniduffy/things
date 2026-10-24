@@ -263,3 +263,20 @@ describe("upgrade dialog", () => {
     expect(localStorage.getItem(UI_STORE_KEY) ?? "").not.toContain("upgradeOpen");
   });
 });
+
+describe("tour", () => {
+  it("tourOpen toggles, is not persisted, and leaves palette and upgrade state alone", () => {
+    const { setTourOpen, setPaletteOpen, setUpgradeOpen } = useUiStore.getState();
+    setPaletteOpen(true);
+    setUpgradeOpen(true);
+    setTourOpen(true);
+    expect(useUiStore.getState()).toMatchObject({
+      tourOpen: true,
+      paletteOpen: true,
+      upgradeOpen: true,
+    });
+    expect(localStorage.getItem(UI_STORE_KEY) ?? "").not.toContain("tourOpen");
+    setTourOpen(false);
+    expect(useUiStore.getState()).toMatchObject({ tourOpen: false, paletteOpen: true });
+  });
+});

@@ -75,6 +75,10 @@ type UiState = {
   /** The guest "Add email" dialog; the banner, the palette and the quota toasts open it. */
   upgradeOpen: boolean;
   setUpgradeOpen: (open: boolean) => void;
+
+  /** The first-visit tour; opens itself for a new account and replays from the palette/sidebar. */
+  tourOpen: boolean;
+  setTourOpen: (open: boolean) => void;
 };
 
 export const UI_STORE_KEY = "things-ui";
@@ -190,6 +194,9 @@ export const useUiStore = create<UiState>()(
 
       upgradeOpen: false,
       setUpgradeOpen: (upgradeOpen) => set({ upgradeOpen }),
+
+      tourOpen: false,
+      setTourOpen: (tourOpen) => set({ tourOpen }),
     }),
     {
       name: UI_STORE_KEY,

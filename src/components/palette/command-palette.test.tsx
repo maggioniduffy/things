@@ -93,6 +93,14 @@ beforeEach(() => {
 });
 
 describe("CommandPalette", () => {
+  it("has a Show the tour action that closes the palette and opens the tour", async () => {
+    useUiStore.setState({ tourOpen: false });
+    const { user } = setup();
+    await open();
+    await user.click(await screen.findByRole("option", { name: /Show the tour/ }));
+    expect(useUiStore.getState()).toMatchObject({ tourOpen: true, paletteOpen: false });
+  });
+
   it("renders nothing until paletteOpen is set, then shows the three groups", async () => {
     setup();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import type { Database } from "../src/types/supabase";
 import { BUCKET, UploadError, filePath, uploadFile } from "../src/lib/items/upload";
 import { getOtpCode, uniqueEmail } from "./mailpit";

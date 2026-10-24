@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { trackConsoleErrors } from "./helpers";
 
 const SECTIONS = ["Colors", "Typography", "Radii, shadows and motion", "Brand", "Components"];
