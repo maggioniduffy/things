@@ -1,8 +1,9 @@
-import type { InfiniteData } from "@tanstack/react-query";
+import { QueryClient, type InfiniteData } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { makeCounts, makeItem } from "@/test/fixtures";
 import { ITEM_KINDS, viewKey, type ViewSpec } from "@/lib/views";
 import {
+  findCachedItem,
   addToCounts,
   compareForSort,
   insertSortedInPages,
@@ -14,6 +15,7 @@ import {
   removeFromPages,
   viewFromKey,
 } from "./cache";
+import { itemQueryKey } from "./item-query";
 import type { ItemsPage } from "./queries";
 
 const COLLECTION = "33333333-3333-4333-8333-333333333333";
@@ -282,5 +284,23 @@ describe("insertSortedInPages", () => {
     expect(ids(insertSortedInPages(empty, first, "newest"))).toEqual([["i1"]]);
     const none: InfiniteData<ItemsPage> = { pages: [], pageParams: [] };
     expect(insertSortedInPages(none, first, "newest")).toBe(none);
+  });
+});
+
+describe("findCachedItem", () => {
+  it("finds an item in a board cache, then the drawer cache, else null", () => {
+    const client = new QueryClient();
+    const onBoard = makeItem({ id: "board-item" });
+    const inDrawer = makeItem({ id: "drawer-item" });
+    client.setQueryData<InfiniteData<ItemsPage>>(["items", "all", "manual"], {
+      pages: [{ items: [onBoard], nextCursor: null }],
+      pageParams: [null],
+    });
+    client.setQueryData(itemQueryKey("drawer-item"), inDrawer);
+
+    expect(findCachedItem(client, "board-item")).toBe(onBoard);
+    expect(findCachedItem(client, "drawer-item")).toBe(inDrawer);
+    expect(findCachedItem(client, "missing")).toBeNull();
+    expect(findCachedItem(client, null)).toBeNull();
   });
 });

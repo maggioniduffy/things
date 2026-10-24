@@ -1,13 +1,13 @@
 "use client";
 
-import { useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
 import { useOpenItem } from "@/components/drawer/item-param";
 import { isDialogOpen, isEditableElement } from "@/components/capture/paste-listener";
 import { useBatchMove } from "@/lib/items/batch-mutations";
-import type { BoardItem, ItemsPage } from "@/lib/items/queries";
+import { findCachedItem } from "@/lib/items/cache";
 import { useItemActions } from "@/lib/items/state-mutations";
 import { boardShortcut, CHORD_TIMEOUT_MS, type BoardAction } from "@/lib/shortcuts";
 import { viewHref } from "@/lib/views";
@@ -41,18 +41,6 @@ export function moveCursor(step: 1 | -1): void {
   document
     .querySelector<HTMLElement>(`[data-item-id="${CSS.escape(id)}"]`)
     ?.scrollIntoView?.({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
-}
-
-function cachedItem(queryClient: QueryClient, id: string): BoardItem | null {
-  for (const [, data] of queryClient.getQueriesData<InfiniteData<ItemsPage>>({
-    queryKey: ["items"],
-  })) {
-    for (const page of data?.pages ?? []) {
-      const found = page.items.find((item) => item.id === id);
-      if (found) return found;
-    }
-  }
-  return null;
 }
 
 /** The selection (what is on screen of it), else the cursor card, else nothing. */
@@ -121,7 +109,7 @@ export function useShortcuts(): void {
         case "prev":
           return moveCursor(-1);
         case "open": {
-          const item = ui.cursorId ? cachedItem(queryClient, ui.cursorId) : null;
+          const item = ui.cursorId ? findCachedItem(queryClient, ui.cursorId) : null;
           return item ? openItem(item) : undefined;
         }
         case "quick-look":
@@ -135,7 +123,7 @@ export function useShortcuts(): void {
         case "trash": {
           const ids = targetIds();
           if (ids.length === 0) return;
-          const items = ids.flatMap((id) => cachedItem(queryClient, id) ?? []);
+          const items = ids.flatMap((id) => findCachedItem(queryClient, id) ?? []);
           if (ids.length === 1) {
             const item = items[0];
             if (!item) return;

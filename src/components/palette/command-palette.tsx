@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -17,9 +17,9 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { useT } from "@/i18n/client";
-import { itemQueryKey } from "@/lib/items/item-query";
+import { findCachedItem } from "@/lib/items/cache";
 import { useCapture } from "@/lib/items/mutations";
-import type { BoardItem, ItemsPage } from "@/lib/items/queries";
+import type { BoardItem } from "@/lib/items/queries";
 import { searchItems } from "@/lib/items/search";
 import { useItemActions } from "@/lib/items/state-mutations";
 import {
@@ -60,23 +60,6 @@ function viewFromPath(pathname: string): ViewSpec {
   return parseView(segments) ?? { type: "inbox" };
 }
 
-/** An item from the board caches or the drawer's cache, by id. */
-function cachedItem(
-  queryClient: ReturnType<typeof useQueryClient>,
-  id: string | null,
-): BoardItem | null {
-  if (!id) return null;
-  for (const [, data] of queryClient.getQueriesData<InfiniteData<ItemsPage>>({
-    queryKey: ["items"],
-  })) {
-    for (const page of data?.pages ?? []) {
-      const found = page.items.find((item) => item.id === id);
-      if (found) return found;
-    }
-  }
-  return queryClient.getQueryData<BoardItem | null>(itemQueryKey(id)) ?? null;
-}
-
 type Context = {
   isGuest: boolean;
   /** The card under the keyboard cursor, when there is one. */
@@ -108,7 +91,7 @@ export function CommandPalette() {
 
   const cursorItem = useMemo(
     // Read when the palette opens: the cache can change under a closed palette.
-    () => (open ? cachedItem(queryClient, cursorId) : null),
+    () => (open ? findCachedItem(queryClient, cursorId) : null),
     [open, queryClient, cursorId],
   );
 

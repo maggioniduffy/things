@@ -1,6 +1,7 @@
-import type { InfiniteData } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import { ITEM_KINDS, type SortMode, type SystemView, type ViewSpec } from "@/lib/views";
+import { itemQueryKey } from "./item-query";
 import type { BoardItem, ItemsPage } from "./queries";
 
 // Pure helpers for editing the cached `["items", viewKey, sort]` lists and the `["counts"]` cache
@@ -207,4 +208,16 @@ export function addToCounts(counts: SidebarCounts, item: BoardItem): SidebarCoun
 /** Inverse of `addToCounts`, for rollback. Never goes below zero. */
 export function removeFromCounts(counts: SidebarCounts, item: BoardItem): SidebarCounts {
   return adjustCounts(counts, item, -1);
+}
+
+/** An item from any board cache (`["items", …]`) or, failing that, the drawer's cache, by id. */
+export function findCachedItem(queryClient: QueryClient, id: string | null): BoardItem | null {
+  if (!id) return null;
+  for (const [, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
+    for (const page of data?.pages ?? []) {
+      const found = page.items.find((item) => item.id === id);
+      if (found) return found;
+    }
+  }
+  return queryClient.getQueryData<BoardItem | null>(itemQueryKey(id)) ?? null;
 }
