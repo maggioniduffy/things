@@ -17,7 +17,8 @@ export function needsTour(userMetadata: unknown): boolean {
 /**
  * Stores `tour_done_at` on the account, then refreshes the session. The /app layout reads JWT
  * claims, whose `user_metadata` stays stale until the token is reissued, so without the refresh
- * the tour would come back on the next reload. Errors are swallowed: the dialog is already closed.
+ * the tour would come back on the next reload. Called as soon as the tour opens, not on close.
+ * Errors are swallowed: the tour is already showing and must not break.
  */
 export async function markTourDone(client: TourClient): Promise<void> {
   try {
