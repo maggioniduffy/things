@@ -76,9 +76,7 @@ export function TitleField({ item, actions }: { item: BoardItem; actions: ItemAc
         // Enter while an IME is composing confirms the composition, not the field.
         if (event.key === "Enter" && !event.nativeEvent.isComposing) event.currentTarget.blur();
       }}
-      // Length-typed: plain `text-card` also matches the shadcn `--color-card` token and compiles
-      // to a color, which painted the text the card color (invisible) past `sm`.
-      className="h-10 text-[length:var(--text-card)] font-medium sm:text-[length:var(--text-card)]"
+      className="text-card sm:text-card h-10 font-medium"
     />
   );
 }

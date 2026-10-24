@@ -145,7 +145,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
+  /* No --color-card: it would make `text-card` (font size, 17px) compile to a color. */
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
@@ -211,7 +211,7 @@
  * rather than shrunk. Pinch zoom is untouched (the viewport is not locked).
  */
 @media (pointer: coarse) {
-  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [autocomplete="one-time-code"], .text-\[length\:var\(--text-card\)\]),
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [autocomplete="one-time-code"], .text-card),
   textarea,
   select,
   [contenteditable]:not([contenteditable="false"]) {
