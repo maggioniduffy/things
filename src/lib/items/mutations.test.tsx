@@ -24,6 +24,7 @@ import {
   unfurlPatch,
   uploadErrorMessage,
   useCapture,
+  insertIntoCaches,
 } from "./mutations";
 import { itemsQueryKey, ITEM_COLUMNS, type BoardItem, type ItemsPage } from "./queries";
 import { UploadError, thumbnailPath } from "./upload";
@@ -981,5 +982,22 @@ describe("capturing a file", () => {
     await act(() => guest.capture.current.captureFile(file("big.bin", "", 11 * 1024 * 1024)));
     expect(mocks.toast.error).toHaveBeenCalledWith("Guest files can be up to 10 MB.");
     expect(guest.fake.state.inserts).toHaveLength(0);
+  });
+});
+
+describe("insertIntoCaches", () => {
+  it("prepends to matching plain lists but never to search results", () => {
+    const queryClient = makeTestQueryClient();
+    const empty = { pages: [{ items: [] as BoardItem[], nextCursor: null }], pageParams: [null] };
+    const plainKey = itemsQueryKey({ type: "inbox" }, "manual");
+    const searchKey = [...plainKey, { search: { text: "x" } }];
+    queryClient.setQueryData(plainKey, empty);
+    queryClient.setQueryData(searchKey, empty);
+    const row = makeItem({ id: "00000000-0000-4000-8000-0000000000aa" });
+    insertIntoCaches(queryClient, row);
+    const ids = (key: readonly unknown[]) =>
+      queryClient.getQueryData<InfiniteData<ItemsPage>>(key)?.pages[0]?.items.map((i) => i.id);
+    expect(ids(plainKey)).toEqual([row.id]);
+    expect(ids(searchKey)).toEqual([]);
   });
 });

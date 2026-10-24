@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
+import { makeItem } from "@/test/fixtures";
 import { messages } from "@/i18n/messages";
 import type { Database } from "@/types/supabase";
 import {
@@ -9,6 +10,7 @@ import {
   cleanRules,
   describeRules,
   isRuleEmbedKey,
+  itemMatchesRules,
   parseDomainList,
   parseRules,
   ruleSelect,
@@ -383,5 +385,55 @@ describe("viewToSearchRules", () => {
       ),
     ).toEqual({ kinds: ["pdf"], query: "hi" });
     expect(viewToSearchRules({ type: "smart", viewId: "v" })).toEqual({});
+  });
+});
+
+describe("itemMatchesRules", () => {
+  const NOW = new Date("2026-01-11T00:00:00Z");
+  const item = makeItem({
+    kind: "link",
+    collection_id: COLLECTION_A,
+    domain: "example.com",
+    is_read: false,
+    is_favorite: true,
+    created_at: "2026-01-09T00:00:00Z",
+  });
+
+  it("matches a live item against empty rules and rejects archived or trashed ones", () => {
+    expect(itemMatchesRules(item, {}, NOW)).toBe(true);
+    expect(itemMatchesRules({ ...item, archived_at: "2026-01-10T00:00:00Z" }, {}, NOW)).toBe(false);
+    expect(itemMatchesRules({ ...item, deleted_at: "2026-01-10T00:00:00Z" }, {}, NOW)).toBe(false);
+  });
+
+  it.each([
+    [{ kinds: ["link"] }, true],
+    [{ kinds: ["pdf", "note"] }, false],
+    [{ collectionIds: [COLLECTION_A] }, true],
+    [{ collectionIds: ["55555555-5555-4555-8555-555555555555"] }, false],
+    [{ domains: ["example.com"] }, true],
+    [{ domains: ["other.com"] }, false],
+    [{ isRead: false }, true],
+    [{ isRead: true }, false],
+    [{ isFavorite: true }, true],
+    [{ isFavorite: false }, false],
+    [{ savedWithinDays: 5 }, true],
+    [{ savedWithinDays: 1 }, false],
+  ] as [Rules, boolean][])("judges %j as %s", (rules, expected) => {
+    expect(itemMatchesRules(item, rules, NOW)).toBe(expected);
+  });
+
+  it("requires every rule (AND) and a collection or domain on the item", () => {
+    expect(itemMatchesRules(item, { kinds: ["link"], isRead: true }, NOW)).toBe(false);
+    expect(
+      itemMatchesRules({ ...item, collection_id: null }, { collectionIds: [COLLECTION_A] }, NOW),
+    ).toBe(false);
+    expect(itemMatchesRules({ ...item, domain: null }, { domains: ["example.com"] }, NOW)).toBe(
+      false,
+    );
+  });
+
+  it("answers null when the rules need tags or full text", () => {
+    expect(itemMatchesRules(item, { tagIds: [COLLECTION_A] }, NOW)).toBeNull();
+    expect(itemMatchesRules(item, { query: "hello" }, NOW)).toBeNull();
   });
 });

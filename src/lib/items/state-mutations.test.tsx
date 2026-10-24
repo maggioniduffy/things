@@ -632,4 +632,65 @@ describe("tag actions", () => {
     expect(tagView()).toEqual([ITEM.id, OTHER.id]);
     expect(mocks.toast.error).toHaveBeenCalledWith("Couldn't remove that tag.");
   });
+
+  it("adds the card to the tag's view when the tag is attached, and rolls back on error", async () => {
+    const { fake, queryClient, actions } = setupTags([]);
+    const key = keyOf({ type: "tag", tagId: TAG }, "manual");
+    queryClient.setQueryData(key, pageOf([OTHER]));
+    queryClient.setQueryData(itemQueryKey(ITEM.id), ITEM);
+    queryClient.setQueryData(keyOf(INBOX, "manual"), pageOf([ITEM, OTHER]));
+    const tagView = () =>
+      queryClient.getQueryData<InfiniteData<ItemsPage>>(key)?.pages[0]?.items.map((i) => i.id);
+    const gate = deferred<Result>();
+    fake.state.result = () => gate.promise;
+    let done!: Promise<void>;
+    act(() => {
+      done = actions.current.addTag(ITEM.id, TAG);
+    });
+    await waitFor(() => expect(tagView()).toEqual([ITEM.id, OTHER.id]));
+    await act(async () => {
+      gate.resolve({ error: new Error("boom") });
+      await done;
+    });
+    expect(tagView()).toEqual([OTHER.id]);
+  });
+});
+
+describe("smart views and search caches", () => {
+  const SV = "sv-1";
+  const SMART: ViewSpec = { type: "smart", viewId: SV };
+
+  it("adds a favorited item to a cached smart view with isFavorite, and drops it on unfavorite", async () => {
+    const { queryClient, actions, ids } = setup();
+    queryClient.setQueryData(
+      ["smart-views"],
+      [{ id: SV, name: "Favs", rules: { isFavorite: true } }],
+    );
+    queryClient.setQueryData(keyOf(SMART, "manual"), pageOf([]));
+    await act(async () => {
+      await actions.current.toggleFavorite(ITEM);
+    });
+    expect(ids(SMART)).toEqual([ITEM.id]);
+
+    const favorite = makeItem({ ...ITEM, is_favorite: true });
+    await act(async () => {
+      await actions.current.toggleFavorite(favorite);
+    });
+    expect(ids(SMART)).toEqual([]);
+  });
+
+  it("leaves a smart view with tag rules alone and never inserts into search caches", async () => {
+    const { queryClient, actions, ids } = setup();
+    queryClient.setQueryData(["smart-views"], [{ id: SV, name: "T", rules: { tagIds: [TAG] } }]);
+    queryClient.setQueryData(keyOf(SMART, "manual"), pageOf([]));
+    const searchKey = [...keyOf({ type: "favorites" }, "manual"), { search: { text: "x" } }];
+    queryClient.setQueryData(searchKey, pageOf([]));
+    await act(async () => {
+      await actions.current.toggleFavorite(ITEM);
+    });
+    expect(ids(SMART)).toEqual([]);
+    expect(queryClient.getQueryData<InfiniteData<ItemsPage>>(searchKey)?.pages[0]?.items).toEqual(
+      [],
+    );
+  });
 });

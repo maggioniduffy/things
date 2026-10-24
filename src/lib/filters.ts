@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Messages } from "@/i18n/messages";
 import { kindPluralLabel } from "@/lib/kinds";
+import type { BoardItem } from "@/lib/items/queries";
 import { ITEM_KINDS, type ViewSpec } from "@/lib/views";
 
 /**
@@ -163,6 +164,44 @@ export function applyRules<Q extends RulesFilterable<Q>>(
   if (text) q = q.textSearch("search", text, { type: "websearch", config: "simple" });
 
   return q;
+}
+
+/**
+ * Whether `item` satisfies `rules`, with the semantics of `applyRules` (live items only). Returns
+ * null when the rules need data the row does not carry (`tagIds`, `query`): the caller must not
+ * guess and leaves the answer to the refetch.
+ */
+export function itemMatchesRules(
+  item: BoardItem,
+  rules: Rules,
+  now: Date = new Date(),
+): boolean | null {
+  if (unique(rules.tagIds).length > 0 || rules.query?.trim()) return null;
+  if (item.deleted_at !== null || item.archived_at !== null) return false;
+
+  const kinds = unique(rules.kinds);
+  if (kinds.length > 0 && !kinds.includes(item.kind)) return false;
+
+  const collectionIds = unique(rules.collectionIds);
+  if (
+    collectionIds.length > 0 &&
+    !(item.collection_id && collectionIds.includes(item.collection_id))
+  )
+    return false;
+
+  const domains = unique(
+    rules.domains?.map((domain) => domain.trim()).filter((domain) => DOMAIN_PATTERN.test(domain)),
+  );
+  if (domains.length > 0 && !(item.domain && domains.includes(item.domain))) return false;
+
+  if (rules.isRead !== undefined && item.is_read !== rules.isRead) return false;
+  if (rules.isFavorite !== undefined && item.is_favorite !== rules.isFavorite) return false;
+
+  if (rules.savedWithinDays !== undefined) {
+    const since = now.getTime() - rules.savedWithinDays * DAY_MS;
+    if (new Date(item.created_at).getTime() < since) return false;
+  }
+  return true;
 }
 
 /**

@@ -14,11 +14,15 @@ import { getActiveMessages } from "@/i18n/active";
 import { undoToast } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
-import type { SortMode } from "@/lib/views";
 import type { Database } from "@/types/supabase";
 import {
   addToCounts,
+  addToTagLists,
+  findCachedItem,
   insertSortedInPages,
+  isSearchKey,
+  isSortMode,
+  viewContextOf,
   itemMatchesView,
   itemStaysInView,
   patchInPages,
@@ -63,10 +67,6 @@ type Snapshot = {
   detail: BoardItem | null | undefined;
 };
 
-function isSortMode(value: unknown): value is SortMode {
-  return value === "manual" || value === "newest" || value === "oldest" || value === "title";
-}
-
 function snapshotOf(queryClient: QueryClient, id: string): Snapshot {
   return {
     lists: queryClient.getQueriesData<Items>({ queryKey: ["items"] }),
@@ -86,6 +86,7 @@ export function applyChange(
   queryClient: QueryClient,
   { before, after }: Pick<ItemChange, "before" | "after">,
 ): void {
+  const context = viewContextOf(queryClient);
   for (const [key, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
     if (!data) continue;
     const [, vk, sort] = key;
@@ -93,7 +94,7 @@ export function applyChange(
     if (!view) continue;
 
     let next = data;
-    if (after === null || !itemStaysInView(after, view)) {
+    if (after === null || !itemStaysInView(after, view, context)) {
       next = removeFromPages(data, before.id);
     } else {
       next = patchInPages(data, before.id, after);
@@ -101,9 +102,9 @@ export function applyChange(
       if (
         next === data &&
         view.type !== "tag" &&
-        view.type !== "smart" &&
+        !isSearchKey(key) &&
         isSortMode(sort) &&
-        itemMatchesView(after, view)
+        itemMatchesView(after, view, context)
       ) {
         next = insertSortedInPages(data, after, sort);
       }
@@ -363,6 +364,7 @@ export function useTagActions(): TagActions {
       ]);
       const tags = queryClient.getQueryData<string[]>(key);
       const lists = queryClient.getQueriesData<Items>({ queryKey: ["items"] });
+      const cached = attach ? findCachedItem(queryClient, itemId) : null;
 
       queryClient.setQueryData<string[]>(key, (current) => {
         const ids = current ?? [];
@@ -370,6 +372,8 @@ export function useTagActions(): TagActions {
           ? [...ids, ...tagIds.filter((tagId) => !ids.includes(tagId))]
           : ids.filter((id) => !tagIds.includes(id));
       });
+      // The item joins those tags' own views at once.
+      if (cached) addToTagLists(queryClient, cached, tagIds);
       if (!attach) {
         // The item leaves those tags' own views at once.
         for (const [listKey, data] of lists) {

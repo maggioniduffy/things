@@ -5,6 +5,7 @@ import {
   useQueryClient,
   type InfiniteData,
   type QueryClient,
+  type QueryKey,
 } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ import type { UnfurlResult } from "@/lib/unfurl/types";
 import type { Database, ItemKind } from "@/types/supabase";
 import {
   addToCounts,
+  isSearchKey,
   itemMatchesView,
   patchInPages,
   prependToPages,
@@ -319,7 +321,7 @@ function isSortMode(value: unknown): value is SortMode {
 /** Applies `edit` to every cached `["items", viewKey, sort]` list; skips lists it leaves as is. */
 function editLists(
   queryClient: QueryClient,
-  edit: (data: Items, view: ViewSpec | null, sort: SortMode | null) => Items,
+  edit: (data: Items, view: ViewSpec | null, sort: SortMode | null, key: QueryKey) => Items,
 ): void {
   for (const [key, data] of queryClient.getQueriesData<Items>({ queryKey: ["items"] })) {
     if (!data) continue;
@@ -328,15 +330,20 @@ function editLists(
       data,
       typeof vk === "string" ? viewFromKey(vk) : null,
       isSortMode(sort) ? sort : null,
+      key,
     );
     if (next !== data) queryClient.setQueryData(key, next);
   }
 }
 
 export function insertIntoCaches(queryClient: QueryClient, row: BoardItem): void {
-  editLists(queryClient, (data, view, sort) =>
+  editLists(queryClient, (data, view, sort, key) =>
     // Oldest/title lists would put it elsewhere: the refetch at the end of the capture does.
-    view && (sort === "manual" || sort === "newest") && itemMatchesView(row, view)
+    // Search results are ranked server-side: never insert into them.
+    view &&
+    !isSearchKey(key) &&
+    (sort === "manual" || sort === "newest") &&
+    itemMatchesView(row, view)
       ? prependToPages(data, row)
       : data,
   );

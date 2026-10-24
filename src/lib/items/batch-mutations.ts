@@ -15,6 +15,7 @@ import { undoToast } from "@/components/ui/sonner";
 import type { SidebarCounts } from "@/lib/sidebar/counts";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/supabase";
+import { addToTagLists } from "./cache";
 import { itemQueryKey, itemTagsQueryKey } from "./item-query";
 import { ITEM_STATE_MUTATION_KEY, REORDER_MUTATION_KEY } from "./mutation-keys";
 import type { NoteColor } from "./note-colors";
@@ -298,6 +299,9 @@ export function useBatchMove(): BatchMove {
           queryClient.setQueryData<string[]>(itemTagsQueryKey(id), (current) =>
             current && !current.includes(tagId) ? [...current, tagId] : current,
           );
+        }
+        for (const item of findCachedItems(queryClient, plan.ids)) {
+          addToTagLists(queryClient, item, [tagId]);
         }
       } else {
         for (const change of plan.changes) applyChange(queryClient, change);

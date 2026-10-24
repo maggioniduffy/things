@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { makeCounts, makeItem } from "@/test/fixtures";
 import { ITEM_KINDS, viewKey, type ViewSpec } from "@/lib/views";
 import {
+  addToTagLists,
   findCachedItem,
+  isSearchKey,
   addToCounts,
   compareForSort,
   insertSortedInPages,
@@ -302,5 +304,42 @@ describe("findCachedItem", () => {
     expect(findCachedItem(client, "drawer-item")).toBe(inDrawer);
     expect(findCachedItem(client, "missing")).toBeNull();
     expect(findCachedItem(client, null)).toBeNull();
+  });
+});
+
+describe("smart views and tag lists", () => {
+  const FAV_VIEW: ViewSpec = { type: "smart", viewId: "sv1" };
+  const ctx = { smartRules: (id: string) => (id === "sv1" ? { isFavorite: true } : undefined) };
+  const fav = makeItem({ is_favorite: true });
+  const plain = makeItem({ is_favorite: false });
+
+  it("judges a smart view by its known rules and keeps today's answer otherwise", () => {
+    expect(itemMatchesView(fav, FAV_VIEW, ctx)).toBe(true);
+    expect(itemMatchesView(plain, FAV_VIEW, ctx)).toBe(false);
+    expect(itemMatchesView(fav, FAV_VIEW)).toBe(false);
+    expect(itemStaysInView(plain, FAV_VIEW, ctx)).toBe(false);
+    expect(itemStaysInView(plain, FAV_VIEW)).toBe(true);
+    const tagged = { smartRules: () => ({ tagIds: [COLLECTION] }) };
+    expect(itemMatchesView(plain, FAV_VIEW, tagged)).toBe(false);
+    expect(itemStaysInView(plain, FAV_VIEW, tagged)).toBe(true);
+  });
+
+  it("recognizes search keys by their extra segment", () => {
+    expect(isSearchKey(["items", "all", "newest"])).toBe(false);
+    expect(isSearchKey(["items", "all", "newest", { search: {} }])).toBe(true);
+  });
+
+  it("adds an item to plain tag lists only, never to search results", () => {
+    const qc = new QueryClient();
+    const empty = { pages: [{ items: [], nextCursor: null }], pageParams: [null] };
+    qc.setQueryData(["items", "tag:t1", "manual"], empty);
+    qc.setQueryData(["items", "tag:t1", "manual", { search: { text: "x" } }], empty);
+    qc.setQueryData(["items", "tag:t2", "manual"], empty);
+    addToTagLists(qc, plain, ["t1"]);
+    const ids = (key: unknown[]) =>
+      qc.getQueryData<InfiniteData<ItemsPage>>(key)?.pages[0]?.items.map((i) => i.id);
+    expect(ids(["items", "tag:t1", "manual"])).toEqual([plain.id]);
+    expect(ids(["items", "tag:t1", "manual", { search: { text: "x" } }])).toEqual([]);
+    expect(ids(["items", "tag:t2", "manual"])).toEqual([]);
   });
 });
