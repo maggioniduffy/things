@@ -235,6 +235,17 @@ export function describeRules(
 /** Rules the `search_items` RPC accepts: smart-view rules plus the scope of the view being searched. */
 export type SearchRules = Rules & { scope?: "live" | "archived" | "trashed"; inbox?: boolean };
 
+/**
+ * Search rules as sent to `search_items`: `cleanRules`, plus `scope` only when it is not the
+ * default and `inbox` only when true, so absent filters are absent keys (the RPC errors on nulls).
+ */
+export function cleanSearchRules(rules: SearchRules): SearchRules {
+  const clean: SearchRules = cleanRules(rules);
+  if (rules.scope === "archived" || rules.scope === "trashed") clean.scope = rules.scope;
+  if (rules.inbox === true) clean.inbox = true;
+  return clean;
+}
+
 /** The `search_items` rules that make a search stay inside the view it was opened from. */
 export function viewToSearchRules(view: ViewSpec, smartRules?: Rules): SearchRules {
   switch (view.type) {
