@@ -50,6 +50,14 @@ type UiState = {
   selectAll: (ids: readonly string[]) => void;
   clearSelection: () => void;
 
+  /** The keyboard cursor (J/K): the card shortcuts act on when nothing is selected. */
+  cursorId: string | null;
+  setCursor: (id: string | null) => void;
+
+  /** The dialog a board shortcut opened (M, T, Space); the board renders it. */
+  shortcutDialog: "move" | "tag" | "quick-look" | null;
+  setShortcutDialog: (dialog: "move" | "tag" | "quick-look" | null) => void;
+
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   mobileSidebarOpen: boolean;
@@ -156,6 +164,12 @@ export const useUiStore = create<UiState>()(
             ? { selectedIds: [], anchorId: null }
             : state,
         ),
+
+      cursorId: null,
+      setCursor: (cursorId) => set({ cursorId }),
+
+      shortcutDialog: null,
+      setShortcutDialog: (shortcutDialog) => set({ shortcutDialog }),
 
       sidebarCollapsed: false,
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),

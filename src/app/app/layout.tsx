@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { GuestBanner } from "@/components/account/guest-banner";
 import { AppShell } from "@/components/app-shell/app-shell";
+import { ShortcutsHost } from "@/hooks/use-shortcuts";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ViewerProvider } from "@/components/providers/viewer-provider";
 import { getT } from "@/i18n/server";
@@ -48,7 +49,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <HydrationBoundary state={dehydrate(queryClient)}>
           <div className="bg-paper flex h-dvh flex-col">
             {isGuest ? <GuestBanner /> : null}
-            <AppShell email={email}>{children}</AppShell>
+            <AppShell email={email}>
+              <ShortcutsHost />
+              {children}
+            </AppShell>
           </div>
         </HydrationBoundary>
       </ViewerProvider>

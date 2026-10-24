@@ -143,6 +143,19 @@ export const items = {
     noCollection: "No collection found.",
   },
 
+  shortcuts: {
+    tagTitle: (n: number) => `Add a tag to ${n} ${n === 1 ? "item" : "items"}`,
+    tagDescription: "Pick a tag, or type a name to create one.",
+    findTag: "Find or create a tag",
+    noTag: "No tags found.",
+    createTag: (name: string) => `Create tag “${name}”`,
+    quickLookTitle: "Quick look",
+    quickLookDescription:
+      "Preview of the highlighted item. Enter opens it, Space or Escape closes.",
+    quickLookEmpty: "Nothing to preview.",
+    cursorHint: "Highlighted with the keyboard",
+  },
+
   toasts: {
     // Single-item state changes
     errTrash: "Couldn't move to trash.",

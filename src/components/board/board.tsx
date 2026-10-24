@@ -3,6 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useMemo, useRef, type MouseEvent } from "react";
 import { useBoardDnd } from "@/components/dnd/board-dnd-provider";
+import { MoveDialog } from "@/components/canvas/move-dialog";
 import { useOpenItem } from "@/components/drawer/item-param";
 import { ItemDrawerHost } from "@/components/drawer/item-drawer";
 import { ExternalDropZone } from "@/components/capture/external-drop-zone";
@@ -11,6 +12,8 @@ import { QuickAdd } from "@/components/capture/quick-add";
 import { CanvasView } from "@/components/canvas/canvas-view";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/client";
+import { useBatchMove } from "@/lib/items/batch-mutations";
+import type { BoardItem } from "@/lib/items/queries";
 import { useRetryEnrich } from "@/lib/items/mutations";
 import { itemsInfiniteQueryOptions } from "@/lib/items/queries";
 import { createClient } from "@/lib/supabase/client";
@@ -21,9 +24,49 @@ import { EmptyState } from "./empty-state";
 import type { CardDnd } from "./board-cards";
 import { ItemGrid } from "./item-grid";
 import { ItemList } from "./item-list";
+import { QuickLook } from "./quick-look";
 import { SelectionBar } from "./selection-bar";
 import { SortableItems } from "./sortable-items";
+import { TagPickerDialog } from "./tag-picker-dialog";
 import { Toolbar, useEffectiveViewMode, useViewInfo } from "./toolbar";
+
+/** The dialogs the M, T and Space keys open (see `useShortcuts`). */
+function ShortcutDialogs({ view, items }: { view: ViewSpec; items: readonly BoardItem[] }) {
+  const dialog = useUiStore((state) => state.shortcutDialog);
+  const setDialog = useUiStore((state) => state.setShortcutDialog);
+  const selectedIds = useUiStore((state) => state.selectedIds);
+  const cursorId = useUiStore((state) => state.cursorId);
+  const clearSelection = useUiStore((state) => state.clearSelection);
+  const move = useBatchMove();
+
+  // Same target rule as the keys: the selection that is on screen, else the cursor card.
+  const loaded = new Set(items.map((item) => item.id));
+  const selected = selectedIds.filter((id) => loaded.has(id));
+  const ids = selected.length > 0 ? selected : cursorId && loaded.has(cursorId) ? [cursorId] : [];
+
+  return (
+    <>
+      {/* Mounted only while open: each one runs its own query. */}
+      {dialog === "move" ? (
+        <MoveDialog
+          open
+          onOpenChange={(open) => setDialog(open ? "move" : null)}
+          count={ids.length}
+          currentCollectionId={view.type === "collection" ? view.collectionId : null}
+          onPick={(collectionId, label) =>
+            void move(ids, { type: "collection", id: collectionId }, label).then((saved) => {
+              if (saved) clearSelection();
+            })
+          }
+        />
+      ) : null}
+      {dialog === "tag" ? (
+        <TagPickerDialog open onOpenChange={(open) => setDialog(open ? "tag" : null)} ids={ids} />
+      ) : null}
+      <QuickLook items={items} />
+    </>
+  );
+}
 
 type BoardProps = { view: ViewSpec; sort: SortMode };
 
@@ -33,11 +76,15 @@ export function Board({ view, sort }: BoardProps) {
   const info = useViewInfo(view);
   const viewMode = useEffectiveViewMode(view);
   const clearSelection = useUiStore((state) => state.clearSelection);
+  const setCursor = useUiStore((state) => state.setCursor);
+  const setShortcutDialog = useUiStore((state) => state.setShortcutDialog);
 
   const currentViewKey = viewKey(view);
   useEffect(() => {
     clearSelection();
-  }, [currentViewKey, clearSelection]);
+    setCursor(null);
+    setShortcutDialog(null);
+  }, [currentViewKey, clearSelection, setCursor, setShortcutDialog]);
 
   const boardDnd = useBoardDnd();
   const wasJustDragged = boardDnd?.wasJustDragged;
@@ -48,7 +95,8 @@ export function Board({ view, sort }: BoardProps) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (useUiStore.getState().selectedIds.length === 0) return;
+      const { selectedIds, cursorId } = useUiStore.getState();
+      if (selectedIds.length === 0 && cursorId === null) return;
       if (isDragActive?.() || wasJustDragged?.()) return;
       if (document.querySelector('[role="dialog"]')) return;
       const target = event.target;
@@ -59,6 +107,7 @@ export function Board({ view, sort }: BoardProps) {
         return;
       }
       useUiStore.getState().clearSelection();
+      useUiStore.getState().setCursor(null);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -266,6 +315,7 @@ export function Board({ view, sort }: BoardProps) {
         <ItemDrawerHost view={view} />
       </Suspense>
       {canvas ? null : <SelectionBar view={view} itemIds={allItems.map((item) => item.id)} />}
+      {canvas ? null : <ShortcutDialogs view={view} items={allItems} />}
       <PasteListener view={view} />
       <ExternalDropZone view={view} />
       <QuickAdd view={view} />
