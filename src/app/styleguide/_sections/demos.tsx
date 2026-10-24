@@ -5,6 +5,7 @@ import { CopyIcon, InboxIcon, PencilIcon, PlusIcon, StarIcon, Trash2Icon } from 
 import { Button } from "@/components/ui/button";
 import {
   Command,
+  CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -228,6 +229,43 @@ export function CommandDemo() {
         </CommandGroup>
       </CommandList>
     </Command>
+  );
+}
+
+/** The palette's dialog shell: a button opens it. The real palette is bound to ⌘K in the app. */
+export function CommandDialogDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        Open command dialog
+      </Button>
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput placeholder="Type a command…" />
+        <CommandList>
+          <CommandEmpty>No results.</CommandEmpty>
+          <CommandGroup heading="Actions">
+            <CommandItem onSelect={() => setOpen(false)}>
+              <PlusIcon /> Add item
+            </CommandItem>
+            <CommandItem onSelect={() => setOpen(false)}>
+              <CopyIcon /> Save clipboard
+              <CommandShortcut>⌘V</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading="Go to">
+            <CommandItem onSelect={() => setOpen(false)}>
+              <InboxIcon /> Inbox
+              <CommandShortcut>G I</CommandShortcut>
+            </CommandItem>
+            <CommandItem onSelect={() => setOpen(false)}>
+              <StarIcon /> Favorites
+              <CommandShortcut>G F</CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </>
   );
 }
 

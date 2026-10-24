@@ -150,7 +150,9 @@ describe("usePasteCopies", () => {
     });
 
     expect(cachedIds(queryClient)).toEqual([]);
-    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy());
+    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy(), {
+      action: { label: "Add email", onClick: expect.any(Function) },
+    });
   });
 
   it("says nothing to paste when every source is gone", async () => {

@@ -767,9 +767,24 @@ describe("insert failure", () => {
     fake.state.insertResult = () => ({ error: { message: "guest_quota_exceeded", code: "P0001" } });
     await act(() => capture.current.captureFile(file("a.pdf", "application/pdf", 1000)));
 
-    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy());
+    expect(mocks.toast.error).toHaveBeenCalledWith(guestQuotaCopy(), {
+      action: { label: "Add email", onClick: expect.any(Function) },
+    });
     expect(ids(itemsQueryKey(INBOX, "manual"))).toEqual([EXISTING.id]);
     expect(mocks.uploadFile).not.toHaveBeenCalled();
+  });
+
+  it("opens the upgrade dialog from the quota toast's Add email action", async () => {
+    const { fake, capture } = setup({ isGuest: true });
+    fake.state.insertResult = () => ({ error: { message: "guest_quota_exceeded", code: "P0001" } });
+    await act(() => capture.current.captureFile(file("a.pdf", "application/pdf", 1000)));
+
+    const options = mocks.toast.error.mock.calls[0]?.[1] as {
+      action: { onClick: () => void };
+    };
+    expect(useUiStore.getState().upgradeOpen).toBe(false);
+    options.action.onClick();
+    expect(useUiStore.getState().upgradeOpen).toBe(true);
   });
 });
 
@@ -899,14 +914,14 @@ describe("capturing a file", () => {
   });
 
   it.each([
-    ["too_large", "Files can be up to 50 MB.", false],
-    ["guest_file_too_large", "Guest files can be up to 10 MB.", false],
-    ["guest_quota", guestQuotaCopy(), false],
-    ["network", "Couldn't upload a.pdf.", true],
-    ["unknown", "Couldn't upload a.pdf.", true],
+    ["too_large", "Files can be up to 50 MB.", undefined],
+    ["guest_file_too_large", "Guest files can be up to 10 MB.", undefined],
+    ["guest_quota", guestQuotaCopy(), "Add email"],
+    ["network", "Couldn't upload a.pdf.", "Retry"],
+    ["unknown", "Couldn't upload a.pdf.", "Retry"],
   ] as const)(
     "rolls the card back when the upload fails with %s",
-    async (code, message, hasRetry) => {
+    async (code, message, actionLabel) => {
       const { fake, capture, queryClient, ids } = setup({ isGuest: true });
       mocks.uploadFile.mockRejectedValue(new UploadError(code));
       await act(() => capture.current.captureFile(file("a.pdf", "application/pdf", 1000)));
@@ -923,7 +938,7 @@ describe("capturing a file", () => {
         { action?: { label: string; onClick: () => void } }?,
       ];
       expect(call[0]).toBe(message);
-      expect(call[1]?.action?.label).toBe(hasRetry ? "Retry" : undefined);
+      expect(call[1]?.action?.label).toBe(actionLabel);
     },
   );
 

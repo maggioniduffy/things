@@ -14,6 +14,8 @@
   --color-ink-muted: #4a4a52;
   --color-ink-subtle: #6b6b74; /* darkened from the plan's #8B8B94 (3.1:1) to meet AA 4.5:1 on paper */
   --color-line: rgb(15 15 18 / 0.12);
+  /* Highlighted menu and command rows: 1.55:1 against the popover surface over paper (the old 6% ink was 1.13:1). */
+  --color-highlight: color-mix(in srgb, var(--color-ink) 20%, transparent);
 
   /* Note surfaces: white and graphite (dark, with inverse ink) next to the aurora tints */
   --color-note-white: #ffffff;

@@ -71,6 +71,10 @@ type UiState = {
   /** What the opener wants the new thing to carry (a tag view's tag); cleared when it closes. */
   quickAddDefaults: QuickAddDefaults | null;
   setQuickAddOpen: (open: boolean, defaults?: QuickAddDefaults) => void;
+
+  /** The guest "Add email" dialog; the banner, the palette and the quota toasts open it. */
+  upgradeOpen: boolean;
+  setUpgradeOpen: (open: boolean) => void;
 };
 
 export const UI_STORE_KEY = "things-ui";
@@ -183,6 +187,9 @@ export const useUiStore = create<UiState>()(
       quickAddDefaults: null,
       setQuickAddOpen: (quickAddOpen, defaults) =>
         set({ quickAddOpen, quickAddDefaults: quickAddOpen ? (defaults ?? null) : null }),
+
+      upgradeOpen: false,
+      setUpgradeOpen: (upgradeOpen) => set({ upgradeOpen }),
     }),
     {
       name: UI_STORE_KEY,

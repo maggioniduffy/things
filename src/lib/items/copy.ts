@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { CanvasClipboard } from "@/stores/canvas-clipboard";
 import type { Database } from "@/types/supabase";
 import {
-  guestQuotaCopy,
+  guestQuotaToast,
   reservePositions,
   insertIntoCaches,
   isGuestQuotaError,
@@ -311,7 +311,8 @@ export function usePasteCopies(
           const kept = inserted && (await client.from("items").delete().in("id", newIds)).error;
           if (!kept) await removeObjects(client, copied);
           const msgs = getActiveMessages().items.toasts;
-          toast.error(isQuotaFailure(error) ? guestQuotaCopy() : msgs.errPaste);
+          if (isQuotaFailure(error)) guestQuotaToast();
+          else toast.error(msgs.errPaste);
           return [];
         }
 

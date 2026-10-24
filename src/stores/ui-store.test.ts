@@ -244,3 +244,22 @@ describe("persistence", () => {
     expect(useUiStore.getState().viewMode).toBe("list");
   });
 });
+
+describe("upgrade dialog", () => {
+  it("opens and closes through the store, apart from the palette and quick add", () => {
+    expect(useUiStore.getState().upgradeOpen).toBe(false);
+    useUiStore.getState().setUpgradeOpen(true);
+    expect(useUiStore.getState()).toMatchObject({
+      upgradeOpen: true,
+      paletteOpen: false,
+      quickAddOpen: false,
+    });
+    useUiStore.getState().setUpgradeOpen(false);
+    expect(useUiStore.getState().upgradeOpen).toBe(false);
+  });
+
+  it("is not persisted", () => {
+    useUiStore.getState().setUpgradeOpen(true);
+    expect(localStorage.getItem(UI_STORE_KEY) ?? "").not.toContain("upgradeOpen");
+  });
+});

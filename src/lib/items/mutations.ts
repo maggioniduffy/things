@@ -20,6 +20,7 @@ import type { SidebarCounts } from "@/lib/sidebar/counts";
 import type { SidebarCollection } from "@/lib/sidebar/queries";
 import { attachTagNames } from "@/lib/tags/mutations";
 import { SORT_MODES, viewHref, viewKey, type SortMode, type ViewSpec } from "@/lib/views";
+import { useUiStore } from "@/stores/ui-store";
 import { useUploadStore } from "@/stores/upload-store";
 import type { UnfurlResult } from "@/lib/unfurl/types";
 import type { Database, ItemKind } from "@/types/supabase";
@@ -70,6 +71,19 @@ export function captureTargetFor(view: ViewSpec): CaptureTarget {
 
 /** Copy is read where it is shown, so it follows the active language. */
 export const guestQuotaCopy = (): string => getActiveMessages().items.toasts.guestQuota;
+
+/**
+ * The guest-quota error toast, with an "Add email" action that opens the upgrade dialog (the
+ * only way out of a full quota). Quota errors only happen to guests.
+ */
+export function guestQuotaToast(message: string = guestQuotaCopy()): void {
+  toast.error(message, {
+    action: {
+      label: getActiveMessages().auth.guest.addEmail,
+      onClick: () => useUiStore.getState().setUpgradeOpen(true),
+    },
+  });
+}
 
 /** Toast copy for an upload failure (the Retry action is added by the caller). */
 export function uploadErrorMessage(code: UploadErrorCode, fileName: string): string {
@@ -503,6 +517,8 @@ async function enrichFile(
         toast.error(message, {
           action: { label: getActiveMessages().items.toasts.retry, onClick: retry },
         });
+      } else if (code === "guest_quota") {
+        guestQuotaToast(message);
       } else {
         toast.error(message);
       }
@@ -570,11 +586,8 @@ function useInsertItem() {
     onError: (error, { row }) => {
       // Take out exactly this card (a snapshot restore would also undo other captures in flight).
       removeFromCaches(queryClient, row);
-      toast.error(
-        isGuestQuotaError(error)
-          ? guestQuotaCopy()
-          : getActiveMessages().items.toasts.errSaveFile(row.file_name),
-      );
+      if (isGuestQuotaError(error)) guestQuotaToast();
+      else toast.error(getActiveMessages().items.toasts.errSaveFile(row.file_name));
     },
   });
 }

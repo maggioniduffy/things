@@ -1,0 +1,35 @@
+/** The ⌘K command palette: search results, actions and jump-to targets. */
+export const palette = {
+  placeholder: "Search things, run a command or jump to…",
+  untitled: "Untitled",
+  empty: "No matches.",
+  searching: "Searching…",
+  searchFailed: "Couldn't search your things.",
+  groups: {
+    results: "Results",
+    actions: "Actions",
+    goTo: "Go to",
+  },
+  actions: {
+    addItem: "Add item",
+    saveClipboard: "Save clipboard",
+    open: "Open",
+    favorite: "Add to favorites",
+    unfavorite: "Remove from favorites",
+    archive: "Archive",
+    unarchive: "Unarchive",
+    trash: "Move to trash",
+    moveTo: "Move to collection…",
+    addTag: "Add tag…",
+  },
+  go: {
+    inbox: "Inbox",
+    all: "All",
+    unread: "Unread",
+    favorites: "Favorites",
+    archive: "Archive",
+    trash: "Trash",
+  },
+  clipboardDenied: "Couldn't read the clipboard. Allow clipboard access and try again.",
+  clipboardEmpty: "The clipboard is empty.",
+};
