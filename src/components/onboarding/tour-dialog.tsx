@@ -170,7 +170,7 @@ function TourSteps({
         data-slot="tour-card"
         style={cardAt ?? undefined}
         className={cn(
-          "rounded-card border-line bg-surface text-ink shadow-card fixed z-50 grid w-full max-w-[min(22rem,calc(100%-2rem))] gap-4 border p-5 outline-hidden",
+          "rounded-card border-line bg-note-white text-ink shadow-card fixed z-50 grid w-full max-w-[min(22rem,calc(100%-2rem))] gap-4 border p-5 outline-hidden",
           cardAt
             ? "motion-safe:transition-[top,left] motion-safe:duration-(--duration-base)"
             : "inset-0 m-auto h-fit",
