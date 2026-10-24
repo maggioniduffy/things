@@ -1,16 +1,18 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { itemsQueryKey } from "@/lib/items/queries";
+import { itemsQueryKey, itemsSearchQueryKey } from "@/lib/items/queries";
+import { parseSearchParams } from "@/lib/search-params";
 import { useUiStore } from "@/stores/ui-store";
-import type { ViewSpec } from "@/lib/views";
+import type { SortMode, ViewSpec } from "@/lib/views";
 import { makeItem, makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
 import { Board } from "./board";
 
+const nav = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: nav.replace }),
   usePathname: () => "/app",
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(nav.search),
 }));
 
 // A Supabase stand-in: every builder method returns the chain, and awaiting it yields the next
@@ -63,6 +65,8 @@ function seedItems(client: ReturnType<typeof makeTestQueryClient>, titles: strin
 describe("Board", () => {
   beforeEach(() => {
     supabase.state.queue = [];
+    nav.replace.mockClear();
+    nav.search = "";
     useUiStore.setState({ viewMode: "grid", selectedIds: [] });
   });
 
@@ -204,6 +208,58 @@ describe("Board", () => {
       renderWithQuery(<Board view={{ type: "trash" }} sort="manual" />, client);
       expect(screen.getByText("Gone")).toBeInTheDocument();
       expect(handles()).toHaveLength(0);
+    });
+  });
+
+  describe("searching", () => {
+    function seedSearch(
+      client: ReturnType<typeof makeTestQueryClient>,
+      titles: string[],
+      sort: SortMode = "manual",
+    ) {
+      const search = parseSearchParams(new URLSearchParams(nav.search));
+      if (!search) throw new Error("no search");
+      client.setQueryData(itemsSearchQueryKey(INBOX, sort, search), {
+        pages: [
+          {
+            items: titles.map((title, index) =>
+              makeItem({ id: `00000000-0000-4000-8000-00000000010${index}`, title }),
+            ),
+            nextCursor: null,
+          },
+        ],
+        pageParams: [null],
+      });
+    }
+
+    it("shows the ranked results, with the chips row and no reordering", () => {
+      nav.search = "q=pan&kind=note";
+      const client = makeTestQueryClient();
+      seedSearch(client, ["Receta de pan", "Pan dulce"]);
+      renderWithQuery(<Board view={INBOX} sort="manual" />, client);
+      const titles = screen.getAllByText(/pan/i).map((node) => node.textContent);
+      expect(titles).toEqual(["Receta de pan", "Pan dulce"]);
+      expect(screen.getByRole("group", { name: "Search filters" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Remove filter: Notes" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Reorder / })).not.toBeInTheDocument();
+    });
+
+    it("shows No matches with a Clear search action", async () => {
+      nav.search = "q=zzz&sort=title";
+      const client = makeTestQueryClient();
+      seedSearch(client, [], "title");
+      renderWithQuery(<Board view={INBOX} sort="title" />, client);
+      expect(screen.getByRole("heading", { level: 2, name: "No matches" })).toBeInTheDocument();
+      const empty = document.querySelector<HTMLElement>('[data-slot="no-matches"]')!;
+      await userEvent.click(within(empty).getByRole("button", { name: "Clear search" }));
+      expect(nav.replace).toHaveBeenCalledWith("/app?sort=title", { scroll: false });
+    });
+
+    it("does not show the chips row when not searching", () => {
+      const client = makeTestQueryClient();
+      seedItems(client, ["First"]);
+      renderWithQuery(<Board view={INBOX} sort="manual" />, client);
+      expect(screen.queryByRole("group", { name: "Search filters" })).not.toBeInTheDocument();
     });
   });
 });

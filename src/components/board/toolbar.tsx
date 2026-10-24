@@ -10,7 +10,9 @@ import {
   MenuIcon,
   PanelLeftIcon,
   PlusIcon,
+  SearchIcon,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +30,7 @@ import type { Messages } from "@/i18n/messages";
 import { describeRules, parseRules } from "@/lib/filters";
 import { effectiveSort } from "@/lib/items/queries";
 import { kindPluralLabel } from "@/lib/kinds";
+import { NO_SEARCH, isEmptySearch, parseSearchParams, searchParamsHref } from "@/lib/search-params";
 import {
   collectionsQueryOptions,
   smartViewsQueryOptions,
@@ -138,6 +141,71 @@ function isSortMode(value: string): value is SortMode {
   return (SORT_MODES as readonly string[]).includes(value);
 }
 
+/** Debounce between the last keystroke and the `?q=` write. */
+const SEARCH_DEBOUNCE_MS = 250;
+
+/**
+ * The board's search field: typing writes `?q=` after a pause (other params are kept), Escape
+ * clears and blurs, and the text follows the URL when something else changes it (Clear, back).
+ */
+function BoardSearchField({ placeholder }: { placeholder: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const paramString = searchParams.toString();
+  const urlQ = parseSearchParams(searchParams)?.q ?? "";
+
+  const [text, setText] = useState(urlQ);
+  const written = useRef(urlQ);
+  const latest = useRef({ pathname, paramString });
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    latest.current = { pathname, paramString };
+  });
+  useEffect(() => {
+    if (urlQ !== written.current) {
+      written.current = urlQ;
+      setText(urlQ);
+    }
+  }, [urlQ]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  function commit(value: string) {
+    const q = value.replace(/\s+/g, " ").trim();
+    if (q === written.current) return;
+    written.current = q;
+    const { pathname: path, paramString: params } = latest.current;
+    const next = { ...(parseSearchParams(new URLSearchParams(params)) ?? NO_SEARCH), q };
+    router.replace(searchParamsHref(path, params, isEmptySearch(next) ? null : next), {
+      scroll: false,
+    });
+  }
+
+  return (
+    <SearchField
+      data-search-input=""
+      value={text}
+      hint="/"
+      placeholder={placeholder}
+      aria-label={placeholder}
+      className="hidden w-56 sm:block"
+      onValueChange={(value) => {
+        setText(value);
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => commit(value), SEARCH_DEBOUNCE_MS);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        clearTimeout(timer.current);
+        setText("");
+        commit("");
+        event.currentTarget.blur();
+      }}
+    />
+  );
+}
+
 type ToolbarProps = { view: ViewSpec; sort: SortMode };
 
 /** Reads `useSearchParams`, so render it inside a Suspense boundary. */
@@ -205,13 +273,17 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         ) : null}
       </div>
 
-      <SearchField
-        disabled
-        hint={null}
-        placeholder={tb.search}
-        aria-label={tb.search}
-        className="hidden w-56 sm:block"
-      />
+      <BoardSearchField placeholder={tb.search} />
+      {/* Below sm the field is hidden; the palette does the searching there. */}
+      <IconButton
+        variant="ghost"
+        size="sm"
+        label={tb.search}
+        className="sm:hidden"
+        onClick={() => useUiStore.getState().setPaletteOpen(true)}
+      >
+        <SearchIcon />
+      </IconButton>
 
       {/* The canvas has its own marquee selection and menu. */}
       {viewMode === "canvas" ? null : (

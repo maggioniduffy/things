@@ -1,8 +1,17 @@
 import { infiniteQueryOptions } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Item } from "@/types/supabase";
-import { applyRules, isRuleEmbedKey, parseRules, ruleSelect, type Rules } from "@/lib/filters";
+import {
+  applyRules,
+  isRuleEmbedKey,
+  parseRules,
+  ruleSelect,
+  viewToSearchRules,
+  type Rules,
+} from "@/lib/filters";
+import { mergeSearchRules, type BoardSearch } from "@/lib/search-params";
 import { viewKey, type SortMode, type ViewSpec } from "@/lib/views";
+import { searchItems } from "./search";
 
 type Client = SupabaseClient<Database>;
 
@@ -73,6 +82,11 @@ export function itemsQueryKey(
   sort: SortMode,
 ): readonly ["items", string, SortMode] {
   return ["items", viewKey(view), effectiveSort(view, sort)] as const;
+}
+
+/** Key of a search in a view: the plain key plus a `{ search }` segment, still under ["items"]. */
+export function itemsSearchQueryKey(view: ViewSpec, sort: SortMode, search: BoardSearch) {
+  return [...itemsQueryKey(view, sort), { search }] as const;
 }
 
 /**
@@ -241,10 +255,39 @@ export async function fetchItemsPage(
   return { items, nextCursor };
 }
 
-export function itemsInfiniteQueryOptions(client: Client, view: ViewSpec, sort: SortMode) {
+/**
+ * One ranked page of a search inside `view` (the view's rules plus the chips), through the
+ * `search_items` RPC. No cursor: the RPC returns at most `SEARCH_LIMIT` rows in rank order.
+ */
+async function fetchSearchPage(
+  client: Client,
+  view: ViewSpec,
+  search: BoardSearch,
+): Promise<ItemsPage> {
+  let smartRules: Rules | undefined;
+  if (view.type === "smart") {
+    const rules = await fetchSmartViewRules(client, view.viewId);
+    if (!rules) return { items: [], nextCursor: null };
+    smartRules = rules;
+  }
+  const rules = mergeSearchRules(viewToSearchRules(view, smartRules), search);
+  if (rules === "empty") return { items: [], nextCursor: null };
+  return { items: await searchItems(client, search.q, rules), nextCursor: null };
+}
+
+/** Pass `search` (from `parseSearchParams`) to list ranked matches instead of the plain view. */
+export function itemsInfiniteQueryOptions(
+  client: Client,
+  view: ViewSpec,
+  sort: SortMode,
+  search?: BoardSearch | null,
+) {
   return infiniteQueryOptions({
-    queryKey: itemsQueryKey(view, sort),
-    queryFn: ({ pageParam }) => fetchItemsPage(client, view, sort, pageParam),
+    queryKey: search ? itemsSearchQueryKey(view, sort, search) : itemsQueryKey(view, sort),
+    queryFn: ({ pageParam }): Promise<ItemsPage> =>
+      search
+        ? fetchSearchPage(client, view, search)
+        : fetchItemsPage(client, view, sort, pageParam),
     initialPageParam: null as ItemsCursor | null,
     getNextPageParam: (lastPage: ItemsPage) => lastPage.nextCursor ?? undefined,
   });

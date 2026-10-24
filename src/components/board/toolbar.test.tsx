@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeTestQueryClient, renderWithQuery } from "@/test/fixtures";
@@ -8,11 +8,12 @@ import { Toolbar } from "./toolbar";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
   pathname: "/app/f/pdf",
   search: "",
 }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: nav.push }),
+  useRouter: () => ({ push: nav.push, replace: nav.replace }),
   usePathname: () => nav.pathname,
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
@@ -51,6 +52,7 @@ function renderToolbar(view: ViewSpec, sort: SortMode = "manual") {
 describe("Toolbar", () => {
   beforeEach(() => {
     nav.push.mockClear();
+    nav.replace.mockClear();
     nav.pathname = "/app/f/pdf";
     nav.search = "";
     useUiStore.setState({
@@ -58,6 +60,7 @@ describe("Toolbar", () => {
       sidebarCollapsed: false,
       mobileSidebarOpen: false,
       quickAddOpen: false,
+      paletteOpen: false,
     });
   });
 
@@ -223,10 +226,60 @@ describe("Toolbar", () => {
     });
   });
 
-  it("has a disabled search field", () => {
-    renderToolbar({ type: "inbox" });
-    expect(screen.getByRole("searchbox", { name: "Search" })).toBeDisabled();
-    expect(screen.getByPlaceholderText("Search")).toBeInTheDocument();
+  describe("search", () => {
+    it("has an enabled search field marked for the / shortcut", () => {
+      renderToolbar({ type: "inbox" });
+      const field = screen.getByRole("searchbox", { name: "Search" });
+      expect(field).toBeEnabled();
+      expect(field).toHaveAttribute("data-search-input");
+      expect(screen.getByPlaceholderText("Search")).toBeInTheDocument();
+    });
+
+    it("writes ?q= after the debounce, keeping sort and item", async () => {
+      nav.search = "sort=title&item=abc";
+      renderToolbar({ type: "kind", kind: "pdf" }, "title");
+      await userEvent.type(screen.getByRole("searchbox", { name: "Search" }), "cancion");
+      expect(nav.replace).not.toHaveBeenCalled();
+      await waitFor(() => expect(nav.replace).toHaveBeenCalledTimes(1));
+      const [href, options] = nav.replace.mock.calls[0] as [string, { scroll: boolean }];
+      expect(href.startsWith("/app/f/pdf?")).toBe(true);
+      const params = new URLSearchParams(href.split("?")[1]);
+      expect(params.get("q")).toBe("cancion");
+      expect(params.get("sort")).toBe("title");
+      expect(params.get("item")).toBe("abc");
+      expect(options).toEqual({ scroll: false });
+    });
+
+    it("shows the current ?q= in the field", () => {
+      nav.search = "q=pan";
+      renderToolbar({ type: "inbox" });
+      expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("pan");
+    });
+
+    it("Escape clears the search at once and blurs the field", async () => {
+      nav.search = "q=pan&sort=title";
+      renderToolbar({ type: "inbox" });
+      const field = screen.getByRole("searchbox", { name: "Search" });
+      await userEvent.click(field);
+      await userEvent.keyboard("{Escape}");
+      expect(field).toHaveValue("");
+      expect(field).not.toHaveFocus();
+      expect(nav.replace).toHaveBeenCalledWith("/app/f/pdf?sort=title", { scroll: false });
+    });
+
+    it("keeps chips when the text is cleared", async () => {
+      nav.search = "q=pan&kind=note";
+      renderToolbar({ type: "inbox" });
+      await userEvent.click(screen.getByRole("searchbox", { name: "Search" }));
+      await userEvent.keyboard("{Escape}");
+      expect(nav.replace).toHaveBeenCalledWith("/app/f/pdf?kind=note", { scroll: false });
+    });
+
+    it("has a search button for phones that opens the palette", async () => {
+      renderToolbar({ type: "inbox" });
+      await userEvent.click(screen.getByRole("button", { name: "Search", hidden: true }));
+      expect(useUiStore.getState().paletteOpen).toBe(true);
+    });
   });
 
   it("has a primary Add button that opens quick add", async () => {

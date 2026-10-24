@@ -172,6 +172,14 @@ test.describe("keyboard shortcuts", () => {
     await expect(page.locator('[data-cursor="true"]')).toHaveCount(0);
   });
 
+  test("/ focuses the search field", async ({ page, context }) => {
+    await startGuest(page);
+    await seed(page, context);
+
+    await page.keyboard.press("/");
+    await expect(page.getByRole("searchbox", { name: "Search" })).toBeFocused();
+  });
+
   test("Cmd/Ctrl+K toggles the palette state from anywhere", async ({ page, context }) => {
     await startGuest(page);
     await seed(page, context);
