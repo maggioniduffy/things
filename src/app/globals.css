@@ -211,7 +211,7 @@
  * rather than shrunk. Pinch zoom is untouched (the viewport is not locked).
  */
 @media (pointer: coarse) {
-  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [autocomplete="one-time-code"], .text-card),
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"], [autocomplete="one-time-code"], .text-\[length\:var\(--text-card\)\]),
   textarea,
   select,
   [contenteditable]:not([contenteditable="false"]) {
