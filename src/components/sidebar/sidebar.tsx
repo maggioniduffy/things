@@ -98,7 +98,7 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 pr-2 pl-4">
         {onClose ? (
           // A pointer shortcut; the icon button next to it is the labelled, focusable control.
-          <button type="button" tabIndex={-1} onClick={onClose} className="cursor-pointer">
+          <button type="button" tabIndex={-1} onClick={onClose} className="flex cursor-pointer">
             <Logo />
           </button>
         ) : (
