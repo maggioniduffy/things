@@ -126,7 +126,7 @@ export function FilterChips({ search, items }: FilterChipsProps) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm">
-            <PlusIcon />
+            <PlusIcon strokeWidth={2.75} />
             {s.addFilter}
           </Button>
         </DropdownMenuTrigger>

@@ -189,6 +189,7 @@ function BoardSearchField({ placeholder }: { placeholder: string }) {
       hint="/"
       placeholder={placeholder}
       aria-label={placeholder}
+      data-tour="search"
       className="hidden w-56 sm:block"
       onValueChange={(value) => {
         setText(value);
@@ -279,6 +280,7 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         variant="ghost"
         size="sm"
         label={tb.search}
+        data-tour="search"
         className="sm:hidden"
         onClick={() => useUiStore.getState().setPaletteOpen(true)}
       >
@@ -317,7 +319,12 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div role="group" aria-label={tb.viewGroup} className="flex items-center gap-1">
+      <div
+        role="group"
+        aria-label={tb.viewGroup}
+        data-tour="view"
+        className="flex items-center gap-1"
+      >
         <IconButton
           variant={viewMode === "grid" ? "outline" : "ghost"}
           size="sm"
@@ -360,8 +367,8 @@ export function Toolbar({ view, sort }: ToolbarProps) {
         </Tooltip>
       </div>
 
-      <Button size="sm" aria-label={tb.add} onClick={() => setQuickAddOpen(true)}>
-        <PlusIcon />
+      <Button size="sm" aria-label={tb.add} data-tour="add" onClick={() => setQuickAddOpen(true)}>
+        <PlusIcon strokeWidth={2.75} />
         <span className="hidden sm:inline">{tb.add}</span>
       </Button>
     </div>

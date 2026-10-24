@@ -108,7 +108,7 @@ export function ComponentsSection() {
 
       <Group title="Kbd">
         <Kbd>/</Kbd>
-        <Kbd keys={["⌘", "K"]} />
+        <Kbd keys={["Ctrl", "K"]} />
         <Kbd keys={["Shift", "Enter"]} />
       </Group>
 

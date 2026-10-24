@@ -35,8 +35,8 @@ export const marketing = {
       {
         title: "Find it again",
         body: "Search, filter by format, tag or status, and open any item for a full preview.",
-        example: "Find it with ⌘K or by format.",
-        chips: ["⌘K", "Format", "Tag"],
+        example: "Find it with Ctrl+K or by format.",
+        chips: ["Ctrl+K", "Format", "Tag"],
       },
     ],
   },

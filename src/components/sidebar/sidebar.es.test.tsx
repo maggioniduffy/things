@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setActiveLocale } from "@/i18n/active";
 import { I18nProvider } from "@/i18n/client";
@@ -33,8 +34,28 @@ describe("Sidebar in Spanish", () => {
     expect(screen.getByRole("link", { name: /^Imágenes/ })).toBeInTheDocument();
     expect(screen.getByText("Todavía no hay colecciones")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nueva colección" })).toBeInTheDocument();
-    const account = screen.getByRole("group", { name: "Cuenta" });
-    expect(account).toHaveTextContent("Invitado");
-    expect(within(account).getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Colabora con un cafecito" })).toHaveAttribute(
+      "href",
+      "https://cafecito.app/maggioniduffy",
+    );
+  });
+
+  it("names the settings menu items in Spanish", async () => {
+    const client = makeTestQueryClient();
+    client.setQueryData(["counts"], makeCounts());
+    client.setQueryData(["collections"], []);
+    client.setQueryData(["tags"], []);
+    client.setQueryData(["smart-views"], []);
+    renderWithQuery(
+      <I18nProvider locale="es">
+        <Sidebar email={null} />
+      </I18nProvider>,
+      client,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Configuración" }));
+    expect(screen.getByRole("group", { name: "Cuenta" })).toHaveTextContent("Invitado");
+    expect(screen.getByRole("menuitem", { name: "Cerrar sesión" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Mostrar el recorrido" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: "Español" })).toBeChecked();
   });
 });

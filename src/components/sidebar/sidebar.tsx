@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArchiveIcon,
   CircleDotIcon,
+  CoffeeIcon,
   InboxIcon,
   LayersIcon,
   PanelLeftIcon,
@@ -16,11 +17,11 @@ import { Logo } from "@/components/brand";
 import { SIDEBAR_ZONE_ATTRIBUTE } from "@/components/dnd/collision";
 import { archiveTarget, favoritesTarget, inboxTarget, trashTarget } from "@/components/dnd/targets";
 import { KindIcon } from "@/components/kind-icon";
-import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { focusRing } from "@/components/ui/focus-ring";
 import { IconButton } from "@/components/ui/icon-button";
 import { Separator } from "@/components/ui/separator";
 import { useT } from "@/i18n/client";
-import { useUiStore } from "@/stores/ui-store";
+import { cn } from "@/lib/utils";
 import { kindPluralLabel } from "@/lib/kinds";
 import {
   collectionsQueryOptions,
@@ -33,7 +34,7 @@ import { ITEM_KINDS, viewHref } from "@/lib/views";
 import { CollectionDialog } from "./collection-dialog";
 import { CollectionRow, SmartViewRow, TagRow } from "./manage-rows";
 import { NavItem } from "./nav-item";
-import { SignOutButton } from "./sign-out-button";
+import { SettingsMenu } from "./settings-menu";
 import { SmartViewDialog } from "./smart-view-dialog";
 import { SortableRows } from "./sortable-rows";
 
@@ -49,9 +50,12 @@ function Section({
   label,
   heading = true,
   action,
+  tour,
   children,
 }: {
   label: string;
+  /** Marks the section as a tour target. */
+  tour?: string;
   /** Show the label as a visible heading. System groups are labelled for screen readers only. */
   heading?: boolean;
   /** A control at the right end of the heading, e.g. "New collection". */
@@ -60,7 +64,7 @@ function Section({
 }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1" data-tour={tour}>
       {heading ? (
         <div className="flex items-center justify-between pr-1">
           <h2 id={id} className="text-meta text-ink-subtle px-2.5 pt-1 pb-0.5 font-medium">
@@ -81,8 +85,7 @@ function Section({
 }
 
 export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
-  const messages = useT();
-  const t = messages.shell;
+  const t = useT().shell;
   const client = createClient();
   const { data: counts } = useQuery(countsQueryOptions(client));
   const { data: collections } = useQuery(collectionsQueryOptions(client));
@@ -178,6 +181,7 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
         <Separator />
         <Section
           label={t.sidebar.collections}
+          tour="collections"
           action={
             <IconButton
               variant="ghost"
@@ -186,7 +190,7 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
               className="size-6"
               onClick={() => setCreatingCollection(true)}
             >
-              <PlusIcon className="size-4" />
+              <PlusIcon className="size-4" strokeWidth={2.75} />
             </IconButton>
           }
         >
@@ -230,7 +234,7 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
               className="size-6"
               onClick={() => setCreatingSmartView(true)}
             >
-              <PlusIcon className="size-4" />
+              <PlusIcon className="size-4" strokeWidth={2.75} />
             </IconButton>
           }
         >
@@ -276,25 +280,26 @@ export function Sidebar({ email, onNavigate, onClose }: SidebarProps) {
       <SmartViewDialog open={creatingSmartView} onOpenChange={setCreatingSmartView} />
 
       <Separator />
-      <div role="group" aria-label={t.sidebar.account} className="flex shrink-0 flex-col gap-2 p-3">
-        <p className="text-meta text-ink-muted min-w-0 truncate" title={email ?? undefined}>
-          {email ?? t.sidebar.guest}
-        </p>
-        {/* Own row: the switcher plus "Cerrar sesión" don't fit beside the email at sidebar width. */}
-        <div className="flex items-center justify-between gap-2">
-          <LanguageSwitcher className="h-8" />
-          <SignOutButton />
-        </div>
-        <button
-          type="button"
-          className="text-meta text-ink-muted hover:text-ink self-start underline-offset-2 hover:underline"
-          onClick={() => {
-            onNavigate?.();
-            useUiStore.getState().setTourOpen(true);
-          }}
+      <div className="flex shrink-0 items-center gap-1 p-2">
+        <SettingsMenu email={email} onNavigate={onNavigate} />
+        <a
+          href={t.sidebar.cafecitoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "text-meta text-ink-muted hover:text-ink rounded-control flex min-w-0 items-center gap-2 px-2 py-1.5",
+            "hover:bg-accent transition-colors duration-(--duration-fast) motion-reduce:transition-none",
+            focusRing,
+          )}
         >
-          {messages.onboarding.showTour}
-        </button>
+          <span
+            aria-hidden="true"
+            className="bg-aurora-coral/30 text-aurora-red rounded-control flex size-6 shrink-0 items-center justify-center"
+          >
+            <CoffeeIcon className="size-3.5" />
+          </span>
+          <span className="truncate">{t.sidebar.cafecito}</span>
+        </a>
       </div>
     </div>
   );

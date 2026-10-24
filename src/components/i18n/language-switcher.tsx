@@ -22,21 +22,26 @@ async function saveToProfile(locale: Locale) {
   }
 }
 
+/** Returns the function that switches the language: cookie, profile, then a re-render. */
+export function useChooseLocale() {
+  const router = useRouter();
+  const current = useLocale();
+  return function choose(locale: Locale) {
+    if (locale === current) return;
+    writeLocaleCookie(locale);
+    void saveToProfile(locale);
+    router.refresh();
+  };
+}
+
 /**
  * Two-option language control. The choice is a cookie on this host (auth cookies are
  * host-scoped, so it never redirects to the other domain), then the page re-renders.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {
-  const router = useRouter();
   const current = useLocale();
+  const choose = useChooseLocale();
   const { language } = useT().common;
-
-  function choose(locale: Locale) {
-    if (locale === current) return;
-    writeLocaleCookie(locale);
-    void saveToProfile(locale);
-    router.refresh();
-  }
 
   return (
     <div

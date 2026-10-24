@@ -36,8 +36,8 @@ export const marketing: Messages["marketing"] = {
       {
         title: "Encontralo de nuevo",
         body: "Buscá, filtrá por formato, etiqueta o estado, y abrí cualquier cosa para verla completa.",
-        example: "Encontralo con ⌘K o por formato.",
-        chips: ["⌘K", "Formato", "Etiqueta"],
+        example: "Encontralo con Ctrl+K o por formato.",
+        chips: ["Ctrl+K", "Formato", "Etiqueta"],
       },
     ],
   },

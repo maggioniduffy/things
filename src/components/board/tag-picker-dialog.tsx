@@ -87,7 +87,7 @@ export function TagPickerDialog({ open, onOpenChange, ids }: TagPickerDialogProp
             ))}
             {canCreate ? (
               <CommandItem value={`create ${typed}`} forceMount onSelect={() => void create()}>
-                <PlusIcon aria-hidden="true" />
+                <PlusIcon strokeWidth={2.75} aria-hidden="true" />
                 {copy.createTag(typed)}
               </CommandItem>
             ) : null}

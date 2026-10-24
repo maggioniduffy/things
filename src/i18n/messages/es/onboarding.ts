@@ -18,7 +18,7 @@ export const onboarding = {
     },
     capture: {
       title: "Guarda lo que sea, rápido",
-      body: "Pega en cualquier lugar con ⌘V, suelta archivos en la página o usa Agregar para escribir un enlace o una nota.",
+      body: "Pega en cualquier lugar con Ctrl+V, suelta archivos en la página o usa Agregar para escribir un enlace o una nota.",
     },
     organize: {
       title: "Mantén todo en orden",
@@ -26,11 +26,15 @@ export const onboarding = {
     },
     find: {
       title: "Encuéntralo otra vez",
-      body: "Pulsa / para buscar; los errores de tipeo y las tildes no importan. Pulsa ⌘K para ver todos los comandos, J y K para moverte entre tarjetas, F para marcar favorita y E para archivar.",
+      body: "Pulsa / para buscar; los errores de tipeo y las tildes no importan. Pulsa Ctrl+K para ver todos los comandos, J y K para moverte entre tarjetas, F para marcar favorita y E para archivar.",
     },
     canvas: {
       title: "Ordénalo en un lienzo",
       body: "Cambia una colección o la Bandeja de entrada a la vista de lienzo para colocar las tarjetas libremente, como en un tablero.",
+    },
+    settings: {
+      title: "Tu configuración",
+      body: "Bajo la tuerca puedes cambiar el idioma, repetir este recorrido y cerrar sesión.",
     },
     keep: {
       title: "Conserva tus cosas",

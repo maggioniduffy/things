@@ -18,7 +18,7 @@ export const onboarding = {
     },
     capture: {
       title: "Save anything fast",
-      body: "Paste anywhere with ⌘V, drop files onto the page, or use Add to type a link or a note.",
+      body: "Paste anywhere with Ctrl+V, drop files onto the page, or use Add to type a link or a note.",
     },
     organize: {
       title: "Keep it organized",
@@ -26,11 +26,15 @@ export const onboarding = {
     },
     find: {
       title: "Find it again",
-      body: "Press / to search; typos and accents are fine. Press ⌘K for every command, J and K to move between cards, F to favorite and E to archive.",
+      body: "Press / to search; typos and accents are fine. Press Ctrl+K for every command, J and K to move between cards, F to favorite and E to archive.",
     },
     canvas: {
       title: "Arrange on a canvas",
       body: "Switch a collection or the Inbox to canvas view to place cards freely, like a board.",
+    },
+    settings: {
+      title: "Your settings",
+      body: "Under the gear you can switch the language, replay this tour and sign out.",
     },
     keep: {
       title: "Keep your things",

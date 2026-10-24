@@ -113,15 +113,29 @@ describe("Sidebar", () => {
     );
   });
 
-  it("shows who is signed in and a sign-out button", () => {
+  it("keeps account, language, tour and sign out inside the settings menu", async () => {
+    const user = userEvent.setup();
     const { unmount } = renderWithQuery(<Sidebar email={null} />, seed());
-    const account = screen.getByRole("group", { name: "Account" });
-    expect(account).toHaveTextContent("Guest");
-    expect(within(account).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("group", { name: "Account" })).toHaveTextContent("Guest");
+    expect(screen.getByRole("menuitem", { name: "Add email" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: "English" })).toBeChecked();
+    expect(screen.getByRole("menuitemradio", { name: "Español" })).not.toBeChecked();
     unmount();
 
     renderWithQuery(<Sidebar email="ada@example.com" />, seed());
+    await user.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("group", { name: "Account" })).toHaveTextContent("ada@example.com");
+    expect(screen.queryByRole("menuitem", { name: "Add email" })).not.toBeInTheDocument();
+  });
+
+  it("links to the cafecito page in a new tab", () => {
+    renderWithQuery(<Sidebar email={null} />, seed());
+    const link = screen.getByRole("link", { name: "Buy me a cafecito" });
+    expect(link).toHaveAttribute("href", "https://cafecito.app/maggioniduffy");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
   });
 
   it("hides itself from the header icon and from the app name", async () => {
@@ -138,11 +152,12 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("button", { name: "Hide sidebar" })).not.toBeInTheDocument();
   });
 
-  it("replays the tour from the account area", async () => {
+  it("replays the tour from the settings menu", async () => {
     useUiStore.setState({ tourOpen: false });
     const onNavigate = vi.fn();
     renderWithQuery(<Sidebar email={null} onNavigate={onNavigate} />, seed());
-    await userEvent.click(screen.getByRole("button", { name: "Show the tour" }));
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Show the tour" }));
     expect(useUiStore.getState().tourOpen).toBe(true);
     expect(onNavigate).toHaveBeenCalled();
   });

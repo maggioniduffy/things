@@ -181,21 +181,21 @@ export function CanvasMenu({
               <ContextMenuItem onSelect={onCopy}>
                 <CopyIcon aria-hidden="true" />
                 {t.canvas.copy}
-                <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+                <ContextMenuShortcut>Ctrl+C</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             {onDuplicate ? (
               <ContextMenuItem onSelect={onDuplicate}>
                 <CopyPlusIcon aria-hidden="true" />
                 {t.canvas.duplicate}
-                <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+                <ContextMenuShortcut>Ctrl+D</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             {onPaste ? (
               <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste()}>
                 <ClipboardPasteIcon aria-hidden="true" />
                 {t.canvas.paste}
-                <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+                <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
             <ContextMenuItem onSelect={onBringToFront}>
@@ -217,14 +217,14 @@ export function CanvasMenu({
         ) : target?.type === "pane" && onNewNote ? (
           <>
             <ContextMenuItem onSelect={() => onNewNote(target.point)}>
-              <PlusIcon aria-hidden="true" />
+              <PlusIcon strokeWidth={2.75} aria-hidden="true" />
               {t.canvas.newNoteHere}
             </ContextMenuItem>
             {onPaste ? (
               <ContextMenuItem disabled={!canPaste} onSelect={() => onPaste(target.point)}>
                 <ClipboardPasteIcon aria-hidden="true" />
                 {t.canvas.paste}
-                <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+                <ContextMenuShortcut>Ctrl+V</ContextMenuShortcut>
               </ContextMenuItem>
             ) : null}
           </>

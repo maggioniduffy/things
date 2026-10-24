@@ -466,6 +466,10 @@ describe("previews", () => {
     );
     const preview = await screen.findByRole("img", { name: "Photo" });
     expect(preview).toHaveAttribute("src", "https://signed.example/u/i/photo.png?token=t");
+    // The title keeps its ink color next to the 17px size (title-field-css.test.ts pins the CSS).
+    const title = screen.getByRole("textbox", { name: "Title" });
+    expect(title).toHaveClass("text-ink", "text-card");
+    expect(title.className).not.toMatch(/text-ink-inverse/);
 
     await userEvent.click(screen.getByRole("button", { name: "View full size" }));
     const lightbox = await screen.findByRole("dialog", { name: "Photo" });

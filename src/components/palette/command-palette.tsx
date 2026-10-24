@@ -295,7 +295,7 @@ function PaletteBody({
             onSelect={saveClipboard}
           >
             {t.actions.saveClipboard}
-            <CommandShortcut>⌘V</CommandShortcut>
+            <CommandShortcut>Ctrl+V</CommandShortcut>
           </CommandItem>
           {isGuest ? (
             <CommandItem
